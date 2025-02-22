@@ -54,23 +54,23 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
     $form->addHiddenValue('address', $session->get('address'));
 
     $row = $form->addRow();
-        $row->addLabel('title', __('Title'));
+        $row->addLabel('title', __('分类标题'));
         $row->addTextField('title')->isRequired()->maxLength(100);
 
     $row = $form->addRow();
-        $row->addLabel('staff', __('Viewable To Staff'));
+        $row->addLabel('staff', __('员工可见？'));
         $row->addYesNo('staff')->isRequired();
 
     $row = $form->addRow();
-        $row->addLabel('student', __('Viewable To Students'));
+        $row->addLabel('student', __('学生可见？'));
         $row->addYesNo('student')->isRequired();
 
     $row = $form->addRow();
-        $row->addLabel('parent', __('Viewable To Parents'));
+        $row->addLabel('parent', __('家长可见？'));
         $row->addYesNo('parent')->isRequired();
 
     $row = $form->addRow();
-        $row->addLabel('other', __('Viewable To Others'));
+        $row->addLabel('other', __('其他用户可见？'));
         $row->addYesNo('other')->isRequired();
 
     $row = $form->addRow();
