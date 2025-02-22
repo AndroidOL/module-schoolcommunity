@@ -47,7 +47,7 @@ $moduleTables[] = 'CREATE TABLE `message_category` (
     `categoryID` INT(10) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,    -- 分类ID
     `categoryName` VARCHAR(100) NOT NULL,    -- 分类名称
     `userID` INT(10) UNSIGNED ZEROFILL NOT NULL,    -- 添加人ID
-    `accessControl` CHAR(1) NOT NULL,    -- 权限控制
+    `accessControl` INT(2) UNSIGNED ZEROFILL NOT NULL,    -- 权限控制
     `createTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,    -- 创建时间
     `updateTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,    -- 修改时间
     PRIMARY KEY (`categoryID`)
@@ -81,7 +81,7 @@ $actionRows[] = [
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
     'category'                  => '设置', // Optional: subgroups for the right hand side module menu
     'description'               => '允许用户修改设置分类', // Text description
-    'URLList'                   => 'message_categorySetting.php, message_categoryAdding.php,  message_categoryEditting.php, message_categoryDeleting.php', // List of pages included in this action
+    'URLList'                   => 'message_categorySetting.php, message_categoryAdding.php, message_categoryAddingProccess.php,  message_categoryEditting.php, message_categoryDeleting.php', // List of pages included in this action
     'entryURL'                  => 'message_categorySetting.php', // The landing action for the page.
     'entrySidebar'              => 'Y', // Whether or not there's a sidebar on entry to the action
     'menuShow'                  => 'Y', // Whether or not this action shows up in menus or if it's hidden

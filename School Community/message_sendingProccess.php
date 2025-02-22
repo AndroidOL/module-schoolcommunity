@@ -64,6 +64,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/message_sending
             $data[$key] = $_POST[$key];
         }
     }
+    
 
     $settingGateway = $container->get(SettingGateway::class);
 

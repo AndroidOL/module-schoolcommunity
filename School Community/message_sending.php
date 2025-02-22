@@ -49,6 +49,21 @@ if (!isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . 
     $form = Form::create('createMessage',  $session->get('absoluteURL') . '/modules/' . 'School Community' . '/name_view.php', 'post');
     $form->addHiddenValue('address', $session->get('address'));
 
+
+    $row = $form->addRow();
+        $row->addLabel('issueName', __('标题'));
+        $row->addTextField('issueName')
+            ->required()
+            ->maxLength(50);
+    
+    $row = $form->addRow();
+    $column = $row->addColumn();
+        $column->addLabel('description', __('内容'));
+        $column->addEditor('description', $guid)
+                ->setRows(10)
+                ->showMedia()
+                ->required();
+
     $row = $form->addRow();
         $row->addLabel('person', __('Person'));
         $row->addSelectPerson('person')

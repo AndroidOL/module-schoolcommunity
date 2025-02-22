@@ -41,7 +41,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
     $form->addHiddenValue('q', '/modules/'.$session->get('module').'/message_categorySetting.php');
 
     $row = $form->addRow();
-        $row->addLabel('search', __('查询'))->description(__('Title'));
+        $row->addLabel('search', __('查询'))->description(__('标题'));
         $row->addTextField('search')->setValue($search);
 
     $row = $form->addRow();
@@ -51,7 +51,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
 
     $cGateway = $container->get(CategoryGateway::class);
     $criteria = $cGateway->newQueryCriteria()
-        ->searchBy('i.title', $_GET['search'] ?? '')
+        ->searchBy('i.categoryID', $_GET['search'] ?? '')
         ->fromPost();
 
     $igrid = $cGateway->queryCategory($criteria);
@@ -65,15 +65,11 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
         ->addParam('search', $_GET['search'] ?? '')
         ->displayLabel();
 
-    $table->addColumn('logo', __('头像'))
-        ->width('100px')
-        ->format(Format::using('userPhoto', [
-            'logo',
-            75
-        ]));
-
-    $table->addColumn('title', __('姓名'))->format(Format::using('link', ['https://gibbon.tianhao.me/index.php?q=/modules/Staff/staff_view_details.php&gibbonPersonID=0000000001' . 'url','title']));
+    $table->addColumn('CategoryName', __('名称'));
+    $table->addColumn('gibbonPersonName', __('用户姓名'))->format(Format::using('link', ['gibbonPersonIDURL', 'gibbonPersonName']));
     $table->addColumn('AccessControl', __('访问控制'));
+    $table->addColumn('TimeCreated', __('添加时间'));
+    $table->addColumn('TimeUpdated', __('更新时间'));
 
     $actions = $table->addActionColumn()
         ->addParam('infoGridEntryID')

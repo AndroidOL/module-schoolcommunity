@@ -27,7 +27,6 @@ use Gibbon\Module\SchoolCommunity\Domain\CategoryGateway;
 //Module includes
 require_once __DIR__ . '/moduleFunctions.php';
 
-
 if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '/message_categorySetting.php') == false) {
     //Acess denied
     $page->addError(__('You do not have access to this action.'));
@@ -50,7 +49,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
         $page->navigator->addSearchResultsAction(Url::fromModuleRoute('School Community', 'message_categorySetting.php')->withQueryParams($params));
     }
 
-    $form = Form::create('action', $session->get('absoluteURL')."/modules/' . 'School Community' . '/message_categoryAdding.php?search=$search");
+    $form = Form::create('action', $session->get('absoluteURL').'/modules/' . 'School Community' . '/message_categoryAddingProccess.php?search=' . $search);
 
     $form->addHiddenValue('address', $session->get('address'));
 
@@ -69,6 +68,10 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
     $row = $form->addRow();
         $row->addLabel('parent', __('Viewable To Parents'));
         $row->addYesNo('parent')->isRequired();
+
+    $row = $form->addRow();
+        $row->addLabel('other', __('Viewable To Others'));
+        $row->addYesNo('other')->isRequired();
 
     $row = $form->addRow();
         $row->addFooter();

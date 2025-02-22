@@ -116,3 +116,47 @@ function formatExpandableSection($title, $content) {
 
     return $output;
 }
+
+/**
+ * 计算权限值
+ *
+ * @param string $staff   默认 "N"，当为 "Y" 时表示有 staff 权限（权值 8）
+ * @param string $student 默认 "N"，当为 "Y" 时表示有 student 权限（权值 4）
+ * @param string $parent  默认 "N"，当为 "Y" 时表示有 parent 权限（权值 2）
+ * @param string $other   默认 "N"，当为 "Y" 时表示有 other 权限（权值 1）
+ *
+ * @return int 返回权限值的整数表示
+ */
+function calcPermission($staff = "N", $student = "N", $parent = "N", $other = "N") {
+    // 确保所有输入都是字符串，否则转换为 "N"
+    $staff   = is_string($staff)   ? $staff   : "N";
+    $student = is_string($student) ? $student : "N";
+    $parent  = is_string($parent)  ? $parent  : "N";
+    $other   = is_string($other)   ? $other   : "N";
+
+    // 只有当参数严格等于 "Y" 时才认为是 "Y"，否则统一识别为 "N"
+    $staff   = ($staff === "Y")   ? "Y" : "N";
+    $student = ($student === "Y") ? "Y" : "N";
+    $parent  = ($parent === "Y")  ? "Y" : "N";
+    $other   = ($other === "Y")   ? "Y" : "N";
+
+    $value = 0;
+    // 按照题目要求，映射对应的二进制位：
+    // staff -> 8 (二进制 1000)
+    // student -> 4 (二进制 0100)
+    // parent -> 2 (二进制 0010)
+    // other -> 1 (二进制 0001)
+    if ($staff === "Y") {
+        $value |= 8;
+    }
+    if ($student === "Y") {
+        $value |= 4;
+    }
+    if ($parent === "Y") {
+        $value |= 2;
+    }
+    if ($other === "Y") {
+        $value |= 1;
+    }
+    return $value;
+}
