@@ -106,4 +106,29 @@ class CategoryGateway extends QueryableGateway
 
         return $this->runSelect($select);;
     }
+    public function queryExistCategory() {
+
+        // 创建一个新的 SELECT 查询
+        $select = $this->newSelect();
+
+        // 添加查询的列
+        $select->cols([
+            'message_totals.categoryID',          // 选择 message_totals 表的 categoryID 字段
+            'message_category.categoryName',      // 选择 message_category 表的 categoryName 字段
+        ]);
+
+        // 指定查询的数据源（FROM）
+        $select->from('message_totals');
+
+        // 进行 JOIN 操作，连接 message_category 表
+        $select->join(
+            'INNER',                             // 使用 INNER JOIN
+            'message_category',                  // 连接到 message_category 表
+            'message_totals.categoryID = message_category.categoryID' // 连接条件
+        );
+
+        // 添加 WHERE 条件，只保留 message_category 表中存在的 categoryID
+        $select->where('message_category.categoryID IS NOT NULL');
+        return $this->runSelect($select);;
+    }
 }
