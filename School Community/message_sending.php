@@ -35,7 +35,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . 
     $page->addError(__('您没有权限访问该页面。'));
 } else {
     // Proceed!
-    $page->return->setEditLink($session->get('absoluteURL') . '/index.php?q=/modules/' . 'School Community' . '/name_view.php');
+    $page->return->setEditLink($session->get('absoluteURL') . '/index.php?q=/modules/' . 'School Community' . '/message_reading.php');
 
 
     // Get Non-Technicians
@@ -43,14 +43,14 @@ if (!isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . 
 
     // Get Message Category
     $cGateway = $container->get(CategoryGateway::class);
-    $categoryOptions = array_column($cGateway->querySimpleCategory()->fetchAll(), 'CategoryName');
+    $categoryOptions = array_column($cGateway->querySimpleCategory()->fetchAll(), 'CategoryName', 'CategoryID');
 
     $users = array_reduce($technicianGateway->selectGibbonPerson()->fetchAll(), function ($group, $item) {
         $group[$item['gibbonPersonID']] = Format::name('', $item['preferredName'], $item['surname'], 'Staff', true) . ' (' . $item['username'] . ', ' . __($item['category']) . ')';
         return $group;
     }, []);
 
-    $form = Form::create('createMessage',  $session->get('absoluteURL') . '/modules/' . 'School Community' . '/name_view.php', 'post');
+    $form = Form::create('createMessage',  $session->get('absoluteURL') . '/modules/' . 'School Community' . '/message_sendingProccess.php', 'post');
     $form->addHiddenValue('address', $session->get('address'));
 
     $row = $form->addRow();
@@ -75,8 +75,20 @@ if (!isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . 
                 ->required();
 
     $row = $form->addRow();
-        $row->addLabel('messageRecipient', __('Person'));
-        $row->addSelectPerson('person')
+        $row->addLabel('messagePriority', __('优先程度'));
+        $row->addSelect('messagePriority')
+            ->fromArray([
+                'h' => '紧急',
+                'm' => '正常',
+                'l' => '通知',
+            ])
+            ->placeholder()
+            ->required()
+            ->setValue('m');
+
+    $row = $form->addRow();
+        $row->addLabel('messageRecipient', __('对方用户'));
+        $row->addSelectPerson('messageRecipient')
             ->fromArray($users)
             ->placeholder()
             ->required();

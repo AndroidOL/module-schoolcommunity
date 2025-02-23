@@ -33,7 +33,7 @@ $moduleName = $session->get('module');
 
 $URL = $absoluteURL . '/index.php?q=/modules/' . $moduleName;
 
-if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/message_sending.php')) {
+if (!isActionAccessible($guid, $connection2, '/modules/' . $moduleName . '/message_sending.php')) {
     $URL .= '/message_reading.php&return=error0';
     header("Location: {$URL}");
     exit();
@@ -46,17 +46,14 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/message_sending
     $data = [
         //Default data
         'gibbonPersonID' => $gibbonPersonID,
-        'createdByID' => $gibbonPersonID,
-        'status' => 'Unassigned',
         'gibbonSchoolYearID' => $session->get('gibbonSchoolYearID'),
-        'date' => date('Y-m-d'),
+        'createDate' => date('Y-m-d'),
         //Data to get from Post or getSettingByScope
-        'issueName' => '',
-        'category' => '',
-        'description' => '',
-        'gibbonSpaceID' => null,
-        'priority' => '',
-        'subcategoryID' => null,
+        'messageTitle' => '',
+        'messageCategory' => '',
+        'messageDescription' => '',
+        'messageRecipient' => null,
+        'messagePriority' => 'm',
     ];
 
     foreach ($data as $key => $value) {
@@ -65,66 +62,74 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/message_sending
         }
     }
 
-    if ($title == '' or $staff == '' or $student == '' or $parent == '' or $other == '') {
-        // 检查必填项
-        $URL = $URL.'&return=error3';
-        header("Location: {$URL}");
-    } else {
+    $data['messageDescription'] = base64_encode($_POST['messageDescription'] ?? '');
 
-        /*
-        $data1 = [
-            'title'   => $title,
-            'staff'   => $staff,
-            'student' => $student,
-            'parent'  => $parent,
-            'other'   => $other,
-            'perm'    => $perm,
-            'user'    => $user
-        ];
+    $sendData = [
+        'title' => $data['messageTitle'],  // 标题
+        'body' => $data['messageDescription'],  // 内容
+        'categoryID' => $data['messageCategory'],  // 分类
+        'priority' => null,  // 需要根据 messagePriority 来设置
+        'senderID' => $data['gibbonPersonID'],  // 发送者 ID
+        'receiverID' => $data['messageRecipient'],  // 接收者 ID
+    ];
+    switch ($data['messagePriority']) {
+        case 'h':
+            $sendData['priority'] = true;
+            break;
+        case 'l':
+            $sendData['priority'] = false;
+            break;
+        default:
+            $sendData['priority'] = null;  // 'm' 或其他任何值都设为 null
+            break;
+    }
+    echo '<pre>';
+    print_r($sendData);
+    echo '</pre>';
 
-        //Move attached image  file, if there is one
-        if (!empty($_FILES['file']['tmp_name'])) {
-            $fileUploader = new Gibbon\FileUploader($pdo, $gibbon->session);
-            $fileUploader->getFileExtensions('Graphics/Design');
+    /*
+    //Move attached image  file, if there is one
+    if (!empty($_FILES['file']['tmp_name'])) {
+        $fileUploader = new Gibbon\FileUploader($pdo, $gibbon->session);
+        $fileUploader->getFileExtensions('Graphics/Design');
 
-            $file = (isset($_FILES['file']))? $_FILES['file'] : null;
+        $file = (isset($_FILES['file']))? $_FILES['file'] : null;
 
-            // Upload the file, return the /uploads relative path
-            $logo = $fileUploader->uploadFromPost($file, 'infoGrid');
+        // Upload the file, return the /uploads relative path
+        $logo = $fileUploader->uploadFromPost($file, 'infoGrid');
 
-            if (empty($logo)) {
-                $partialFail = true;
-            }
+        if (empty($logo)) {
+            $partialFail = true;
         }
-
-        //Write to database
-        try {
-            $data = array('title' => $title, 'perm' => $perm, 'userID' => $session->get('gibbonPersonID'));
-            $sql = 'INSERT INTO message_category SET categoryName=:title, accessControl=:perm, userID=:userID';
-            $result = $connection2->prepare($sql);
-            $result->execute($data);
-        } catch (PDOException $ex) {
-            $errorMessage = "Database error: " . $ex->getMessage() . "\n";
-            $errorMessage .= "In file: " . $ex->getFile() . " on line " . $ex->getLine() . "\n";
-            $errorMessage .= "Stack trace:\n" . $ex->getTraceAsString() . "\n";
-        
-            // 将错误信息记录到日志文件中
-            error_log($errorMessage, 3, "./logfile.log");
-            //Fail 2
-            $URL = $URL.'&return=error2';
-            header("Location: {$URL}");
-            exit();
-        }
-        $AI = str_pad($connection2->lastInsertID(), 8, '0', STR_PAD_LEFT);
-
-        if ($partialFail == true) {
-            $URL .= '&return=warning1';
-            header("Location: {$URL}");
-        } else {
-            $URL .= "&return=success0&editID=$AI";
-            header("Location: {$URL}");
-        }
-        */
     }
 
+
+    */
+    //Write to database
+    try {
+        $sql = 'INSERT INTO message_totals (title, body, categoryID, priority, senderID, receiverID) 
+        VALUES (:title, :body, :categoryID, :priority, :senderID, :receiverID)';
+        $result = $connection2->prepare($sql);
+        $result->execute($sendData);
+    } catch (PDOException $ex) {
+        $errorMessage = "Database error: " . $ex->getMessage() . "\n";
+        $errorMessage .= "In file: " . $ex->getFile() . " on line " . $ex->getLine() . "\n";
+        $errorMessage .= "Stack trace:\n" . $ex->getTraceAsString() . "\n";
+    
+        // 将错误信息记录到日志文件中
+        error_log($errorMessage, 3, "./logfile.log");
+        //Fail 2
+        $URL = $URL.'&return=error2';
+        header("Location: {$URL}");
+        exit();
+    }
+    $AI = str_pad($connection2->lastInsertID(), 8, '0', STR_PAD_LEFT);
+
+    if ($partialFail == true) {
+        $URL .= '&return=warning1';
+        header("Location: {$URL}");
+    } else {
+        $URL .= "&return=success0&editID=$AI";
+        header("Location: {$URL}");
+    }
 }
