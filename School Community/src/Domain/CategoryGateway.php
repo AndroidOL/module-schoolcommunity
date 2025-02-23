@@ -62,6 +62,12 @@ class CategoryGateway extends QueryableGateway
         return $this->runQuery($query, $criteria);
     }
 
+    public function queryCategoryID(QueryCriteria $criteria) {
+        $query = $this->getDefaultTableQuery()->where('message_category.categoryID = :CategoryID')
+        ->bindValue('gibbonPersonID', $gibbonPersonID);
+        return $this->runQuery($query, $criteria);
+    }
+
     private function getSharedQueryFilters() {
         return [
             'creator' => function ($query, $needle) {
@@ -72,8 +78,26 @@ class CategoryGateway extends QueryableGateway
     }
     
     private function getDefaultTableQuery() {
-        return $this
-            ->newQuery()
+        return $this->newQuery()
+            ->from($this->getTableName() . ' as i')
+            ->innerJoin('gibbonPerson', 'i.userID = gibbonPersonID')
+            ->orderBy(['i.createTime'])
+            ->cols([
+                'i.categoryID as CategoryID',
+                'i.categoryName as CategoryName',
+                'i.userID as gibbonPersonIDCreator',
+                'CONCAT("/index.php?q=/modules/Staff/staff_view_details.php&gibbonPersonID=", i.userID) as gibbonPersonIDURL',
+                'gibbonPerson.surname as gibbonPersonSurname',
+                'gibbonPerson.firstName as gibbonPersonFirstName',
+                'CONCAT(gibbonPerson.surname, " ", gibbonPerson.firstName) as gibbonPersonName',
+                'i.accessControl as AccessControl',
+                'i.createTime as TimeCreated',
+                'i.updateTime as TimeUpdated',
+            ]);
+    }
+    
+    private function getDefaultTableQuery() {
+        return $this->newQuery()
             ->from($this->getTableName() . ' as i')
             ->innerJoin('gibbonPerson', 'i.userID = gibbonPersonID')
             ->orderBy(['i.createTime'])

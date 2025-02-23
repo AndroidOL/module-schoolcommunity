@@ -55,7 +55,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
 
     $row = $form->addRow();
         $row->addLabel('title', __('分类标题'));
-        $row->addTextField('title')->isRequired()->maxLength(100);
+        $row->addTextField('title')->isRequired()->maxLength(50);
 
     $row = $form->addRow();
         $row->addLabel('staff', __('员工可见？'));

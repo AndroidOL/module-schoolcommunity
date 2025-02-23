@@ -181,3 +181,29 @@ function convertIntToYN($num) {
     
     return $result;
 }
+
+/**
+ * 获取数字在第 $position 位的值，数字范围限定在 0～15（超出视为 0）
+ * 位编号从右侧开始：第1位为最低有效位，依次向左
+ *
+ * @param int $num      输入数字
+ * @param int $position 位的位置（1～4）
+ * @return int          返回 1 或 0
+ */
+function getBitAtPosition($num, $position) {
+    // 如果传入的是字符串且是数值，则将其转换为整数（使用 base 10 转换，防止出现八进制问题）
+    if (is_string($value) && is_numeric($value)) {
+        $value = intval($value, 10);
+    } else {
+        // 对于其他类型，也直接转为整数
+        $value = (int)$value;
+    }
+    if ($num < 0 || $num > 15) {
+        $num = 0;
+    }
+    if ($position < 1 || $position > 4) {
+        return 0;
+    }
+    // 对于 4 位数，从左数时，相当于右移 (4 - $position) 位
+    return (($num >> (4 - $position)) & 1) ? 'Y' : 'N';
+}
