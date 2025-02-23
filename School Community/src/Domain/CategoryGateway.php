@@ -39,17 +39,13 @@ class CategoryGateway extends QueryableGateway
 
     private static $searchableColumns = ['i.categoryName'];
 
-    public function queryCategory(QueryCriteria $criteria)
-    {
+    public function queryCategory(QueryCriteria $criteria) {
         $query = $this->getDefaultTableQuery();
-
         $criteria->addFilterRules($this->getSharedQueryFilters());
-
         return $this->runQuery($query, $criteria);
     }
 
-    public function queryCategoryCreator(QueryCriteria $criteria)
-    {
+    public function queryCategoryCreator(QueryCriteria $criteria) {
         $query = $this->getDefaultTableQuery()
             ->innerJoin('gibbonPerson p on p.gibbonPersonID = i.gibbonPersonIDCreator');
         
@@ -66,8 +62,7 @@ class CategoryGateway extends QueryableGateway
         return $this->runQuery($query, $criteria);
     }
 
-    private function getSharedQueryFilters()
-    {
+    private function getSharedQueryFilters() {
         return [
             'creator' => function ($query, $needle) {
                 return $query->where("i.gibbonPersonIDCreator = :creatorID")
@@ -76,8 +71,7 @@ class CategoryGateway extends QueryableGateway
         ];
     }
     
-    private function getDefaultTableQuery()
-    {
+    private function getDefaultTableQuery() {
         return $this
             ->newQuery()
             ->from($this->getTableName() . ' as i')

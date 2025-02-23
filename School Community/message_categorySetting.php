@@ -66,21 +66,26 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
         ->displayLabel();
 
     $table->addColumn('CategoryName', __('名称'));
-    $table->addColumn('gibbonPersonName', __('用户姓名'))->format(Format::using('link', ['gibbonPersonIDURL', 'gibbonPersonName']));
-    $table->addColumn('AccessControl', __('访问控制'));
+    $table->addColumn('gibbonPersonName', __('用户姓名'))->format(function ($row) {
+        return '<a href="/index.php?q=/modules/Staff/staff_view_details.php&gibbonPersonID=' . $row['gibbonPersonIDCreator'] . '">' . $row['gibbonPersonName'] . "</a>";
+    });
+    //$table->addColumn('gibbonPersonName', __('用户姓名'))->format(Format::using('link', ['gibbonPersonIDURL', 'gibbonPersonName']));
+    $table->addColumn('AccessControl', __('访问控制'))->format(function ($row) {
+        return convertIntToYN($row['AccessControl']);
+    });
     $table->addColumn('TimeCreated', __('添加时间'));
     $table->addColumn('TimeUpdated', __('更新时间'));
 
     $actions = $table->addActionColumn()
-        ->addParam('infoGridEntryID')
+        ->addParam('CategoryID')
         ->addParam('search', $_GET['search'] ?? '')
-        ->format(function ($infoGridItem, $actions) {
+        ->format(function ($categoryItem, $actions) {
             $actions
-                ->addAction('edit', 'Edit')
+                ->addAction('edit', '编辑')
                 ->setURL('/modules/' . 'School Community' . '/message_categoryEditting.php');
 
             $actions
-                ->addAction('delete', 'Delete')
+                ->addAction('delete', '删除')
                 ->setURL('/modules/' . 'School Community' . '/message_categoryDelete.php');
         });
 

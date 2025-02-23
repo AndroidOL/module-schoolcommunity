@@ -160,3 +160,24 @@ function calcPermission($staff = "N", $student = "N", $parent = "N", $other = "N
     }
     return $value;
 }
+
+/**
+ * 将一个0-15的整数转换为4位二进制字符串，并将1替换为Y、0替换为N
+ *
+ * @param int $num 要转换的数字
+ * @return string 转换后的字符串，如15转换为"YYYY"，0转换为"NNNN"
+ */
+function convertIntToYN($num) {
+    // 如果传入的数字不在0-15范围内，则置为0
+    if ($num < 0 || $num > 15) {
+        $num = 0;
+    }
+    
+    // 将数字转换为二进制字符串，并补齐到4位（不足4位的前面补0）
+    $binary = str_pad(decbin($num), 4, '0', STR_PAD_LEFT);
+    
+    // 将二进制字符串中的'1'替换为'Y'，'0'替换为'N'
+    $result = strtr($binary, ['1' => 'Y', '0' => 'N']);
+    
+    return $result;
+}
