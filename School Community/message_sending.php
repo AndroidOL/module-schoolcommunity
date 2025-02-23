@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-use Gibbon\Domain\System\SettingGateway;
 use Gibbon\Forms\DatabaseFormFactory;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
+use Gibbon\Module\SchoolCommunity\Domain\CategoryGateway;
 use Gibbon\Module\SchoolCommunity\Domain\TechnicianGateway;
 use Gibbon\Domain\School\FacilityGateway;
 
@@ -31,41 +31,51 @@ require_once __DIR__ . '/moduleFunctions.php';
 $page->breadcrumbs->add(__('发送校内消息'));
 
 if (!isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '/message_sending.php')) {
-    //Acess denied
+    // Acess denied
     $page->addError(__('您没有权限访问该页面。'));
 } else {
-    //Proceed!
+    // Proceed!
     $page->return->setEditLink($session->get('absoluteURL') . '/index.php?q=/modules/' . 'School Community' . '/name_view.php');
 
 
-    //Get Non-Technicians
+    // Get Non-Technicians
     $technicianGateway = $container->get(TechnicianGateway::class);
 
-    $users = array_reduce($technicianGateway->selectNonTechnicians()->fetchAll(), function ($group, $item) {
-        $group[$item['gibbonPersonID']] = Format::name('', $item['preferredName'], $item['surname'], 'Student', true) . ' (' . $item['username'] . ', ' . __($item['category']) . ')';
+    // Get Message Category
+    $cGateway = $container->get(CategoryGateway::class);
+    $categoryOptions = array_column($cGateway->querySimpleCategory()->fetchAll(), 'CategoryName');
+
+    $users = array_reduce($technicianGateway->selectGibbonPerson()->fetchAll(), function ($group, $item) {
+        $group[$item['gibbonPersonID']] = Format::name('', $item['preferredName'], $item['surname'], 'Staff', true) . ' (' . $item['username'] . ', ' . __($item['category']) . ')';
         return $group;
     }, []);
 
     $form = Form::create('createMessage',  $session->get('absoluteURL') . '/modules/' . 'School Community' . '/name_view.php', 'post');
     $form->addHiddenValue('address', $session->get('address'));
 
-
     $row = $form->addRow();
-        $row->addLabel('issueName', __('标题'));
-        $row->addTextField('issueName')
+        $row->addLabel('messageTitle', __('消息标题'));
+        $row->addTextField('messageTitle')
             ->required()
             ->maxLength(50);
+
+    $row = $form->addRow();
+        $row->addLabel('messageCategory', __('消息分类'));
+        $row->addSelect('messageCategory')
+            ->fromArray($categoryOptions)
+            ->placeholder()
+            ->required();
     
     $row = $form->addRow();
     $column = $row->addColumn();
-        $column->addLabel('description', __('内容'));
-        $column->addEditor('description', $guid)
+        $column->addLabel('messageDescription', __('消息内容'));
+        $column->addEditor('messageDescription', $guid)
                 ->setRows(10)
                 ->showMedia()
                 ->required();
 
     $row = $form->addRow();
-        $row->addLabel('person', __('Person'));
+        $row->addLabel('messageRecipient', __('Person'));
         $row->addSelectPerson('person')
             ->fromArray($users)
             ->placeholder()

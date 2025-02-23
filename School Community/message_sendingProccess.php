@@ -64,91 +64,67 @@ if (!isActionAccessible($guid, $connection2, '/modules/Help Desk/message_sending
             $data[$key] = $_POST[$key];
         }
     }
-    
 
-    $settingGateway = $container->get(SettingGateway::class);
-
-    $priorityOptions = explodeTrim($settingGateway->getSettingByScope($moduleName, 'issuePriority'));
-    $categoryOptions = explodeTrim($settingGateway->getSettingByScope($moduleName, 'issueCategory'));
-    $simpleCategories = ($settingGateway->getSettingByScope($moduleName, 'simpleCategories') == '1');
-
-    $techGroupGateway = $container->get(TechGroupGateway::class);
-
-    $createdOnBehalf = false;
-
-    if(empty($_POST['createFor'])) {
-        $data['gibbonPersonID'] = $gibbonPersonID;
-    } else if (isset($_POST['createFor']) && $_POST['createFor'] != 0 && $techGroupGateway->getPermissionValue($gibbonPersonID, 'createIssueForOther')) {
-        $data['gibbonPersonID'] = $_POST['createFor'];
-        $createdOnBehalf = true;
-    }
-    
-    $subcategoryGateway = $container->get(SubcategoryGateway::class);
-    
-    if (empty($data['issueName'])
-        || empty($data['description']) 
-        || (!in_array($data['category'], $categoryOptions) && count($categoryOptions) > 0 && $simpleCategories)
-        || (!$subcategoryGateway->exists($data['subcategoryID']) && !$simpleCategories)
-        || (!in_array($data['priority'], $priorityOptions) && count($priorityOptions) > 0)) {
-
-        $URL .= '&return=error1';
+    if ($title == '' or $staff == '' or $student == '' or $parent == '' or $other == '') {
+        // 检查必填项
+        $URL = $URL.'&return=error3';
         header("Location: {$URL}");
-        exit();
     } else {
-        $issueGateway = $container->get(IssueGateway::class);
-        $issueID = $issueGateway->insert($data);
-        if ($issueID === false) {
-            $URL .= '&return=error2';
-            header("Location: {$URL}");
-            exit();
-        }
 
-        //Send Notification
-        $notificationGateway = $container->get(NotificationGateway::class);
-        $notificationSender = new NotificationSender($notificationGateway, $session); 
+        /*
+        $data1 = [
+            'title'   => $title,
+            'staff'   => $staff,
+            'student' => $student,
+            'parent'  => $parent,
+            'other'   => $other,
+            'perm'    => $perm,
+            'user'    => $user
+        ];
 
-        //Notify issue owner, if created on their behalf
-        if ($createdOnBehalf) {
-            $message = __('A new issue has been created on your behalf, Issue #') . $issueID . '(' . $data['issueName'] . ').';
-            $notificationSender->addNotification($data['gibbonPersonID'], $message, 'Help Desk', '/index.php?q=/modules/Help Desk/issues_discussView.php&issueID=' . $issueID);
-        }
+        //Move attached image  file, if there is one
+        if (!empty($_FILES['file']['tmp_name'])) {
+            $fileUploader = new Gibbon\FileUploader($pdo, $gibbon->session);
+            $fileUploader->getFileExtensions('Graphics/Design');
 
-        //Notify Techicians
-        $technicianGateway = $container->get(TechnicianGateway::class);
+            $file = (isset($_FILES['file']))? $_FILES['file'] : null;
 
-        if ($simpleCategories) {
-            $techs = $technicianGateway->selectTechnicians()->fetchAll();
-        } else {
-            $departmentID = $subcategoryGateway->getByID($data['subcategoryID'])['departmentID'];
-            $techs = $technicianGateway->selectTechniciansByDepartment($departmentID)->fetchAll();
-        }
+            // Upload the file, return the /uploads relative path
+            $logo = $fileUploader->uploadFromPost($file, 'infoGrid');
 
-        $techs = array_column($techs, 'gibbonPersonID');
-
-        $message = __('A new issue has been added') . ' (' . $data['issueName'] . ').';
-
-        foreach ($techs as $techPersonID) {
-            $permission = $techGroupGateway->getPermissionValue($techPersonID, 'viewIssueStatus');
-            if ($techPersonID != $session->get('gibbonPersonID') && $techPersonID != $data['gibbonPersonID'] && in_array($permission, ['UP', 'All'])) {
-                $notificationSender->addNotification($techPersonID, $message, 'Help Desk','/index.php?q=/modules/Help Desk/issues_discussView.php&issueID=' . $issueID);
+            if (empty($logo)) {
+                $partialFail = true;
             }
         }
 
-        $notificationSender->sendNotifications();
-
-        //Log
-        $array = ['issueID' => $issueID];
-        $title = 'Issue Created';
-        if ($createdOnBehalf) {
-            $array['technicianID'] = $technicianGateway->getTechnicianByPersonID($gibbonPersonID)->fetch()['technicianID'];
-            $title = 'Issue Created (for Another Person)';
+        //Write to database
+        try {
+            $data = array('title' => $title, 'perm' => $perm, 'userID' => $session->get('gibbonPersonID'));
+            $sql = 'INSERT INTO message_category SET categoryName=:title, accessControl=:perm, userID=:userID';
+            $result = $connection2->prepare($sql);
+            $result->execute($data);
+        } catch (PDOException $ex) {
+            $errorMessage = "Database error: " . $ex->getMessage() . "\n";
+            $errorMessage .= "In file: " . $ex->getFile() . " on line " . $ex->getLine() . "\n";
+            $errorMessage .= "Stack trace:\n" . $ex->getTraceAsString() . "\n";
+        
+            // 将错误信息记录到日志文件中
+            error_log($errorMessage, 3, "./logfile.log");
+            //Fail 2
+            $URL = $URL.'&return=error2';
+            header("Location: {$URL}");
+            exit();
         }
+        $AI = str_pad($connection2->lastInsertID(), 8, '0', STR_PAD_LEFT);
 
-        $logGateway = $container->get(LogGateway::class);
-        $logGateway->addLog($session->get('gibbonSchoolYearID'), 'Help Desk', $gibbonPersonID, $title, $array);
-
-        $URL .= "&issueID=$issueID&return=success0";
-        header("Location: {$URL}");
-        exit();
+        if ($partialFail == true) {
+            $URL .= '&return=warning1';
+            header("Location: {$URL}");
+        } else {
+            $URL .= "&return=success0&editID=$AI";
+            header("Location: {$URL}");
+        }
+        */
     }
+
 }

@@ -95,4 +95,15 @@ class CategoryGateway extends QueryableGateway
                 'i.updateTime as TimeUpdated',
             ]);
     }
+    public function querySimpleCategory() {
+        $select = $this->newSelect()
+            ->from($this->getTableName() . ' as i')
+            ->orderBy(['i.createTime'])
+            ->cols([
+                'i.categoryID as CategoryID',
+                'i.categoryName as CategoryName',
+            ]);
+
+        return $this->runSelect($select);;
+    }
 }

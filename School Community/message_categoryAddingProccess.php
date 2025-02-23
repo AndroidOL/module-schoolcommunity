@@ -47,6 +47,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
         $perm = calcPermission($staff, $student, $parent, $other);
         $user = $session->get('gibbonPersonID');
 
+        /*
         $data1 = [
             'title'   => $title,
             'staff'   => $staff,
@@ -57,7 +58,6 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
             'user'    => $user
         ];
 
-        /*
         //Move attached image  file, if there is one
         if (!empty($_FILES['file']['tmp_name'])) {
             $fileUploader = new Gibbon\FileUploader($pdo, $gibbon->session);
