@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+use Gibbon\Http\Url;
 use Gibbon\Forms\Form;
 use Gibbon\Tables\DataTable;
 use Gibbon\Services\Format;
@@ -34,7 +35,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
     $page->breadcrumbs->add(__m('查看分类'), 'message_categorySetting.php');
     $page->breadcrumbs->add(__m('添加分类'));
 
-    $search = $_GET['search'] ?? '' ;
+    $search = $_GET['search'] ?? '';
 
     $editLink = '';
     if (isset($_GET['editID'])) {
@@ -55,7 +56,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
 
     $row = $form->addRow();
         $row->addLabel('title', __('分类标题'));
-        $row->addTextField('title')->isRequired()->maxLength(50);
+        $row->addTextField('title')->setValue($search)->isRequired()->maxLength(50);
 
     $row = $form->addRow();
         $row->addLabel('staff', __('员工可见？'));

@@ -51,7 +51,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
 
     $cGateway = $container->get(CategoryGateway::class);
     $criteria = $cGateway->newQueryCriteria()
-        ->searchBy('i.categoryID', $_GET['search'] ?? '')
+        ->searchBy('i.categoryName', $_GET['search'] ?? '')
         ->fromPost();
 
     $igrid = $cGateway->queryCategory($criteria);
@@ -73,7 +73,7 @@ if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '
     $table->addColumn('AccessControl', __('访问控制'))->format(function ($row) {
         return convertIntToYN($row['AccessControl']);
     });
-    $table->addColumn('TimeCreated', __('添加时间'));
+    // $table->addColumn('TimeCreated', __('添加时间'));
     $table->addColumn('TimeUpdated', __('更新时间'));
 
     $actions = $table->addActionColumn()
