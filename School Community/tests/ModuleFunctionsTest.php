@@ -269,6 +269,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
                 return implode("\n", $action);
             }, $actionRows));
             $this->assertStringContainsString('message_recipientChooser.php', $sendAction);
+            $manifestUrlLists = array_column($actionRows, 'URLList', 'name');
 
             $sql = [];
             require dirname(__DIR__).'/CHANGEDB.php';
@@ -280,6 +281,14 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             }
             $this->assertStringContainsString(
                 "ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y'",
+                $migration
+            );
+            $this->assertStringContainsString(
+                "SET `URLList`='".$manifestUrlLists['Send Message']."'",
+                $migration
+            );
+            $this->assertStringContainsString(
+                "SET `URLList`='".$manifestUrlLists['View Messages']."'",
                 $migration
             );
         }

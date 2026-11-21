@@ -7,7 +7,9 @@ $count = 0;
 // v1.4.0
 $sql[$count][0] = "1.4.0";
 $sql[$count][1] = "ALTER TABLE message_thread_state ADD COLUMN deletedAt TIMESTAMP NULL DEFAULT NULL AFTER archivedAt;end
-ALTER TABLE message_category ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y' AFTER accessControl;end";
+ALTER TABLE message_category ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y' AFTER accessControl;end
+UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_recipientChooser.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE name='Send Message' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
+UPDATE `gibbonAction` SET `URLList`='message_reading.php, message_view.php, message_replyProcess.php, message_threadProcess.php, message_threadConfirm.php, message_groups.php, message_groupView.php, message_groupRecipients.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php' WHERE name='View Messages' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end";
 $count++;
 
 // v1.3.0
