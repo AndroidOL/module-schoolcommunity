@@ -52,7 +52,7 @@ if (schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
     );
 }
 
-$page->navigator->addHeaderAction('back', schoolCommunityT('Back to Messages'))
+$page->navigator->addHeaderAction('back', schoolCommunityT('Messages'))
     ->setURL('/modules/School Community/message_reading.php')
     ->setIcon('back')
     ->displayLabel();
