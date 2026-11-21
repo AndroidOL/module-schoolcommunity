@@ -84,6 +84,12 @@ msgstr "你发送或收到的消息。未读消息会在标题中标记。"
 msgid "Name"
 msgstr "名称"
 
+msgid "New message from %s: %s"
+msgstr "%s 发来新消息：%s"
+
+msgid "New reply from %s: %s"
+msgstr "%s 回复了：%s"
+
 msgid "No message categories are available for your role. Contact an administrator."
 msgstr "你的角色没有可用的消息分类，请联系管理员。"
 

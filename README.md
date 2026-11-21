@@ -25,6 +25,7 @@ and a home-school communication workflow.
 - List sent, received and unread messages with category and priority filters.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
+- Notify recipients about new messages and replies.
 - Restrict direct message visibility to the sender and recipient.
 
 ## Security

@@ -25,7 +25,7 @@ $description = 'Categorised, auditable messages between staff, students and fami
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.0.0';            // Version number
+$version     = '1.0.1';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 

@@ -24,6 +24,14 @@ $people = schoolCommunityPersonOptions($pdo, $gibbonPersonID);
 
 if (empty($categories)) {
     $page->addError(schoolCommunityT('No message categories are available for your role. Contact an administrator.'));
+    if (isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+        $actionForm = Form::createBlank('schoolCommunityNoCategories');
+        $actionForm->addHeaderAction('categories', schoolCommunityT('Manage Message Categories'))
+            ->setURL('/modules/School Community/message_categorySetting.php')
+            ->setIcon('settings')
+            ->displayLabel();
+        $page->write($actionForm->getOutput());
+    }
     return;
 }
 if (empty($people)) {

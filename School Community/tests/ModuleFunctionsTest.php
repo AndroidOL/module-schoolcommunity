@@ -11,6 +11,7 @@ namespace {
 
 namespace Gibbon\Module\SchoolCommunity\Tests {
     use PHPUnit\Framework\TestCase;
+    use Gibbon\Data\Validator;
 
     require_once dirname(__DIR__).'/moduleFunctions.php';
 
@@ -40,6 +41,22 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('High', \schoolCommunityPriorityLabel(1));
             $this->assertSame('Normal', \schoolCommunityPriorityLabel(null));
             $this->assertSame('Notice', \schoolCommunityPriorityLabel(0));
+        }
+
+        public function testLegacyAndCurrentMessageBodiesAreSanitizedForDisplay()
+        {
+            $container = new class {
+                public function get($class)
+                {
+                    return new Validator('', '', '');
+                }
+            };
+
+            $body = 'Hello<script>alert(1)</script>';
+            $legacy = base64_encode('<p>Legacy</p><script>alert(1)</script>');
+
+            $this->assertSame('Helloalert(1)', \schoolCommunityBodyForDisplay($container, $body));
+            $this->assertSame('Legacyalert(1)', \schoolCommunityBodyForDisplay($container, $legacy));
         }
     }
 }

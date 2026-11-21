@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+v1.0.1
+------
+- Notify recipients about new messages and replies without blocking storage.
+- Add a direct management link when no message categories are available.
+
 v1.0.0
 ------
 - Rebuilt message and category workflows for Gibbon 31.

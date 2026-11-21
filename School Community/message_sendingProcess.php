@@ -5,6 +5,7 @@ Copyright © 2010, Gibbon Foundation
 */
 
 use Gibbon\Data\Validator;
+use Gibbon\Domain\System\NotificationGateway;
 use Gibbon\Session\TokenHandler;
 
 require_once '../../gibbon.php';
@@ -73,6 +74,18 @@ $inserted = $pdo->insert(
 
 if (empty($inserted)) {
     $redirect('error2');
+}
+
+try {
+    $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
+    $container->get(NotificationGateway::class)->insertNotification([
+        'gibbonPersonID' => $recipientID,
+        'text'           => sprintf(schoolCommunityT('New message from %s: %s'), $senderName, $title),
+        'moduleName'     => 'School Community',
+        'actionLink'     => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode((string) $inserted),
+    ]);
+} catch (\Throwable $e) {
+    // The message is already stored; notification failure must not lose it.
 }
 
 header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode((string) $inserted).'&return=success0');
