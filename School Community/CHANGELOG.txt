@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+v1.2.0
+------
+- Add administrative-class and course-class message groups.
+- Show teachers only the class sources they are assigned to manage.
+- Synchronize linked class membership from the current Gibbon class roster
+  while keeping send-time recipient snapshots immutable.
+- Keep one linked message group per administrative or course class.
+
 v1.1.2
 ------
 - Show group read totals only to the author of each group message.

@@ -28,6 +28,9 @@ and a home-school communication workflow.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
 - Create category-controlled groups with owner-managed members.
+- Create one linked group per administrative class or course class; teachers
+  can select only classes they are assigned to.
+- Synchronize linked class membership from the current Gibbon roster.
 - Review resolved recipients before sending and freeze a send-time snapshot.
 - Send group messages and replies with unread counts, read receipts and
   notifications; later members cannot see earlier messages.

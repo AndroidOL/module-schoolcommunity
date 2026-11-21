@@ -57,16 +57,34 @@ $groups = $pdo->select(
                AND receipt.groupReadReceiptID IS NULL) AS unreadCount
      FROM message_group
      JOIN message_category ON message_category.categoryID=message_group.categoryID
-     JOIN message_group_member AS member
+     LEFT JOIN message_group_member AS member
         ON member.groupID=message_group.groupID
        AND member.gibbonPersonID=:currentPersonID
      JOIN gibbonPerson AS owner ON owner.gibbonPersonID=message_group.ownerID
      JOIN gibbonRole AS ownerRole ON ownerRole.gibbonRoleID=owner.gibbonRoleIDPrimary
+     WHERE (message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
+        OR message_group.sourceType IN ('formGroup', 'courseClass')
      ORDER BY COALESCE(latestTimestamp, message_group.createdAt) DESC, message_group.groupName",
     ['currentPersonID' => $currentPersonID]
 )->fetchAll(PDO::FETCH_ASSOC);
 
-$groups = array_values(array_filter($groups, function ($group) use ($currentPersonID, $roleCategory) {
+$groups = array_values(array_filter($groups, function ($group) use ($pdo, $currentPersonID, $roleCategory) {
+    if (($group['sourceType'] ?? 'custom') !== 'custom') {
+        $sourceMembers = schoolCommunityLinkedSourceMembers($pdo, $group['sourceType'], $group['sourceID'] ?? '');
+        $sourceAllowed = false;
+        foreach ($sourceMembers as $sourceMember) {
+            if (schoolCommunitySamePersonID($sourceMember['gibbonPersonID'], $currentPersonID)) {
+                $sourceAllowed = true;
+                break;
+            }
+        }
+        if (!$sourceAllowed) {
+            return false;
+        }
+        $group['groupMemberPersonID'] = $currentPersonID;
+        $group['memberCount'] = count($sourceMembers);
+    }
+
     return schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory);
 }));
 
@@ -85,6 +103,7 @@ $table->addColumn('groupName', schoolCommunityT('Group'))->format(function ($gro
     return $label;
 });
 $table->addColumn('categoryName', schoolCommunityT('Category'));
+$table->addColumn('sourceLabel', schoolCommunityT('Source'));
 $table->addColumn('ownerName', schoolCommunityT('Owner'));
 $table->addColumn('memberCount', schoolCommunityT('Members'));
 $table->addColumn('latestTimestamp', schoolCommunityT('Latest Message'))->format(function ($group) {

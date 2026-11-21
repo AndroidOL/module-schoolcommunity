@@ -114,6 +114,14 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertFalse(\schoolCommunitySamePersonID('student', '10'));
         }
 
+        public function testGroupSourceLabelsDistinguishCustomAndClassGroups()
+        {
+            $this->assertSame('Custom Group', \schoolCommunityGroupSourceLabel('custom'));
+            $this->assertSame('Administrative Class', \schoolCommunityGroupSourceLabel('formGroup'));
+            $this->assertSame('Course Class', \schoolCommunityGroupSourceLabel('courseClass'));
+            $this->assertSame('Custom Group', \schoolCommunityGroupSourceLabel('unknown'));
+        }
+
         public function testGroupAudienceExcludesInactiveAndIneligibleMembers()
         {
             $audience = \schoolCommunityGroupAudience([

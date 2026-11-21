@@ -4,6 +4,13 @@
 $sql = [];
 $count = 0;
 
+// v1.2.0
+$sql[$count][0] = "1.2.0";
+$sql[$count][1] = "ALTER TABLE message_group ADD COLUMN sourceType VARCHAR(20) NOT NULL DEFAULT 'custom' AFTER ownerID;end
+ALTER TABLE message_group ADD COLUMN sourceID INT(10) UNSIGNED ZEROFILL DEFAULT NULL AFTER sourceType;end
+ALTER TABLE message_group ADD UNIQUE KEY linkedSource (sourceType, sourceID);end";
+$count++;
+
 // v1.1.0
 $sql[$count][0] = "1.1.0";
 $sql[$count][1] = "CREATE TABLE `message_group` (

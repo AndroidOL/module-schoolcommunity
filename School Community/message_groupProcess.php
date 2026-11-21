@@ -41,11 +41,31 @@ if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
 $_POST = $container->get(Validator::class)->sanitize($_POST);
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
 
 if ($action === 'create') {
     $groupName = is_scalar($_POST['groupName'] ?? null) ? trim((string) $_POST['groupName']) : '';
     $categoryID = is_scalar($_POST['categoryID'] ?? null) ? trim((string) $_POST['categoryID']) : '';
-    if ($groupName === '' || mb_strlen($groupName) > 100 || $categoryID === '') {
+    $linkedSource = is_scalar($_POST['linkedSource'] ?? null) ? trim((string) $_POST['linkedSource']) : '';
+    $sourceType = 'custom';
+    $sourceID = null;
+
+    if ($linkedSource !== 'custom') {
+        $sources = schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
+        if (!array_key_exists($linkedSource, $sources)) {
+            $redirect('error0');
+        }
+        [$sourceType, $sourceID] = array_pad(explode(':', $linkedSource, 2), 2, null);
+        if (!in_array($sourceType, ['formGroup', 'courseClass'], true) || empty($sourceID)) {
+            $redirect('error1');
+        }
+        if ($groupName === '') {
+            $groupName = $sources[$linkedSource];
+        }
+    }
+
+    if (($sourceType === 'custom' && $groupName === '')
+        || mb_strlen($groupName) > 100 || $categoryID === '') {
         $redirect('error1');
     }
 
@@ -57,12 +77,31 @@ if ($action === 'create') {
         $redirect('error0');
     }
 
+    if ($sourceType !== 'custom') {
+        $existingGroupID = $pdo->selectOne(
+            "SELECT groupID FROM message_group
+             WHERE sourceType=:sourceType AND sourceID=:sourceID
+             LIMIT 1",
+            ['sourceType' => $sourceType, 'sourceID' => $sourceID]
+        );
+        if (!empty($existingGroupID)) {
+            header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode((string) $existingGroupID).'&return=error4');
+            exit;
+        }
+    }
+
     try {
         $pdo->beginTransaction();
         $inserted = $pdo->insert(
-            "INSERT INTO message_group (groupName, categoryID, ownerID)
-             VALUES (:groupName, :categoryID, :ownerID)",
-            ['groupName' => $groupName, 'categoryID' => $categoryID, 'ownerID' => $currentPersonID]
+            "INSERT INTO message_group (groupName, categoryID, ownerID, sourceType, sourceID)
+             VALUES (:groupName, :categoryID, :ownerID, :sourceType, :sourceID)",
+            [
+                'groupName' => $groupName,
+                'categoryID'=> $categoryID,
+                'ownerID'   => $currentPersonID,
+                'sourceType'=> $sourceType,
+                'sourceID'  => $sourceID,
+            ]
         );
         if (empty($inserted)) {
             throw new RuntimeException('Unable to create group.');
@@ -72,6 +111,11 @@ if ($action === 'create') {
              VALUES (:groupID, :gibbonPersonID)",
             ['groupID' => $inserted, 'gibbonPersonID' => $currentPersonID]
         );
+        schoolCommunitySyncLinkedGroupMembers($pdo, [
+            'groupID'   => $inserted,
+            'sourceType'=> $sourceType,
+            'sourceID'  => $sourceID,
+        ]);
         $pdo->commit();
     } catch (\Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -86,6 +130,9 @@ if ($action === 'create') {
 
 $group = $groupID !== '' ? schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true) : null;
 if (empty($group)) {
+    $redirect('error0');
+}
+if (($group['sourceType'] ?? 'custom') !== 'custom') {
     $redirect('error0');
 }
 

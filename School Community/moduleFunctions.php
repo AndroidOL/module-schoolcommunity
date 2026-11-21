@@ -128,6 +128,169 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
     return $options;
 }
 
+function schoolCommunityGroupSourceLabel($sourceType): string
+{
+    return [
+        'custom'     => schoolCommunityT('Custom Group'),
+        'formGroup'  => schoolCommunityT('Administrative Class'),
+        'courseClass'=> schoolCommunityT('Course Class'),
+    ][$sourceType] ?? schoolCommunityT('Custom Group');
+}
+
+function schoolCommunityLinkedSourceOptions($pdo, $gibbonPersonID, $gibbonSchoolYearID): array
+{
+    $formGroups = $pdo->select(
+        "SELECT gibbonFormGroupID, name
+         FROM gibbonFormGroup
+         WHERE gibbonSchoolYearID=:gibbonSchoolYearID
+           AND (gibbonPersonIDTutor=:gibbonPersonID
+             OR gibbonPersonIDTutor2=:gibbonPersonID
+             OR gibbonPersonIDTutor3=:gibbonPersonID)
+         ORDER BY LENGTH(name), name",
+        ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $courseClasses = $pdo->select(
+        "SELECT gibbonCourse.nameShort AS courseName, gibbonCourseClass.gibbonCourseClassID,
+                gibbonCourseClass.nameShort AS className
+         FROM gibbonCourseClassPerson
+         JOIN gibbonCourseClass ON gibbonCourseClass.gibbonCourseClassID=gibbonCourseClassPerson.gibbonCourseClassID
+         JOIN gibbonCourse ON gibbonCourse.gibbonCourseID=gibbonCourseClass.gibbonCourseID
+         WHERE gibbonCourse.gibbonSchoolYearID=:gibbonSchoolYearID
+           AND gibbonCourseClassPerson.gibbonPersonID=:gibbonPersonID
+           AND gibbonCourseClassPerson.role IN ('Teacher', 'Assistant', 'Technician')
+           AND gibbonCourseClassPerson.role NOT LIKE '% - Left%'
+         ORDER BY gibbonCourse.nameShort, gibbonCourseClass.nameShort",
+        ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $options = [];
+    foreach ($formGroups as $formGroup) {
+        $options['formGroup:'.$formGroup['gibbonFormGroupID']] = sprintf(
+            schoolCommunityT('Administrative Class: %s'),
+            $formGroup['name']
+        );
+    }
+    foreach ($courseClasses as $courseClass) {
+        $options['courseClass:'.$courseClass['gibbonCourseClassID']] = sprintf(
+            schoolCommunityT('Course Class: %s.%s'),
+            $courseClass['courseName'],
+            $courseClass['className']
+        );
+    }
+
+    return $options;
+}
+
+function schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID): array
+{
+    if ($sourceType === 'formGroup') {
+        return $pdo->select(
+            "SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                    gibbonPerson.surname, gibbonPerson.status, gibbonRole.category AS roleCategory
+             FROM gibbonStudentEnrolment
+             JOIN gibbonPerson ON gibbonPerson.gibbonPersonID=gibbonStudentEnrolment.gibbonPersonID
+             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+             WHERE gibbonStudentEnrolment.gibbonFormGroupID=:sourceID
+               AND gibbonPerson.status='Full'
+               AND (gibbonPerson.dateStart IS NULL OR gibbonPerson.dateStart<=CURRENT_DATE)
+               AND (gibbonPerson.dateEnd IS NULL OR gibbonPerson.dateEnd>=CURRENT_DATE)
+             UNION
+             SELECT tutor.gibbonPersonID, tutor.title, tutor.preferredName,
+                    tutor.surname, tutor.status, tutorRole.category AS roleCategory
+             FROM gibbonFormGroup
+             JOIN gibbonPerson AS tutor
+                ON tutor.gibbonPersonID IN (gibbonFormGroup.gibbonPersonIDTutor,
+                                            gibbonFormGroup.gibbonPersonIDTutor2,
+                                            gibbonFormGroup.gibbonPersonIDTutor3)
+             JOIN gibbonRole AS tutorRole ON tutorRole.gibbonRoleID=tutor.gibbonRoleIDPrimary
+             WHERE gibbonFormGroup.gibbonFormGroupID=:sourceID
+               AND tutor.status='Full'
+               AND (tutor.dateStart IS NULL OR tutor.dateStart<=CURRENT_DATE)
+               AND (tutor.dateEnd IS NULL OR tutor.dateEnd>=CURRENT_DATE)
+             ORDER BY surname, preferredName",
+            ['sourceID' => $sourceID]
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    if ($sourceType === 'courseClass') {
+        return $pdo->select(
+            "SELECT DISTINCT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                    gibbonPerson.surname, gibbonPerson.status, gibbonRole.category AS roleCategory
+             FROM gibbonCourseClassPerson
+             JOIN gibbonPerson ON gibbonPerson.gibbonPersonID=gibbonCourseClassPerson.gibbonPersonID
+             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+             WHERE gibbonCourseClassPerson.gibbonCourseClassID=:sourceID
+               AND gibbonCourseClassPerson.role IN ('Student', 'Teacher', 'Assistant', 'Technician')
+               AND gibbonCourseClassPerson.role NOT LIKE '% - Left%'
+               AND gibbonPerson.status='Full'
+               AND (gibbonCourseClassPerson.dateEnrolled IS NULL OR gibbonCourseClassPerson.dateEnrolled<=CURRENT_DATE)
+               AND (gibbonCourseClassPerson.dateUnenrolled IS NULL OR gibbonCourseClassPerson.dateUnenrolled>=CURRENT_DATE)
+               AND (gibbonPerson.dateStart IS NULL OR gibbonPerson.dateStart<=CURRENT_DATE)
+               AND (gibbonPerson.dateEnd IS NULL OR gibbonPerson.dateEnd>=CURRENT_DATE)
+             ORDER BY gibbonPerson.surname, gibbonPerson.preferredName",
+            ['sourceID' => $sourceID]
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    return [];
+}
+
+function schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $sourceID, $gibbonPersonID): bool
+{
+    foreach (schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID) as $member) {
+        if (schoolCommunitySamePersonID($member['gibbonPersonID'], $gibbonPersonID)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function schoolCommunitySyncLinkedGroupMembers($pdo, array $group): void
+{
+    $sourceType = $group['sourceType'] ?? 'custom';
+    $sourceID = $group['sourceID'] ?? null;
+    if (!in_array($sourceType, ['formGroup', 'courseClass'], true) || empty($sourceID)) {
+        return;
+    }
+
+    $memberIDs = array_values(array_filter(array_map('strval', array_column(
+        schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID),
+        'gibbonPersonID'
+    ))));
+
+    if (empty($memberIDs)) {
+        $pdo->delete(
+            "DELETE FROM message_group_member WHERE groupID=:groupID",
+            ['groupID' => $group['groupID']]
+        );
+        return;
+    }
+
+    $placeholders = [];
+    $params = ['groupID' => $group['groupID']];
+    foreach ($memberIDs as $index => $memberID) {
+        $key = 'person'.$index;
+        $placeholders[] = ':'.$key;
+        $params[$key] = $memberID;
+    }
+    $pdo->delete(
+        "DELETE FROM message_group_member
+         WHERE groupID=:groupID
+           AND gibbonPersonID NOT IN (".implode(', ', $placeholders).")",
+        $params
+    );
+    foreach ($memberIDs as $memberID) {
+        $pdo->insert(
+            "INSERT INTO message_group_member (groupID, gibbonPersonID)
+             VALUES (:groupID, :gibbonPersonID)
+             ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
+            ['groupID' => $group['groupID'], 'gibbonPersonID' => $memberID]
+        );
+    }
+}
+
 function schoolCommunityGroupAccessAllowed(array $group, $gibbonPersonID, $roleCategory, bool $ownerOnly = false): bool
 {
     if (!schoolCommunitySamePersonID($group['groupMemberPersonID'] ?? '', $gibbonPersonID)) {
@@ -149,7 +312,7 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
                 owner.surname AS ownerSurname, ownerRole.category AS ownerRoleCategory
          FROM message_group
          JOIN message_category ON message_category.categoryID=message_group.categoryID
-         JOIN message_group_member AS member
+         LEFT JOIN message_group_member AS member
             ON member.groupID=message_group.groupID
            AND member.gibbonPersonID=:gibbonPersonID
          JOIN gibbonPerson AS owner ON owner.gibbonPersonID=message_group.ownerID
@@ -158,7 +321,20 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
         ['groupID' => $groupID, 'gibbonPersonID' => $gibbonPersonID]
     );
 
-    if (empty($group) || !schoolCommunityGroupAccessAllowed($group, $gibbonPersonID, $roleCategory, $ownerOnly)) {
+    if (empty($group)) {
+        return null;
+    }
+
+    $sourceType = $group['sourceType'] ?? 'custom';
+    if ($sourceType !== 'custom') {
+        if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $group['sourceID'] ?? '', $gibbonPersonID)) {
+            return null;
+        }
+        schoolCommunitySyncLinkedGroupMembers($pdo, $group);
+        $group['groupMemberPersonID'] = $gibbonPersonID;
+    }
+
+    if (!schoolCommunityGroupAccessAllowed($group, $gibbonPersonID, $roleCategory, $ownerOnly)) {
         return null;
     }
 
@@ -168,15 +344,12 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
 function schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $gibbonPersonID, $roleCategory): ?array
 {
     $message = $pdo->selectOne(
-        "SELECT message_group_message.*, message_group.categoryID, message_group.groupName, message_group.ownerID,
-                message_category.categoryName, message_category.accessControl,
-                member.gibbonPersonID AS groupMemberPersonID
+        "SELECT message_group_message.*, message_group.categoryID, message_group.groupName,
+                message_group.ownerID, message_group.sourceType, message_group.sourceID,
+                message_category.categoryName, message_category.accessControl
          FROM message_group_message
          JOIN message_group ON message_group.groupID=message_group_message.groupID
          JOIN message_category ON message_category.categoryID=message_group.categoryID
-         JOIN message_group_member AS member
-            ON member.groupID=message_group.groupID
-           AND member.gibbonPersonID=:gibbonPersonID
          JOIN message_group_message_recipient AS recipient
             ON recipient.groupMessageID=message_group_message.groupMessageID
            AND recipient.gibbonPersonID=:gibbonPersonID
@@ -184,7 +357,12 @@ function schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $gibbonPer
         ['groupMessageID' => $groupMessageID, 'gibbonPersonID' => $gibbonPersonID]
     );
 
-    if (empty($message) || !schoolCommunityGroupAccessAllowed($message, $gibbonPersonID, $roleCategory)) {
+    if (empty($message)) {
+        return null;
+    }
+
+    $group = schoolCommunityAccessibleGroup($pdo, $message['groupID'], $gibbonPersonID, $roleCategory);
+    if (empty($group)) {
         return null;
     }
 
@@ -229,6 +407,7 @@ function schoolCommunityGroupTable(array $groups, $gibbonPersonID): DataSet
         $rows[] = $group + [
             'ownerName'  => $ownerName,
             'isOwner'    => schoolCommunitySamePersonID($group['ownerID'], $gibbonPersonID),
+            'sourceLabel'=> schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom'),
             'unreadLabel'=> (int) $group['unreadCount'] > 0 ? (string) (int) $group['unreadCount'] : '',
             'url'        => '/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($group['groupID']),
         ];

@@ -51,9 +51,13 @@ $members = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $existingMemberIDs = array_column($members, 'gibbonPersonID');
-$people = schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, $existingMemberIDs);
+$isLinkedGroup = ($group['sourceType'] ?? 'custom') !== 'custom';
+$people = $isLinkedGroup ? [] : schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, $existingMemberIDs);
 
-if (!empty($people)) {
+if ($isLinkedGroup) {
+    $page->write('<p><strong>'.schoolCommunityGroupSourceLabel($group['sourceType']).':</strong> '
+        .schoolCommunityT('Membership is synchronized from the current class roster and cannot be edited manually.').'</p>');
+} elseif (!empty($people)) {
     $form = Form::create('schoolCommunityGroupAddMember', $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php', 'post');
     $form->addHiddenValue('action', 'addMember');
     $form->addHiddenValue('groupID', $groupID);
@@ -74,7 +78,7 @@ $rows = [];
 foreach ($members as $member) {
     $name = Format::name($member['title'], $member['preferredName'], $member['surname'], $member['roleCategory'], true);
     $remove = '';
-    if (!schoolCommunitySamePersonID($member['gibbonPersonID'], $group['ownerID'])) {
+    if (!$isLinkedGroup && !schoolCommunitySamePersonID($member['gibbonPersonID'], $group['ownerID'])) {
         $removeForm = Form::create(
             'schoolCommunityGroupRemove'.$member['gibbonPersonID'],
             $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',
@@ -85,7 +89,7 @@ foreach ($members as $member) {
         $removeForm->addHiddenValue('gibbonPersonID', $member['gibbonPersonID']);
         $removeForm->addRow()->addSubmit(schoolCommunityT('Remove'))->setClass('small');
         $remove = $removeForm->getOutput();
-    } else {
+    } elseif (!$isLinkedGroup) {
         $remove = '<span class="schoolCommunityOwnerLabel">'.schoolCommunityT('Owner').'</span>';
     }
 
@@ -97,7 +101,9 @@ foreach ($members as $member) {
 
 $table = DataTable::create('schoolCommunityGroupMembers');
 $table->setTitle(sprintf(schoolCommunityT('%s Members'), htmlPrep($group['groupName'])));
-$table->addMetaData('allowHTML', ['remove']);
+if (!$isLinkedGroup) {
+    $table->addMetaData('allowHTML', ['remove']);
+}
 $table->addColumn('name', schoolCommunityT('Name'));
 $table->addColumn('roleCategory', schoolCommunityT('Role'))->format(function ($member) {
     return schoolCommunityT($member['roleCategory']);
@@ -106,8 +112,10 @@ $table->addColumn('username', schoolCommunityT('Username'));
 $table->addColumn('joinedAt', schoolCommunityT('Joined'))->format(function ($member) {
     return Format::dateTime($member['joinedAt']);
 });
-$table->addColumn('remove', schoolCommunityT('Action'))->format(function ($member) {
-    return $member['remove'];
-});
+if (!$isLinkedGroup) {
+    $table->addColumn('remove', schoolCommunityT('Action'))->format(function ($member) {
+        return $member['remove'];
+    });
+}
 
 $page->write($table->render(new Gibbon\Domain\DataSet($rows)));

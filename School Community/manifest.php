@@ -25,7 +25,7 @@ $description = 'Categorised direct and group messages between staff, students an
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.1.2';            // Version number
+$version     = '1.2.0';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 
@@ -83,11 +83,14 @@ $moduleTables[] = 'CREATE TABLE `message_group` (
     `groupName` VARCHAR(100) NOT NULL,
     `categoryID` INT(10) UNSIGNED ZEROFILL NOT NULL,
     `ownerID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `sourceType` VARCHAR(20) NOT NULL DEFAULT \'custom\',
+    `sourceID` INT(10) UNSIGNED ZEROFILL DEFAULT NULL,
     `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`groupID`),
     KEY `categoryID` (`categoryID`),
-    KEY `ownerID` (`ownerID`)
+    KEY `ownerID` (`ownerID`),
+    UNIQUE KEY `linkedSource` (`sourceType`, `sourceID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
 
 $moduleTables[] = 'CREATE TABLE `message_group_member` (

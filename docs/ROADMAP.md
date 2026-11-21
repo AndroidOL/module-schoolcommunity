@@ -10,6 +10,8 @@
 - Self-addressed messages.
 - Category-controlled groups with owner-managed membership, group messages,
   recipient review, snapshots, replies, unread counts and read receipts.
+- Administrative-class and course-class groups with teacher-scoped sources and
+  current-roster synchronization.
 
 ## Next candidates
 

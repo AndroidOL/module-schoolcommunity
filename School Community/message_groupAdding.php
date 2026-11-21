@@ -19,20 +19,29 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 }
 
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$currentPersonID = (string) $session->get('gibbonPersonID');
+$gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
 $categories = schoolCommunityCategoryOptions($pdo, $roleCategory);
 if (empty($categories)) {
     $page->addError(schoolCommunityT('No message categories are available for your role. Contact an administrator.'));
     return;
 }
 
+$sourceOptions = ['custom' => schoolCommunityT('Custom Group')]
+    + schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
+
 $form = Form::create('schoolCommunityGroupAdd', $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php', 'post');
 $form->addHiddenValue('action', 'create');
 $form->setTitle(schoolCommunityT('Create Group'));
-$form->setDescription(schoolCommunityT('Choose a category carefully: every member and every group message must match its audience permissions.'));
+$form->setDescription(schoolCommunityT('Choose a category carefully. Administrative and course classes automatically use the current school roster for future messages.'));
 
 $row = $form->addRow();
-    $row->addLabel('groupName', schoolCommunityT('Group Name'));
-    $row->addTextField('groupName')->required()->maxLength(100);
+    $row->addLabel('linkedSource', schoolCommunityT('Group Source'))->description(schoolCommunityT('Teachers can select only their own administrative and course classes.'));
+    $row->addSelect('linkedSource')->fromArray($sourceOptions)->required()->selected('custom');
+
+$row = $form->addRow();
+    $row->addLabel('groupName', schoolCommunityT('Group Name'))->description(schoolCommunityT('Required for custom groups; class groups use the class name when left blank.'));
+    $row->addTextField('groupName')->maxLength(100);
 
 $row = $form->addRow();
     $row->addLabel('categoryID', schoolCommunityT('Category'));

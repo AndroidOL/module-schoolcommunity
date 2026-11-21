@@ -26,6 +26,7 @@ $page->return->addReturns([
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the group message.'),
     'error3'   => schoolCommunityT('The recipient list changed. Review the updated list and send again.'),
+    'error4'   => schoolCommunityT('A message group already exists for this class.'),
     'error9'   => schoolCommunityT('Your session expired. Refresh the page and try again.'),
 ]);
 
@@ -120,6 +121,7 @@ $page->write('<div class="schoolCommunityGroupHeader">'
     .'<h2>'.htmlPrep($group['groupName']).'</h2>'
     .'<div class="schoolCommunityMessageMeta">'
     .'<span><strong>'.schoolCommunityT('Category').':</strong> '.htmlPrep($group['categoryName']).'</span>'
+    .'<span><strong>'.schoolCommunityT('Source').':</strong> '.htmlPrep(schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')).'</span>'
     .'<span><strong>'.schoolCommunityT('Owner').':</strong> '.htmlPrep($ownerName).'</span>'
     .'</div>'
     .'</div>');
