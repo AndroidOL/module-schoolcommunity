@@ -36,7 +36,7 @@ if (empty($message)) {
     return;
 }
 
-if ((string) $message['receiverID'] === $currentPersonID) {
+if (schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
     $pdo->statement(
         "INSERT INTO message_read_receipt (messageID, gibbonPersonID)
          VALUES (:messageID, :gibbonPersonID)
@@ -56,7 +56,7 @@ $page->write('<div class="schoolCommunityMessage">'
     .'<span><strong>'.schoolCommunityT('Category').':</strong> '.htmlPrep($message['categoryName']).'</span>'
     .'<span><strong>'.schoolCommunityT('Priority').':</strong> '.htmlPrep(schoolCommunityPriorityLabel($message['priority'])).'</span>'
     .'<span><strong>'.schoolCommunityT('Sent').':</strong> '.Format::dateTime($message['sendTimestamp']).'</span>'
-    .((string) $message['senderID'] === $currentPersonID && (string) $message['receiverID'] === $currentPersonID
+    .(schoolCommunitySamePersonID($message['senderID'], $currentPersonID) && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)
         ? '<span><strong>'.schoolCommunityT('Visibility').':</strong> '.schoolCommunityT('Visible only to you').'</span>'
         : '')
     .'</div>'

@@ -92,8 +92,8 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
         public function testGroupAccessRequiresCurrentMembershipAudienceAndOwnerWhenRequested()
         {
             $group = [
-                'groupMemberPersonID' => '10',
-                'ownerID' => '10',
+                'groupMemberPersonID' => '0000000010',
+                'ownerID' => '0000000010',
                 'accessControl' => 10,
             ];
 
@@ -104,6 +104,14 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
 
             $group['ownerID'] = '11';
             $this->assertFalse(\schoolCommunityGroupAccessAllowed($group, '10', 'Staff', true));
+        }
+
+        public function testZeroPaddedDatabaseIDsMatchSessionIDs()
+        {
+            $this->assertTrue(\schoolCommunitySamePersonID('0000000010', '10'));
+            $this->assertTrue(\schoolCommunitySamePersonID(10, '0000000010'));
+            $this->assertFalse(\schoolCommunitySamePersonID('0000000010', '11'));
+            $this->assertFalse(\schoolCommunitySamePersonID('student', '10'));
         }
 
         public function testGroupAudienceExcludesInactiveAndIneligibleMembers()
@@ -123,8 +131,8 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
         {
             $table = \schoolCommunityMessageTable([[
                 'messageID' => '1',
-                'senderID' => '10',
-                'receiverID' => '10',
+                'senderID' => '0000000010',
+                'receiverID' => '0000000010',
                 'senderTitle' => '',
                 'senderPreferredName' => 'Ada',
                 'senderSurname' => 'Current',

@@ -39,7 +39,7 @@ if (empty($group)) {
     return;
 }
 
-$isOwner = (string) $group['ownerID'] === $currentPersonID;
+$isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
 if ($isOwner) {
     $actionForm = Form::createBlank('schoolCommunityGroupActions');
     $actionForm->addHeaderAction('members', schoolCommunityT('Manage Members'))

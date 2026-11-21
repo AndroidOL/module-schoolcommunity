@@ -79,7 +79,7 @@ if (empty($inserted)) {
     $redirect('error2');
 }
 
-if ($recipientID !== $currentPersonID) {
+if (!schoolCommunitySamePersonID($recipientID, $currentPersonID)) {
     try {
         $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
         $container->get(NotificationGateway::class)->insertNotification([

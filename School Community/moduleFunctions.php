@@ -43,6 +43,16 @@ function schoolCommunityCategoryAllows($accessControl, $roleCategory): bool
     return $bit > 0 && (((int) $accessControl & $bit) === $bit);
 }
 
+function schoolCommunitySamePersonID($left, $right): bool
+{
+    if (!is_scalar($left) || !is_scalar($right)
+        || !ctype_digit((string) $left) || !ctype_digit((string) $right)) {
+        return false;
+    }
+
+    return (int) $left === (int) $right;
+}
+
 function schoolCommunityPermissionValue(array $values): int
 {
     $value = 0;
@@ -101,7 +111,7 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
 
     $options = [];
     foreach ($result as $person) {
-        if (!$includeCurrent && (string) $person['gibbonPersonID'] === (string) $currentPersonID) {
+        if (!$includeCurrent && schoolCommunitySamePersonID($person['gibbonPersonID'], $currentPersonID)) {
             continue;
         }
         if ($accessControl !== null && !schoolCommunityCategoryAllows($accessControl, $person['roleCategory'])) {
@@ -109,7 +119,7 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
         }
         $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
         $label = $name.' ('.schoolCommunityT($person['roleCategory']).')';
-        if ($includeCurrent && (string) $person['gibbonPersonID'] === (string) $currentPersonID) {
+        if ($includeCurrent && schoolCommunitySamePersonID($person['gibbonPersonID'], $currentPersonID)) {
             $label .= ' — '.schoolCommunityT('Self (visible only to you)');
         }
         $options[(string) $person['gibbonPersonID']] = $label;
@@ -120,10 +130,10 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
 
 function schoolCommunityGroupAccessAllowed(array $group, $gibbonPersonID, $roleCategory, bool $ownerOnly = false): bool
 {
-    if ((string) ($group['groupMemberPersonID'] ?? '') !== (string) $gibbonPersonID) {
+    if (!schoolCommunitySamePersonID($group['groupMemberPersonID'] ?? '', $gibbonPersonID)) {
         return false;
     }
-    if ($ownerOnly && (string) ($group['ownerID'] ?? '') !== (string) $gibbonPersonID) {
+    if ($ownerOnly && !schoolCommunitySamePersonID($group['ownerID'] ?? '', $gibbonPersonID)) {
         return false;
     }
 
@@ -218,7 +228,7 @@ function schoolCommunityGroupTable(array $groups, $gibbonPersonID): DataSet
 
         $rows[] = $group + [
             'ownerName'  => $ownerName,
-            'isOwner'    => (string) $group['ownerID'] === (string) $gibbonPersonID,
+            'isOwner'    => schoolCommunitySamePersonID($group['ownerID'], $gibbonPersonID),
             'unreadLabel'=> (int) $group['unreadCount'] > 0 ? (string) (int) $group['unreadCount'] : '',
             'url'        => '/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($group['groupID']),
         ];
@@ -279,8 +289,8 @@ function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
 {
     $rows = [];
     foreach ($messages as $message) {
-        $isSent = (string) $message['senderID'] === (string) $gibbonPersonID;
-        $isSelf = $isSent && (string) $message['receiverID'] === (string) $gibbonPersonID;
+        $isSent = schoolCommunitySamePersonID($message['senderID'], $gibbonPersonID);
+        $isSelf = $isSent && schoolCommunitySamePersonID($message['receiverID'], $gibbonPersonID);
         $otherTitle = $isSent ? $message['receiverTitle'] : $message['senderTitle'];
         $otherName = $isSent
             ? trim($message['receiverPreferredName'].' '.$message['receiverSurname'])

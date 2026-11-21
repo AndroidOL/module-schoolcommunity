@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+v1.1.1
+------
+- Match Gibbon person IDs consistently when session and database values use
+  different zero-padding, including group membership and self-message checks.
+- Verify group snapshot SQL, sender access, read receipts and later-member
+  denial against MySQL 8.4.
+
 v1.1.0
 ------
 - Allow users to send a category-eligible message to themselves.

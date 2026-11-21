@@ -45,10 +45,10 @@ $inserted = $pdo->insert(
 
 if (!empty($inserted)) {
     try {
-        $recipientID = (string) $message['senderID'] === $currentPersonID
+        $recipientID = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
             ? (string) $message['receiverID']
             : (string) $message['senderID'];
-        if ($recipientID !== $currentPersonID) {
+        if (!schoolCommunitySamePersonID($recipientID, $currentPersonID)) {
             $replyAuthor = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
             $container->get(NotificationGateway::class)->insertNotification([
                 'gibbonPersonID' => $recipientID,

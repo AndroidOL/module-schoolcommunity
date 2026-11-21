@@ -74,7 +74,7 @@ $rows = [];
 foreach ($members as $member) {
     $name = Format::name($member['title'], $member['preferredName'], $member['surname'], $member['roleCategory'], true);
     $remove = '';
-    if ((string) $member['gibbonPersonID'] !== (string) $group['ownerID']) {
+    if (!schoolCommunitySamePersonID($member['gibbonPersonID'], $group['ownerID'])) {
         $removeForm = Form::create(
             'schoolCommunityGroupRemove'.$member['gibbonPersonID'],
             $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',

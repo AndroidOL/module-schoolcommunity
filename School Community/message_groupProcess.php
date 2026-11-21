@@ -115,7 +115,7 @@ if ($action === 'addMember') {
     $redirect('success1');
 }
 
-if ((string) $group['ownerID'] === $memberID) {
+if (schoolCommunitySamePersonID($group['ownerID'], $memberID)) {
     $redirect('error1');
 }
 $deleted = $pdo->delete(

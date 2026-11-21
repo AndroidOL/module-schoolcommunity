@@ -65,7 +65,10 @@ $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonP
 sort($recipientIDs, SORT_STRING);
 $actualRecipientSignature = hash('sha256', implode(',', $recipientIDs));
 
-if (!in_array($currentPersonID, $recipientIDs, true)) {
+$currentPersonIsRecipient = count(array_filter($recipientIDs, function ($recipientID) use ($currentPersonID) {
+    return schoolCommunitySamePersonID($recipientID, $currentPersonID);
+})) === 1;
+if (!$currentPersonIsRecipient) {
     $redirect('error0');
 }
 if ($expectedRecipientCount !== count($recipientIDs) || !hash_equals($actualRecipientSignature, $expectedRecipientSignature)) {
@@ -100,7 +103,7 @@ try {
 $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
 $notification = $container->get(NotificationGateway::class);
 foreach ($recipientIDs as $memberID) {
-    if ($memberID === $currentPersonID) {
+    if (schoolCommunitySamePersonID($memberID, $currentPersonID)) {
         continue;
     }
     try {
