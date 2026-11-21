@@ -12,7 +12,15 @@ require_once '../../gibbon.php';
 require_once __DIR__.'/moduleFunctions.php';
 
 $groupID = is_scalar($_POST['groupID'] ?? null) ? trim((string) $_POST['groupID']) : '';
-$URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($groupID);
+$categoryID = is_scalar($_POST['categoryID'] ?? null) ? trim((string) $_POST['categoryID']) : '';
+$target = is_scalar($_POST['target'] ?? null) ? trim((string) $_POST['target']) : '';
+
+if ($groupID !== '') {
+    $URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($groupID);
+} else {
+    $URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupCompose.php'
+        .'&categoryID='.urlencode($categoryID).'&target='.urlencode($target);
+}
 $redirect = function (string $return) use ($URL) {
     header('Location: '.$URL.'&return='.$return);
     exit;
@@ -34,6 +42,7 @@ if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
 $_POST = $container->get(Validator::class)->sanitize($_POST, ['body' => 'HTML']);
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
 $title = is_scalar($_POST['title'] ?? null) ? trim((string) $_POST['title']) : '';
 $body = is_scalar($_POST['body'] ?? null) ? trim((string) $_POST['body']) : '';
 $confirmAudience = ($_POST['confirmAudience'] ?? '') === 'Y';
@@ -44,49 +53,71 @@ $expectedRecipientCount = is_scalar($_POST['expectedRecipientCount'] ?? null)
     ? (int) $_POST['expectedRecipientCount']
     : -1;
 
-if ($groupID === '' || $title === '' || mb_strlen($title) > 100
+if ($title === '' || mb_strlen($title) > 100
     || $body === '' || mb_strlen(strip_tags($body)) > 10000
-    || !$confirmAudience || !preg_match('/^[a-f0-9]{64}$/', $expectedRecipientSignature)) {
+    || !$confirmAudience || !preg_match('/^[a-f0-9]{64}$/', $expectedRecipientSignature)
+    || ($groupID === '' && ($categoryID === '' || $target === ''))
+) {
     $redirect('error1');
-}
-
-$group = schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory);
-if (empty($group) || !schoolCommunityGroupMessagesAllowed($group)) {
-    $redirect('error0');
-}
-
-$members = $pdo->select(
-    "SELECT member.gibbonPersonID, gibbonPerson.status, gibbonRole.category AS roleCategory
-     FROM message_group_member AS member
-     JOIN gibbonPerson ON gibbonPerson.gibbonPersonID=member.gibbonPersonID
-     JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
-     WHERE member.groupID=:groupID",
-    ['groupID' => $groupID]
-)->fetchAll(PDO::FETCH_ASSOC);
-$audience = schoolCommunityGroupAudience($members, $group['accessControl']);
-$recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
-sort($recipientIDs, SORT_STRING);
-$actualRecipientSignature = hash('sha256', implode(',', $recipientIDs));
-
-$currentPersonIsRecipient = count(array_filter($recipientIDs, function ($recipientID) use ($currentPersonID) {
-    return schoolCommunitySamePersonID($recipientID, $currentPersonID);
-})) === 1;
-if (!$currentPersonIsRecipient && !schoolCommunityCanSelectAllLinkedSources($currentPersonID)) {
-    $redirect('error0');
-}
-if ($expectedRecipientCount !== count($recipientIDs) || !hash_equals($actualRecipientSignature, $expectedRecipientSignature)) {
-    $redirect('error3');
 }
 
 try {
     $pdo->beginTransaction();
+
+    if ($groupID === '') {
+        $category = $pdo->selectOne(
+            "SELECT categoryID, accessControl, groupMessages
+             FROM message_category
+             WHERE categoryID=:categoryID",
+            ['categoryID' => $categoryID]
+        );
+        if (empty($category)
+            || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)
+            || !schoolCommunityGroupMessagesAllowed($category)) {
+            throw new RuntimeException('noaccess');
+        }
+
+        $groupID = schoolCommunityResolveSourceTarget($pdo, $categoryID, $target, $currentPersonID, $gibbonSchoolYearID);
+        if ($groupID === null) {
+            throw new RuntimeException('noaccess');
+        }
+    }
+
+    $group = schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory);
+    if (empty($group) || !schoolCommunityGroupMessagesAllowed($group)) {
+        throw new RuntimeException('noaccess');
+    }
+
+    $members = $pdo->select(
+        "SELECT member.gibbonPersonID, gibbonPerson.status, gibbonRole.category AS roleCategory
+         FROM message_group_member AS member
+         JOIN gibbonPerson ON gibbonPerson.gibbonPersonID=member.gibbonPersonID
+         JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+         WHERE member.groupID=:groupID",
+        ['groupID' => $groupID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+    $audience = schoolCommunityGroupAudience($members, $group['accessControl']);
+    $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
+    sort($recipientIDs, SORT_STRING);
+    $actualRecipientSignature = hash('sha256', implode(',', $recipientIDs));
+
+    $currentPersonIsRecipient = count(array_filter($recipientIDs, function ($recipientID) use ($currentPersonID) {
+        return schoolCommunitySamePersonID($recipientID, $currentPersonID);
+    })) === 1;
+    if (!$currentPersonIsRecipient && !schoolCommunityCanSelectAllLinkedSources($currentPersonID)) {
+        throw new RuntimeException('noaccess');
+    }
+    if ($expectedRecipientCount !== count($recipientIDs) || !hash_equals($actualRecipientSignature, $expectedRecipientSignature)) {
+        throw new RuntimeException('mismatch');
+    }
+
     $inserted = $pdo->insert(
         "INSERT INTO message_group_message (groupID, senderID, title, body)
          VALUES (:groupID, :senderID, :title, :body)",
         ['groupID' => $groupID, 'senderID' => $currentPersonID, 'title' => $title, 'body' => $body]
     );
     if (empty($inserted)) {
-        throw new RuntimeException('Unable to create group message.');
+        throw new RuntimeException('unsaved');
     }
     foreach ($recipientIDs as $recipientID) {
         $pdo->insert(
@@ -100,7 +131,8 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $redirect('error2');
+    $errorMap = ['noaccess' => 'error0', 'mismatch' => 'error3'];
+    $redirect($errorMap[$e->getMessage()] ?? 'error2');
 }
 
 try {
@@ -127,5 +159,5 @@ foreach ($recipientIDs as $memberID) {
     }
 }
 
-header('Location: '.$URL.'&return=success0#group-message-'.urlencode((string) $inserted));
+header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($groupID).'&return=success0#group-message-'.urlencode((string) $inserted));
 exit;

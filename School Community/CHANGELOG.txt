@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+v1.4.6
+------
+- Move the target type, free-selection notice and create-group link onto the
+  first Send Message page, directly below the Group Message toggle.
+- Continue from the first page straight to the review-and-send page, removing
+  the intermediate target step and its process endpoint.
+- Resolve class, course and group targets at send time, creating the message
+  group only when the message is actually sent.
+- Show the recipient snapshot as a collapsed official details element on the
+  review page instead of a modal link.
+
 v1.4.5
 ------
 - Rebuild message sending as a category, mode and target selection step followed

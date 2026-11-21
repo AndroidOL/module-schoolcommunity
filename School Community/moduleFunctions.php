@@ -645,6 +645,127 @@ function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCate
     return $options;
 }
 
+function schoolCommunitySendTargetChoices($pdo, $currentPersonID, $roleCategory, $gibbonSchoolYearID): array
+{
+    $options = [
+        'formGroup'   => [],
+        'courseClass' => [],
+        'existing'    => [],
+    ];
+
+    $groups = $pdo->select(
+        "SELECT message_group.groupID, message_group.groupName, message_group.sourceType, message_group.sourceID,
+                message_category.categoryID, message_category.categoryName, message_category.accessControl,
+                member.gibbonPersonID AS groupMemberPersonID
+         FROM message_group
+         JOIN message_category ON message_category.categoryID=message_group.categoryID
+         LEFT JOIN message_group_member AS member
+            ON member.groupID=message_group.groupID
+           AND member.gibbonPersonID=:gibbonPersonID
+         ORDER BY message_category.categoryName, message_group.groupName",
+        ['gibbonPersonID' => $currentPersonID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $linkedSourceGroups = [];
+    foreach ($groups as $group) {
+        $sourceType = $group['sourceType'] ?? 'custom';
+        if ($sourceType !== 'custom') {
+            $linkedSourceGroups[$sourceType.':'.$group['sourceID']] = true;
+            if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $group['sourceID'] ?? '', $currentPersonID)) {
+                continue;
+            }
+            $group['groupMemberPersonID'] = $currentPersonID;
+        }
+        if (!schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
+            continue;
+        }
+
+        $optionKey = 'group:'.$group['groupID'];
+        $label = $group['groupName'].' · '.$group['categoryName'];
+        $options['existing'][$optionKey] = $label;
+        if (isset($options[$sourceType])) {
+            $options[$sourceType][$optionKey] = $label;
+        }
+    }
+
+    foreach (schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID) as $key => $label) {
+        if (isset($linkedSourceGroups[$key])) {
+            continue;
+        }
+        [$sourceType] = array_pad(explode(':', $key, 2), 2, '');
+        if (isset($options[$sourceType])) {
+            $options[$sourceType][$key] = $label;
+        }
+        if ($sourceType === 'gibbonGroup') {
+            $options['existing'][$key] = $label;
+        }
+    }
+
+    return $options;
+}
+
+function schoolCommunityResolveSourceTarget($pdo, string $categoryID, string $target, string $currentPersonID, string $gibbonSchoolYearID): ?string
+{
+    if (str_starts_with($target, 'group:')) {
+        $group = $pdo->selectOne(
+            "SELECT groupID, categoryID FROM message_group WHERE groupID=:groupID LIMIT 1",
+            ['groupID' => substr($target, 6)]
+        );
+        if (empty($group) || (string) $group['categoryID'] !== $categoryID) {
+            return null;
+        }
+
+        return (string) $group['groupID'];
+    }
+
+    [$sourceType, $sourceID] = array_pad(explode(':', $target, 2), 2, '');
+    if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true) || $sourceID === '') {
+        return null;
+    }
+    $sources = schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
+    if (!array_key_exists($target, $sources)) {
+        return null;
+    }
+
+    $existingGroupID = $pdo->selectOne(
+        "SELECT groupID FROM message_group
+         WHERE sourceType=:sourceType AND sourceID=:sourceID
+         LIMIT 1",
+        ['sourceType' => $sourceType, 'sourceID' => $sourceID]
+    );
+    if (!empty($existingGroupID)) {
+        return (string) $existingGroupID;
+    }
+
+    $inserted = $pdo->insert(
+        "INSERT INTO message_group (groupName, categoryID, ownerID, sourceType, sourceID)
+         VALUES (:groupName, :categoryID, :ownerID, :sourceType, :sourceID)",
+        [
+            'groupName'  => $sources[$target],
+            'categoryID' => $categoryID,
+            'ownerID'    => $currentPersonID,
+            'sourceType' => $sourceType,
+            'sourceID'   => $sourceID,
+        ]
+    );
+    if (empty($inserted)) {
+        return null;
+    }
+    $pdo->insert(
+        "INSERT INTO message_group_member (groupID, gibbonPersonID)
+         VALUES (:groupID, :gibbonPersonID)
+         ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
+        ['groupID' => $inserted, 'gibbonPersonID' => $currentPersonID]
+    );
+    schoolCommunitySyncLinkedGroupMembers($pdo, [
+        'groupID'   => $inserted,
+        'sourceType'=> $sourceType,
+        'sourceID'  => $sourceID,
+    ]);
+
+    return (string) $inserted;
+}
+
 function schoolCommunityGroupAudience(array $members, $accessControl): array
 {
     $audience = ['eligible' => [], 'excluded' => []];

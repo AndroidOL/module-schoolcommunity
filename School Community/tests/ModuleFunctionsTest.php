@@ -360,7 +360,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertStringContainsString("addSelect('targetType')", $sendPage);
             $this->assertStringContainsString("'formGroup', 'courseClass', 'existing'", $sendPage);
             $this->assertStringContainsString("addSearchSelect('groupTarget'.ucfirst(\$type))", $sendPage);
-            $this->assertStringContainsString('message_groupCompose.php', file_get_contents(dirname(__DIR__).'/message_groupTargetProcess.php'));
+            $this->assertStringContainsString('message_groupCompose.php', file_get_contents(dirname(__DIR__).'/message_sending.php'));
             $this->assertStringContainsString('selectMultiple()', file_get_contents(dirname(__DIR__).'/message_groupCompose.php'));
             $this->assertStringContainsString('schoolCommunitySetMessageMode', $script);
             $this->assertStringContainsString('schoolCommunitySetGroupTargetType', $script);

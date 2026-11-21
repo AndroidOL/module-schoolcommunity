@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: School Community 1.4.5\n"
+"Project-Id-Version: School Community 1.4.6\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-11-21 21:22+0800\n"
 "PO-Revision-Date: 2026-11-21 21:22+0800\n"
@@ -1057,6 +1057,15 @@ msgstr "要将此会话标记为未读吗？它将回到未读邮箱。"
 
 msgid "Manage Message Groups"
 msgstr "管理消息群组"
+
+msgid "Change Selection"
+msgstr "更改选择"
+
+msgid "Select the target for this message type."
+msgstr "请选择此消息类型的发送对象。"
+
+msgid "Preview recipients (%d)"
+msgstr "预览收件人（%d）"
 
 msgid "Group, category or owner"
 msgstr "群组、分类或所有者"
