@@ -25,7 +25,7 @@ $description = 'Categorised direct and group messages between staff, students an
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.3.0';            // Version number
+$version     = '1.3.1';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 
@@ -206,7 +206,7 @@ $actionRows[] = [
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
     'category'                  => 'Messages', // Optional: subgroups for the right hand side module menu
     'description'               => 'View sent and received messages, receipts and replies.', // Text description
-    'URLList'                   => 'message_reading.php, message_view.php, message_replyProcess.php, message_groups.php, message_groupView.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php', // List of pages included in this action
+    'URLList'                   => 'message_reading.php, message_view.php, message_replyProcess.php, message_threadProcess.php, message_groups.php, message_groupView.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php', // List of pages included in this action
     'entryURL'                  => 'message_reading.php', // The landing action for the page.
     'entrySidebar'              => 'Y', // Whether or not there's a sidebar on entry to the action
     'menuShow'                  => 'Y', // Whether or not this action shows up in menus or if it's hidden

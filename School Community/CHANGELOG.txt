@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+v1.3.1
+------
+- Include the thread archive/unread action route in the installed action map.
+
 v1.3.0
 ------
 - Search group names, group messages and replies with participant filtering.
