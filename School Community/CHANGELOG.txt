@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+v1.4.4
+------
+- Restore only the current user's archived/deleted thread state when they send
+  or reply, instead of clearing every participant's mailbox state.
+- Correct linked group member counts and visibility in the group list and load
+  each linked source membership only once per page view.
+- Filter eligible recipients by role in SQL instead of loading every full user
+  into PHP.
+- Move group target switching into module.js and remove duplicate inline event
+  handling.
+- Route all Send Message page output through the page writer.
+
 v1.4.3
 ------
 - Keep the group target selector on the Send Message page while Free Selection

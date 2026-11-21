@@ -130,24 +130,38 @@ function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = 
 
 function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessControl = null, bool $includeCurrent = false): array
 {
+    $allowedRoles = [];
+    foreach (['Staff' => 8, 'Student' => 4, 'Parent' => 2, 'Other' => 1] as $roleCategory => $bit) {
+        if ($accessControl === null || ((int) $accessControl & $bit) === $bit) {
+            $allowedRoles[] = $roleCategory;
+        }
+    }
+    if (empty($allowedRoles)) {
+        return [];
+    }
+
+    $rolePlaceholders = [];
+    $roleParams = [];
+    foreach ($allowedRoles as $index => $roleCategory) {
+        $key = 'role'.$index;
+        $rolePlaceholders[] = ':'.$key;
+        $roleParams[$key] = $roleCategory;
+    }
+
     $result = $pdo->select(
-        "SELECT gibbonPersonID, title, preferredName, surname, username, roleCategory
-         FROM (
-             SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
-                    gibbonPerson.surname, gibbonPerson.username, gibbonRole.category AS roleCategory
-             FROM gibbonPerson
-             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
-             WHERE gibbonPerson.status='Full'
-         ) AS people
-         ORDER BY surname, preferredName"
+        "SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                gibbonPerson.surname, gibbonPerson.username, gibbonRole.category AS roleCategory
+         FROM gibbonPerson
+         JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+         WHERE gibbonPerson.status='Full'
+           AND gibbonRole.category IN (".implode(', ', $rolePlaceholders).")
+         ORDER BY gibbonPerson.surname, gibbonPerson.preferredName",
+        $roleParams
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $options = [];
     foreach ($result as $person) {
         if (!$includeCurrent && schoolCommunitySamePersonID($person['gibbonPersonID'], $currentPersonID)) {
-            continue;
-        }
-        if ($accessControl !== null && !schoolCommunityCategoryAllows($accessControl, $person['roleCategory'])) {
             continue;
         }
         $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
@@ -656,7 +670,7 @@ function schoolCommunitySetThreadDeleted($pdo, $threadType, $threadID, $gibbonPe
     );
 }
 
-function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID): void
+function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID, $gibbonPersonID): void
 {
     if (!in_array($threadType, ['direct', 'group'], true)) {
         return;
@@ -664,8 +678,14 @@ function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID): void
 
     $pdo->delete(
         "DELETE FROM message_thread_state
-         WHERE threadType=:threadType AND threadID=:threadID",
-        ['threadType' => $threadType, 'threadID' => $threadID]
+         WHERE threadType=:threadType
+           AND threadID=:threadID
+           AND gibbonPersonID=:gibbonPersonID",
+        [
+            'threadType'     => $threadType,
+            'threadID'       => $threadID,
+            'gibbonPersonID' => $gibbonPersonID,
+        ]
     );
 }
 

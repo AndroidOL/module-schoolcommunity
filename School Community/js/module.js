@@ -77,8 +77,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 ['change', 'input'].forEach(function (eventName) {
     document.addEventListener(eventName, function (event) {
-        if (event.target && event.target.id === 'groupMessage') {
+        if (!event.target) {
+            return;
+        }
+        if (event.target.id === 'groupMessage') {
             window.schoolCommunitySetMessageMode(event.target.value);
+        }
+        if (event.target.id === 'targetType') {
+            window.schoolCommunitySetGroupTargetType(event.target.value);
         }
     });
 });

@@ -64,12 +64,11 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
         $row->addFooter();
         $row->addSubmit(schoolCommunityT('Continue'));
 
-    echo $form->getOutput();
+    $page->write($form->getOutput());
     return;
 }
 
-$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($category);
-$requestedGroupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
+$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($category);$requestedGroupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
 $groupMode = $groupMessagesEnabled && $requestedGroupMode;
 $targetTypes = [
     'free'        => schoolCommunityT('Free Selection'),
@@ -133,8 +132,7 @@ if ($groupMessagesEnabled) {
     $groupForm->setTitle(schoolCommunityT('Choose Group Recipient'));
     $row = $groupForm->addRow();
         $row->addLabel('targetType', schoolCommunityT('Target Type'));
-        $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType)
-            ->setAttribute('onchange', 'schoolCommunitySetGroupTargetType(this.value)');
+        $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType);
     foreach (['formGroup', 'courseClass', 'existing'] as $type) {
         $isActiveType = $groupMode && $targetType === $type;
         $row = $groupForm->addRow()
@@ -198,4 +196,4 @@ $row = $form->addRow();
     $row->addFooter();
     $row->addSubmit(schoolCommunityT('Send Message'));
 
-echo $form->getOutput();
+$page->write($form->getOutput());

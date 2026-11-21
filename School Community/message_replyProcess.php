@@ -45,7 +45,7 @@ $inserted = $pdo->insert(
 
 if (!empty($inserted)) {
     try {
-        schoolCommunityRestoreThreadStates($pdo, 'direct', $messageID);
+        schoolCommunityRestoreThreadStates($pdo, 'direct', $messageID, $currentPersonID);
     } catch (\Throwable $e) {
         // The reply is stored; archive cleanup must not lose it.
     }

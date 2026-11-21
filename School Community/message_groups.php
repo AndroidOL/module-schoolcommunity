@@ -134,18 +134,41 @@ $groups = $pdo->select(
     ['currentPersonID' => $currentPersonID, 'search' => '%'.$search.'%']
 )->fetchAll(PDO::FETCH_ASSOC);
 
-$groups = array_values(array_filter($groups, function ($group) use ($pdo, $currentPersonID, $roleCategory) {
+$visibleGroups = [];
+$linkedMemberCache = [];
+foreach ($groups as $group) {
     if (($group['sourceType'] ?? 'custom') !== 'custom') {
-        if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $group['sourceType'], $group['sourceID'] ?? '', $currentPersonID)) {
-            return false;
+        $sourceKey = $group['sourceType'].':'.($group['sourceID'] ?? '');
+        if (!array_key_exists($sourceKey, $linkedMemberCache)) {
+            $linkedMemberCache[$sourceKey] = schoolCommunityLinkedSourceMembers(
+                $pdo,
+                $group['sourceType'],
+                $group['sourceID'] ?? ''
+            );
         }
-        $sourceMembers = schoolCommunityLinkedSourceMembers($pdo, $group['sourceType'], $group['sourceID'] ?? '');
+
+        $isMember = false;
+        foreach ($linkedMemberCache[$sourceKey] as $member) {
+            if (schoolCommunitySamePersonID($member['gibbonPersonID'], $currentPersonID)) {
+                $isMember = true;
+                break;
+            }
+        }
+        if (!$isMember) {
+            continue;
+        }
+
         $group['groupMemberPersonID'] = $currentPersonID;
-        $group['memberCount'] = count($sourceMembers);
+        $group['memberCount'] = count($linkedMemberCache[$sourceKey]);
     }
 
-    return schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory);
-}));
+    if (!schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
+        continue;
+    }
+
+    $visibleGroups[] = $group;
+}
+$groups = $visibleGroups;
 
 $table = DataTable::create('schoolCommunityMessageGroups');
 $table->setTitle(schoolCommunityT('Message Groups'));

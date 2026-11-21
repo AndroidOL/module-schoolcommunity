@@ -87,7 +87,7 @@ if (empty($inserted)) {
 }
 
 try {
-    schoolCommunityRestoreThreadStates($pdo, 'direct', $inserted);
+    schoolCommunityRestoreThreadStates($pdo, 'direct', $inserted, $currentPersonID);
 } catch (\Throwable $e) {
     // The message is stored; archive cleanup must not lose it.
 }

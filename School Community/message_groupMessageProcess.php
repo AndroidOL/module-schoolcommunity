@@ -104,7 +104,7 @@ try {
 }
 
 try {
-    schoolCommunityRestoreThreadStates($pdo, 'group', $groupID);
+    schoolCommunityRestoreThreadStates($pdo, 'group', $groupID, $currentPersonID);
 } catch (\Throwable $e) {
     // The message is stored; archive cleanup must not lose it.
 }

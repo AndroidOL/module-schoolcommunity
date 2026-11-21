@@ -53,7 +53,7 @@ if (empty($inserted)) {
 }
 
 try {
-    schoolCommunityRestoreThreadStates($pdo, 'group', $message['groupID']);
+    schoolCommunityRestoreThreadStates($pdo, 'group', $message['groupID'], $currentPersonID);
 } catch (\Throwable $e) {
     // The reply is stored; archive cleanup must not lose it.
 }

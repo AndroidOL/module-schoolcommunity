@@ -25,7 +25,7 @@ $description = 'Categorised direct and group messages between staff, students an
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.4.3';            // Version number
+$version     = '1.4.4';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 
