@@ -380,6 +380,50 @@ function schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, array
     return $people;
 }
 
+function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCategory, $categoryID, $gibbonSchoolYearID): array
+{
+    $groups = $pdo->select(
+        "SELECT message_group.groupID, message_group.groupName, message_group.sourceType, message_group.sourceID,
+                message_category.accessControl, member.gibbonPersonID AS groupMemberPersonID
+         FROM message_group
+         JOIN message_category ON message_category.categoryID=message_group.categoryID
+         JOIN message_group_member AS member
+           ON member.groupID=message_group.groupID
+          AND member.gibbonPersonID=:gibbonPersonID
+         WHERE message_group.categoryID=:categoryID
+         ORDER BY message_group.groupName",
+        ['gibbonPersonID' => $currentPersonID, 'categoryID' => $categoryID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $options = [];
+    $linkedSources = [];
+    foreach ($groups as $group) {
+        if (($group['sourceType'] ?? 'custom') !== 'custom') {
+            $linkedSources[$group['sourceType'].':'.$group['sourceID']] = true;
+        }
+        if (schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
+            $options['group:'.$group['groupID']] = schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')
+                .' · '.$group['groupName'];
+        }
+    }
+
+    $allLinkedSources = $pdo->select(
+        "SELECT sourceType, sourceID FROM message_group
+         WHERE sourceType IN ('formGroup', 'courseClass')"
+    )->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($allLinkedSources as $source) {
+        $linkedSources[$source['sourceType'].':'.$source['sourceID']] = true;
+    }
+
+    foreach (schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID) as $key => $label) {
+        if (!isset($linkedSources[$key])) {
+            $options[$key] = $label.' · '.schoolCommunityT('Create Group');
+        }
+    }
+
+    return $options;
+}
+
 function schoolCommunityGroupAudience(array $members, $accessControl): array
 {
     $audience = ['eligible' => [], 'excluded' => []];

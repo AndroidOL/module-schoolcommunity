@@ -58,6 +58,50 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
     return;
 }
 
+$groupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
+$modeForm = Form::create('schoolCommunityMessageMode', $session->get('absoluteURL').'/index.php', 'get');
+$modeForm->addHiddenValue('q', '/modules/School Community/message_sending.php');
+$modeForm->addHiddenValue('categoryID', $categoryID);
+$modeForm->setTitle(schoolCommunityT('Message Mode'));
+$row = $modeForm->addRow();
+    $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
+    $row->addYesNo('groupMessage')->required()->selected($groupMode ? 'Y' : 'N');
+$row = $modeForm->addRow();
+    $row->addFooter();
+    $row->addSubmit(schoolCommunityT('Continue'));
+$page->write($modeForm->getOutput());
+
+if ($groupMode) {
+    $targets = schoolCommunityGroupSendTargetOptions(
+        $pdo,
+        $gibbonPersonID,
+        $roleCategory,
+        $categoryID,
+        (string) $session->get('gibbonSchoolYearID')
+    );
+    if (empty($targets)) {
+        $page->addError(schoolCommunityT('No eligible groups or classes are available for this category.'));
+        return;
+    }
+
+    $groupForm = Form::create(
+        'schoolCommunityGroupTarget',
+        $session->get('absoluteURL').'/modules/School Community/message_groupTargetProcess.php',
+        'post'
+    );
+    $groupForm->addHiddenValue('categoryID', $categoryID);
+    $groupForm->setTitle(schoolCommunityT('Choose Group Recipient'));
+    $row = $groupForm->addRow();
+        $row->addLabel('groupTarget', schoolCommunityT('Administrative Class, Course Class or Group'));
+        $row->addSearchSelect('groupTarget')->fromArray($targets)->required()->placeholder()
+            ->setAttribute('autocomplete', 'off');
+    $row = $groupForm->addRow();
+        $row->addFooter();
+        $row->addSubmit(schoolCommunityT('Continue'));
+    $page->write($groupForm->getOutput());
+    return;
+}
+
 $people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl'], true);
 if (empty($people)) {
     $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
@@ -84,7 +128,8 @@ $row = $form->addRow();
 
 $row = $form->addRow();
     $row->addLabel('recipientID', schoolCommunityT('Recipient'));
-    $row->addSelectPerson('recipientID')->fromArray($people)->required()->placeholder();
+    $row->addSelectPerson('recipientID')->fromArray($people)->required()->placeholder()
+        ->setAttribute('autocomplete', 'off');
 
 $row = $form->addRow();
     $column = $row->addColumn();

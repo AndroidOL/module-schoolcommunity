@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+v1.4.0
+------
+- Add a Group Message Y/N mode to the normal send-message workflow.
+- Send through an existing group or choose an eligible administrative/course
+  class and create its controlled group when needed.
+- Disable browser autocomplete on the direct recipient picker.
+
 v1.3.1
 ------
 - Include the thread archive/unread action route in the installed action map.

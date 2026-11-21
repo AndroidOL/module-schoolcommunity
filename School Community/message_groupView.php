@@ -45,33 +45,25 @@ if (empty($group)) {
 
 $threadState = schoolCommunityThreadState($pdo, 'group', $groupID, $currentPersonID);
 $isArchived = !empty($threadState['archivedAt']);
-$archiveForm = Form::create(
-    'schoolCommunityArchiveGroup',
+$threadActions = Form::create(
+    'schoolCommunityGroupActions',
     $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
     'post'
 );
-$archiveForm->setClass('noIntBorder w-full');
-$archiveForm->addHiddenValue('threadType', 'group');
-$archiveForm->addHiddenValue('threadID', $groupID);
-$archiveForm->addHiddenValue('action', $isArchived ? 'restore' : 'archive');
-$row = $archiveForm->addRow();
+$threadActions->setClass('noIntBorder w-full');
+$threadActions->addHiddenValue('threadType', 'group');
+$threadActions->addHiddenValue('threadID', $groupID);
+$row = $threadActions->addRow();
     $row->addFooter();
-    $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))->setColor('gray');
-$page->write($archiveForm->getOutput());
-
-$unreadForm = Form::create(
-    'schoolCommunityUnreadGroup',
-    $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
-    'post'
-);
-$unreadForm->setClass('noIntBorder w-full');
-$unreadForm->addHiddenValue('threadType', 'group');
-$unreadForm->addHiddenValue('threadID', $groupID);
-$unreadForm->addHiddenValue('action', 'unread');
-$row = $unreadForm->addRow();
-    $row->addFooter();
-    $row->addSubmit(schoolCommunityT('Mark Unread'))->setColor('gray');
-$page->write($unreadForm->getOutput());
+    $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
+        ->setName('action')
+        ->setValue($isArchived ? 'restore' : 'archive')
+        ->setColor('gray');
+    $row->addSubmit(schoolCommunityT('Mark Unread'))
+        ->setName('action')
+        ->setValue('unread')
+        ->setColor('gray');
+$page->write($threadActions->getOutput());
 
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
 if ($isOwner) {

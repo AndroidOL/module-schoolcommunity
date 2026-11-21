@@ -24,6 +24,8 @@ and a home-school communication workflow.
 - Send HTML-formatted messages to active Gibbon users.
 - Filter recipient choices by the selected category's allowed role groups.
 - Send a message to yourself without creating duplicate records.
+- Switch the normal send form to group mode and choose an existing group, an
+  administrative class or a course class.
 - List sent, received and unread messages with category and priority filters.
 - Search direct message replies and group names, messages and replies.
 - Archive and restore threads per user, mark messages unread and auto-restore

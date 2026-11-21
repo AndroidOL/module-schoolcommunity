@@ -68,36 +68,27 @@ $page->write('<div class="schoolCommunityMessage">'
 
 $threadState = schoolCommunityThreadState($pdo, 'direct', $messageID, $currentPersonID);
 $isArchived = !empty($threadState['archivedAt']);
-$archiveForm = Form::create(
-    'schoolCommunityArchiveMessage',
+$threadActions = Form::create(
+    'schoolCommunityMessageActions',
     $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
     'post'
 );
-$archiveForm->setClass('noIntBorder w-full');
-$archiveForm->addHiddenValue('threadType', 'direct');
-$archiveForm->addHiddenValue('threadID', $messageID);
-$archiveForm->addHiddenValue('action', $isArchived ? 'restore' : 'archive');
-$row = $archiveForm->addRow();
+$threadActions->setClass('noIntBorder w-full');
+$threadActions->addHiddenValue('threadType', 'direct');
+$threadActions->addHiddenValue('threadID', $messageID);
+$row = $threadActions->addRow();
     $row->addFooter();
     $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
+        ->setName('action')
+        ->setValue($isArchived ? 'restore' : 'archive')
         ->setColor('gray');
-$page->write($archiveForm->getOutput());
-
 if (schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
-    $unreadForm = Form::create(
-        'schoolCommunityUnreadMessage',
-        $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
-        'post'
-    );
-    $unreadForm->setClass('noIntBorder w-full');
-    $unreadForm->addHiddenValue('threadType', 'direct');
-    $unreadForm->addHiddenValue('threadID', $messageID);
-    $unreadForm->addHiddenValue('action', 'unread');
-    $row = $unreadForm->addRow();
-        $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Mark Unread'))->setColor('gray');
-    $page->write($unreadForm->getOutput());
+    $row->addSubmit(schoolCommunityT('Mark Unread'))
+        ->setName('action')
+        ->setValue('unread')
+        ->setColor('gray');
 }
+$page->write($threadActions->getOutput());
 
 $replies = $pdo->select(
     "SELECT message_reply.*, gibbonPerson.title, gibbonPerson.preferredName, gibbonPerson.surname
@@ -126,7 +117,7 @@ $form->setTitle(schoolCommunityT('Reply'));
 $row = $form->addRow();
     $column = $row->addColumn();
     $column->addLabel('body', schoolCommunityT('Reply'));
-    $column->addEditor('body', $guid)->setRows(8)->required();
+    $column->addEditor('body', $guid)->setRows(5)->required();
 $row = $form->addRow();
     $row->addFooter();
     $row->addSubmit(schoolCommunityT('Post Reply'));

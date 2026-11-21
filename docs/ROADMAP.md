@@ -13,6 +13,8 @@
 - Administrative-class and course-class groups with teacher-scoped sources and
   current-roster synchronization.
 - Unified direct/group search, per-user thread archiving and mark-unread actions.
+- Group-message mode in the normal send workflow with class/group target
+  selection.
 
 ## Next candidates
 
