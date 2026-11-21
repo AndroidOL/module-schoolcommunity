@@ -10,11 +10,9 @@ use Gibbon\Tables\DataTable;
 
 require_once __DIR__.'/moduleFunctions.php';
 
-$page->breadcrumbs
-    ->add(schoolCommunityT('Message Categories'), 'message_categorySetting.php')
-    ->add(schoolCommunityT('Manage Message Groups'));
+$page->breadcrumbs->add(schoolCommunityT('Manage Message Groups'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')) {
     $page->addError(schoolCommunityT('You do not have access to this page.'));
     return;
 }
@@ -95,7 +93,7 @@ unset($group);
 
 $table = DataTable::create('schoolCommunityManagedMessageGroups');
 $table->setTitle(schoolCommunityT('Manage Message Groups'));
-$table->setDescription(schoolCommunityT('Review all message groups, their audience category and membership. Class and course groups synchronize membership from their source.'));
+$table->setDescription(schoolCommunityT('Review all message groups, their audience category and membership. Membership is managed manually.'));
 $table->addMetaData('blankSlate', schoolCommunityT('There are no message groups yet.'));
 $table->addColumn('groupName', schoolCommunityT('Group'))->context('primary');
 $table->addColumn('categoryName', schoolCommunityT('Category'))->context('primary');
@@ -115,11 +113,9 @@ $table->addActionColumn()
         $actions->addAction('view', schoolCommunityT('Open'))
             ->setIcon('markbook')
             ->setURL('/modules/School Community/message_groupView.php');
-        if (($group['sourceType'] ?? 'custom') === 'custom') {
-            $actions->addAction('members', schoolCommunityT('Members'))
-                ->setIcon('users')
-                ->setURL('/modules/School Community/message_groupMembers.php');
-        }
+        $actions->addAction('members', schoolCommunityT('Members'))
+            ->setIcon('users')
+            ->setURL('/modules/School Community/message_groupMembers.php');
     });
 
 $page->write($table->render(new \Gibbon\Domain\DataSet($groups)));

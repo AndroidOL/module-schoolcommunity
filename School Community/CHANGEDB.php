@@ -13,11 +13,23 @@ WHERE gibbonModuleID=(
   )
   AND entryURL='message_sending.php';end
 UPDATE gibbonAction
-SET URLList='message_categorySetting.php, message_categoryAdding.php, message_categoryEditing.php, message_categoryDelete.php, message_categoryProcess.php, message_groupManage.php, message_groupAdding.php, message_groupProcess.php, message_groupMembers.php'
+SET URLList='message_categorySetting.php, message_categoryAdding.php, message_categoryEditing.php, message_categoryDelete.php, message_categoryProcess.php'
 WHERE gibbonModuleID=(
       SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community'
   )
-  AND entryURL='message_categorySetting.php';end";
+  AND entryURL='message_categorySetting.php';end
+INSERT INTO gibbonAction (gibbonModuleID, name, precedence, category, description, URLList, entryURL, entrySidebar, menuShow, defaultPermissionAdmin, defaultPermissionTeacher, defaultPermissionStudent, defaultPermissionParent, defaultPermissionSupport, categoryPermissionStaff, categoryPermissionStudent, categoryPermissionParent, categoryPermissionOther)
+SELECT m.gibbonModuleID, 'Manage Message Groups', 0, 'Settings', 'Review message groups and manage their membership manually.', 'message_groupManage.php, message_groupAdding.php, message_groupProcess.php, message_groupMembers.php', 'message_groupManage.php', 'Y', 'Y', 'Y', 'N', 'N', 'N', 'N', 'Y', 'N', 'N', 'N'
+FROM gibbonModule m
+WHERE m.name='School Community'
+  AND NOT EXISTS (SELECT 1 FROM gibbonAction a WHERE a.gibbonModuleID=m.gibbonModuleID AND a.name='Manage Message Groups');end
+INSERT INTO gibbonPermission (gibbonRoleID, gibbonActionID)
+SELECT p.gibbonRoleID, newA.gibbonActionID
+FROM gibbonPermission p
+JOIN gibbonAction catA ON catA.gibbonActionID=p.gibbonActionID
+JOIN gibbonAction newA ON newA.gibbonModuleID=catA.gibbonModuleID AND newA.name='Manage Message Groups'
+WHERE catA.name='Manage Message Categories'
+  AND NOT EXISTS (SELECT 1 FROM gibbonPermission x WHERE x.gibbonRoleID=p.gibbonRoleID AND x.gibbonActionID=newA.gibbonActionID);end";
 $count++;
 
 // v1.4.5

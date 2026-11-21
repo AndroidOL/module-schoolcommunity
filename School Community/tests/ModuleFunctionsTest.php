@@ -317,6 +317,10 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertStringContainsString('message_freeRecipients.php', $migrations['1.4.6']);
             $this->assertStringContainsString('message_freeRecipientsProcess.php', $migrations['1.4.6']);
             $this->assertStringNotContainsString('message_groupTargetProcess.php', $migrations['1.4.6']);
+            $this->assertStringContainsString('INSERT INTO gibbonAction', $migrations['1.4.6']);
+            $this->assertStringContainsString("'Manage Message Groups'", $migrations['1.4.6']);
+            $this->assertStringContainsString('INSERT INTO gibbonPermission', $migrations['1.4.6']);
+            $this->assertStringContainsString("entryURL='message_categorySetting.php'", $migrations['1.4.6']);
             $this->assertStringContainsString(
                 'information_schema.COLUMNS',
                 $migrations['1.4.1']
@@ -411,6 +415,72 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertStringContainsString('DataTable::create', $view);
             $this->assertStringNotContainsString('grid grid-cols-1', $view);
             $this->assertStringContainsString('schoolCommunityMetadataTag(', $groupView);
+        }
+
+        public function testManageMessageGroupsIsASiblingSettingsAction()
+        {
+            $actionRows = [];
+            require dirname(__DIR__).'/manifest.php';
+
+            $settings = array_values(array_filter($actionRows, function ($action) {
+                return $action['category'] === 'Settings';
+            }));
+            $names = array_column($settings, 'name');
+            $this->assertContains('Manage Message Categories', $names);
+            $this->assertContains('Manage Message Groups', $names);
+
+            $categoriesIndex = array_search('Manage Message Categories', $names, true);
+            $groupsIndex = array_search('Manage Message Groups', $names, true);
+            // Menu orders Settings actions alphabetically by name, so Groups sits below Categories.
+            $this->assertGreaterThan($categoriesIndex, $groupsIndex);
+
+            $groups = $settings[$groupsIndex];
+            $this->assertSame('message_groupManage.php', $groups['entryURL']);
+            $this->assertSame('Y', $groups['menuShow']);
+            $this->assertStringContainsString('message_groupMembers.php', $groups['URLList']);
+
+            $categories = $settings[$categoriesIndex];
+            $this->assertStringNotContainsString('message_groupManage.php', $categories['URLList']);
+            $this->assertStringNotContainsString('message_groupMembers.php', $categories['URLList']);
+
+            // Categories page no longer exposes group management as a sub-page button.
+            $this->assertStringNotContainsString(
+                'message_groupManage.php',
+                file_get_contents(dirname(__DIR__).'/message_categorySetting.php')
+            );
+        }
+
+        public function testLinkedGroupMembershipIsNeverSynchronizedFromSource()
+        {
+            $functions = file_get_contents(dirname(__DIR__).'/moduleFunctions.php');
+            $this->assertStringNotContainsString('SyncLinkedGroupMembers', $functions);
+            $this->assertStringNotContainsString('LinkedSourceAllowsPerson', $functions);
+            $this->assertStringNotContainsString('DELETE FROM message_group_member', $functions);
+            $this->assertStringContainsString('function schoolCommunityAddLinkedGroupMembers', $functions);
+
+            $process = file_get_contents(dirname(__DIR__).'/message_groupProcess.php');
+            $this->assertStringContainsString('schoolCommunityAddLinkedGroupMembers', $process);
+            $this->assertStringNotContainsString("(\$group['sourceType'] ?? 'custom') !== 'custom'", $process);
+
+            $members = file_get_contents(dirname(__DIR__).'/message_groupMembers.php');
+            $this->assertStringNotContainsString('isLinkedGroup', $members);
+            $this->assertStringNotContainsString('synchronized', $members);
+
+            $manage = file_get_contents(dirname(__DIR__).'/message_groupManage.php');
+            $this->assertStringNotContainsString('synchronize membership from their source', $manage);
+
+            $groupsList = file_get_contents(dirname(__DIR__).'/message_groups.php');
+            $this->assertStringNotContainsString('linkedMemberCache', $groupsList);
+            $this->assertStringNotContainsString('LinkedSourceMembers', $groupsList);
+            $this->assertStringContainsString('WHERE member.gibbonPersonID IS NOT NULL', $groupsList);
+        }
+
+        public function testClassTargetLabelsCarryNoAdministrativeOrCoursePrefix()
+        {
+            $functions = file_get_contents(dirname(__DIR__).'/moduleFunctions.php');
+            $this->assertStringNotContainsString('Administrative Class: %s', $functions);
+            $this->assertStringNotContainsString('Course Class: %s.%s', $functions);
+            $this->assertStringContainsString("\$options['formGroup:'.\$formGroup['gibbonFormGroupID']] = \$formGroup['name'];", $functions);
         }
     }
 }

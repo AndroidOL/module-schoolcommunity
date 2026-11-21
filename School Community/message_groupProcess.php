@@ -28,7 +28,7 @@ if (!in_array($action, ['create', 'addMember', 'removeMember'], true)) {
 
 $canRead = isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php');
 $canSend = isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php');
-$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php');
+$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php');
 if (($action === 'create' && !$canManageGroups && !schoolCommunityMessagingAccessAllowed($canSend, $canRead))
     || ($action !== 'create' && !$canRead && !$canManageGroups)) {
     $redirect('error0');
@@ -117,7 +117,7 @@ if ($action === 'create') {
              VALUES (:groupID, :gibbonPersonID)",
             ['groupID' => $inserted, 'gibbonPersonID' => $currentPersonID]
         );
-        schoolCommunitySyncLinkedGroupMembers($pdo, [
+        schoolCommunityAddLinkedGroupMembers($pdo, [
             'groupID'   => $inserted,
             'sourceType'=> $sourceType,
             'sourceID'  => $sourceID,
@@ -140,9 +140,6 @@ $group = $groupID !== ''
         : schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true))
     : null;
 if (empty($group)) {
-    $redirect('error0');
-}
-if (($group['sourceType'] ?? 'custom') !== 'custom') {
     $redirect('error0');
 }
 

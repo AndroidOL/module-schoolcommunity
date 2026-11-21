@@ -15,7 +15,7 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Manage Group Members'));
 
 if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
-    && !isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')
+    && !isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')
 ) {
     $page->addError(schoolCommunityT('You do not have access to this page.'));
     return;
@@ -33,7 +33,7 @@ $page->return->addReturns([
 $groupID = is_scalar($_GET['groupID'] ?? null) ? trim((string) $_GET['groupID']) : '';
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
-$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php');
+$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php');
 $group = $groupID !== ''
     ? ($canManageGroups
         ? schoolCommunityManageableGroup($pdo, $groupID)
@@ -58,13 +58,9 @@ $members = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $existingMemberIDs = array_column($members, 'gibbonPersonID');
-$isLinkedGroup = ($group['sourceType'] ?? 'custom') !== 'custom';
-$people = $isLinkedGroup ? [] : schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, $existingMemberIDs);
+$people = schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, $existingMemberIDs);
 
-if ($isLinkedGroup) {
-    $page->write('<p><strong>'.schoolCommunityGroupSourceLabel($group['sourceType']).':</strong> '
-        .schoolCommunityT('Membership is synchronized from the current class roster and cannot be edited manually.').'</p>');
-} elseif (!empty($people)) {
+if (!empty($people)) {
     $form = Form::create('schoolCommunityGroupAddMember', $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php', 'post');
     $form->addHiddenValue('action', 'addMember');
     $form->addHiddenValue('groupID', $groupID);
@@ -85,7 +81,7 @@ $rows = [];
 foreach ($members as $member) {
     $name = Format::name($member['title'], $member['preferredName'], $member['surname'], $member['roleCategory'], true);
     $remove = '';
-    if (!$isLinkedGroup && !schoolCommunitySamePersonID($member['gibbonPersonID'], $group['ownerID'])) {
+    if (!schoolCommunitySamePersonID($member['gibbonPersonID'], $group['ownerID'])) {
         $removeForm = Form::create(
             'schoolCommunityGroupRemove'.$member['gibbonPersonID'],
             $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',
@@ -96,7 +92,7 @@ foreach ($members as $member) {
         $removeForm->addHiddenValue('gibbonPersonID', $member['gibbonPersonID']);
         $removeForm->addRow()->addSubmit(schoolCommunityT('Remove'))->setClass('small');
         $remove = $removeForm->getOutput();
-    } elseif (!$isLinkedGroup) {
+    } else {
         $remove = schoolCommunityT('Owner');
     }
 
@@ -108,9 +104,7 @@ foreach ($members as $member) {
 
 $table = DataTable::create('schoolCommunityGroupMembers');
 $table->setTitle(sprintf(schoolCommunityT('%s Members'), htmlPrep($group['groupName'])));
-if (!$isLinkedGroup) {
-    $table->addMetaData('allowHTML', ['remove']);
-}
+$table->addMetaData('allowHTML', ['remove']);
 $table->addColumn('name', schoolCommunityT('Name'));
 $table->addColumn('roleCategory', schoolCommunityT('Role'))->format(function ($member) {
     return schoolCommunityT($member['roleCategory']);
@@ -119,10 +113,8 @@ $table->addColumn('username', schoolCommunityT('Username'));
 $table->addColumn('joinedAt', schoolCommunityT('Joined'))->format(function ($member) {
     return Format::dateTime($member['joinedAt']);
 });
-if (!$isLinkedGroup) {
-    $table->addColumn('remove', schoolCommunityT('Action'))->format(function ($member) {
-        return $member['remove'];
-    });
-}
+$table->addColumn('remove', schoolCommunityT('Action'))->format(function ($member) {
+    return $member['remove'];
+});
 
 $page->write($table->render(new Gibbon\Domain\DataSet($rows)));

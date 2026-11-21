@@ -102,8 +102,7 @@ $groups = $pdo->select(
         ON threadState.threadType='group'
        AND threadState.threadID=message_group.groupID
        AND threadState.gibbonPersonID=:currentPersonID
-     WHERE ((message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
-        OR message_group.sourceType IN ('formGroup', 'courseClass', 'gibbonGroup'))
+     WHERE member.gibbonPersonID IS NOT NULL
        AND (".($mailbox === 'trash'
             ? 'threadState.deletedAt IS NOT NULL'
             : ($mailbox === 'archived'
@@ -135,33 +134,7 @@ $groups = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $visibleGroups = [];
-$linkedMemberCache = [];
 foreach ($groups as $group) {
-    if (($group['sourceType'] ?? 'custom') !== 'custom') {
-        $sourceKey = $group['sourceType'].':'.($group['sourceID'] ?? '');
-        if (!array_key_exists($sourceKey, $linkedMemberCache)) {
-            $linkedMemberCache[$sourceKey] = schoolCommunityLinkedSourceMembers(
-                $pdo,
-                $group['sourceType'],
-                $group['sourceID'] ?? ''
-            );
-        }
-
-        $isMember = false;
-        foreach ($linkedMemberCache[$sourceKey] as $member) {
-            if (schoolCommunitySamePersonID($member['gibbonPersonID'], $currentPersonID)) {
-                $isMember = true;
-                break;
-            }
-        }
-        if (!$isMember) {
-            continue;
-        }
-
-        $group['groupMemberPersonID'] = $currentPersonID;
-        $group['memberCount'] = count($linkedMemberCache[$sourceKey]);
-    }
-
     if (!schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
         continue;
     }

@@ -194,7 +194,7 @@ function schoolCommunityCanSelectAllLinkedSources($gibbonPersonID): bool
 
     if (!empty($guid)
         && !empty($connection2)
-        && isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')
+        && isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')
     ) {
         return true;
     }
@@ -281,17 +281,10 @@ function schoolCommunityLinkedSourceOptions($pdo, $gibbonPersonID, $gibbonSchool
 
     $options = [];
     foreach ($formGroups as $formGroup) {
-        $options['formGroup:'.$formGroup['gibbonFormGroupID']] = sprintf(
-            schoolCommunityT('Administrative Class: %s'),
-            $formGroup['name']
-        );
+        $options['formGroup:'.$formGroup['gibbonFormGroupID']] = $formGroup['name'];
     }
     foreach ($courseClasses as $courseClass) {
-        $options['courseClass:'.$courseClass['gibbonCourseClassID']] = sprintf(
-            schoolCommunityT('Course Class: %s.%s'),
-            $courseClass['courseName'],
-            $courseClass['className']
-        );
+        $options['courseClass:'.$courseClass['gibbonCourseClassID']] = $courseClass['courseName'].'.'.$courseClass['className'];
     }
     foreach ($gibbonGroups as $group) {
         $options['gibbonGroup:'.$group['gibbonGroupID']] = sprintf(
@@ -391,47 +384,7 @@ function schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID): array
     return [];
 }
 
-function schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $sourceID, $gibbonPersonID): bool
-{
-    if (schoolCommunityCanSelectAllLinkedSources($gibbonPersonID)) {
-        return true;
-    }
-
-    if ($sourceType === 'gibbonGroup') {
-        return !empty($pdo->selectOne(
-            "SELECT gibbonGroup.gibbonGroupID
-             FROM gibbonGroup
-             JOIN gibbonSchoolYear
-               ON gibbonSchoolYear.gibbonSchoolYearID=gibbonGroup.gibbonSchoolYearID
-              AND gibbonSchoolYear.status='Current'
-             JOIN gibbonPerson AS currentPerson
-               ON currentPerson.gibbonPersonID=:gibbonPersonID
-              AND currentPerson.status='Full'
-              AND (currentPerson.dateStart IS NULL OR currentPerson.dateStart<=CURRENT_DATE)
-              AND (currentPerson.dateEnd IS NULL OR currentPerson.dateEnd>=CURRENT_DATE)
-             WHERE gibbonGroup.gibbonGroupID=:sourceID
-               AND (
-                   gibbonGroup.gibbonPersonIDOwner=:gibbonPersonID
-                   OR EXISTS (
-                       SELECT 1 FROM gibbonGroupPerson
-                       WHERE gibbonGroupPerson.gibbonGroupID=gibbonGroup.gibbonGroupID
-                         AND gibbonGroupPerson.gibbonPersonID=:gibbonPersonID
-                   )
-               )",
-            ['sourceID' => $sourceID, 'gibbonPersonID' => $gibbonPersonID]
-        ));
-    }
-
-    foreach (schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID) as $member) {
-        if (schoolCommunitySamePersonID($member['gibbonPersonID'], $gibbonPersonID)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function schoolCommunitySyncLinkedGroupMembers($pdo, array $group): void
+function schoolCommunityAddLinkedGroupMembers($pdo, array $group): void
 {
     $sourceType = $group['sourceType'] ?? 'custom';
     $sourceID = $group['sourceID'] ?? null;
@@ -439,38 +392,12 @@ function schoolCommunitySyncLinkedGroupMembers($pdo, array $group): void
         return;
     }
 
-    $memberIDs = array_values(array_filter(array_map('strval', array_column(
-        schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID),
-        'gibbonPersonID'
-    ))));
-
-    if (empty($memberIDs)) {
-        $pdo->delete(
-            "DELETE FROM message_group_member WHERE groupID=:groupID",
-            ['groupID' => $group['groupID']]
-        );
-        return;
-    }
-
-    $placeholders = [];
-    $params = ['groupID' => $group['groupID']];
-    foreach ($memberIDs as $index => $memberID) {
-        $key = 'person'.$index;
-        $placeholders[] = ':'.$key;
-        $params[$key] = $memberID;
-    }
-    $pdo->delete(
-        "DELETE FROM message_group_member
-         WHERE groupID=:groupID
-           AND gibbonPersonID NOT IN (".implode(', ', $placeholders).")",
-        $params
-    );
-    foreach ($memberIDs as $memberID) {
+    foreach (schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID) as $member) {
         $pdo->insert(
             "INSERT INTO message_group_member (groupID, gibbonPersonID)
              VALUES (:groupID, :gibbonPersonID)
              ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
-            ['groupID' => $group['groupID'], 'gibbonPersonID' => $memberID]
+            ['groupID' => $group['groupID'], 'gibbonPersonID' => $member['gibbonPersonID']]
         );
     }
 }
@@ -508,15 +435,6 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
 
     if (empty($group)) {
         return null;
-    }
-
-    $sourceType = $group['sourceType'] ?? 'custom';
-    if ($sourceType !== 'custom') {
-        if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $group['sourceID'] ?? '', $gibbonPersonID)) {
-            return null;
-        }
-        schoolCommunitySyncLinkedGroupMembers($pdo, $group);
-        $group['groupMemberPersonID'] = $gibbonPersonID;
     }
 
     if (!schoolCommunityGroupAccessAllowed($group, $gibbonPersonID, $roleCategory, $ownerOnly)) {
@@ -674,10 +592,6 @@ function schoolCommunitySendTargetChoices($pdo, $currentPersonID, $roleCategory,
         $sourceType = $group['sourceType'] ?? 'custom';
         if ($sourceType !== 'custom') {
             $linkedSourceGroups[$sourceType.':'.$group['sourceID']] = true;
-            if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $group['sourceID'] ?? '', $currentPersonID)) {
-                continue;
-            }
-            $group['groupMemberPersonID'] = $currentPersonID;
         }
         if (!schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
             continue;
@@ -760,7 +674,7 @@ function schoolCommunityResolveSourceTarget($pdo, string $categoryID, string $ta
          ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
         ['groupID' => $inserted, 'gibbonPersonID' => $currentPersonID]
     );
-    schoolCommunitySyncLinkedGroupMembers($pdo, [
+    schoolCommunityAddLinkedGroupMembers($pdo, [
         'groupID'   => $inserted,
         'sourceType'=> $sourceType,
         'sourceID'  => $sourceID,

@@ -90,7 +90,7 @@ $row = $threadActions->addRow();
         .'</div>'
     );
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
-if ($isOwner || isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+if ($isOwner || isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')) {
     $page->navigator->addHeaderAction('members', schoolCommunityT('Manage Members'))
         ->setURL('/modules/School Community/message_groupMembers.php')
         ->addParam('groupID', $groupID)

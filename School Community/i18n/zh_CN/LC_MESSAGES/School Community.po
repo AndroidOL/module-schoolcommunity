@@ -771,16 +771,6 @@ msgstr "自己（仅自己可见）"
 msgid "Gibbon Group"
 msgstr "Gibbon 群组"
 
-#: ⁨School Community/moduleFunctions.php⁩:220
-#, php-format
-msgid "Administrative Class: %s"
-msgstr "行政班：%s"
-
-#: ⁨School Community/moduleFunctions.php⁩:226
-#, php-format
-msgid "Course Class: %s.%s"
-msgstr "课程班：%s.%s"
-
 #: ⁨School Community/moduleFunctions.php⁩:233
 #, php-format
 msgid "Gibbon Group: %s"
@@ -868,12 +858,6 @@ msgstr "%s 在 %s 发来群组消息：%s"
 #: ⁨School Community/message_groupMembers.php⁩:15
 msgid "Manage Group Members"
 msgstr "管理群组成员"
-
-#: ⁨School Community/message_groupMembers.php⁩:59
-msgid ""
-"Membership is synchronized from the current class roster and cannot be "
-"edited manually."
-msgstr "成员名单会根据当前班级名册自动同步，不能手动编辑。"
 
 #: ⁨School Community/message_groupMembers.php⁩:64
 msgid "Add Group Member"
@@ -1067,8 +1051,8 @@ msgstr "预览收件人（%d）"
 msgid "Group, category or owner"
 msgstr "群组、分类或所有者"
 
-msgid "Review all message groups, their audience category and membership. Class and course groups synchronize membership from their source."
-msgstr "查看全部消息群组、受众分类和成员。行政班和课程班群组的成员会随来源自动同步。"
+msgid "Review all message groups, their audience category and membership. Membership is managed manually."
+msgstr "查看全部消息群组、受众分类和成员。成员名单由人工手动管理。"
 
 msgid "There are no message groups yet."
 msgstr "暂无消息群组。"

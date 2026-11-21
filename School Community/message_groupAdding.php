@@ -12,7 +12,7 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Message Groups'), 'message_groups.php')
     ->add(schoolCommunityT('Create Group'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')
     && !schoolCommunityMessagingAccessAllowed(
         isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
         isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
