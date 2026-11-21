@@ -69,7 +69,7 @@ $row = $form->addRow();
         ->checked($selected)
         ->alignLeft()
         ->required()
-        ->setLabelClass('leading-compact flex-1 text-sm text-gray-800 py-2 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
+        ->setLabelClass('text-gray-800 py-2 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
         ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
 
 $row = $form->addRow();
