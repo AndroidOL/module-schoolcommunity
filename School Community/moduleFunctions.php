@@ -185,32 +185,80 @@ function schoolCommunityGroupSourceLabel($sourceType): string
     ][$sourceType] ?? schoolCommunityT('Custom Group');
 }
 
+function schoolCommunityCanSelectAllLinkedSources($gibbonPersonID): bool
+{
+    global $guid, $connection2;
+
+    if (!empty($guid)
+        && !empty($connection2)
+        && isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')
+    ) {
+        return true;
+    }
+
+    if (function_exists('canViewAllAssessmentClasses') && canViewAllAssessmentClasses($gibbonPersonID)) {
+        return true;
+    }
+
+    if (empty($guid) || empty($connection2)) {
+        return false;
+    }
+
+    $highest = getHighestGroupedAction(
+        $guid,
+        '/modules/Formal Assessment/internalAssessment_write_data.php',
+        $connection2
+    );
+
+    return is_string($highest) && substr($highest, -4) === '_all';
+}
+
 function schoolCommunityLinkedSourceOptions($pdo, $gibbonPersonID, $gibbonSchoolYearID): array
 {
+    $selectAllSources = schoolCommunityCanSelectAllLinkedSources($gibbonPersonID);
+
+    $formGroupParams = ['gibbonSchoolYearID' => $gibbonSchoolYearID];
+    $formGroupClause = '';
+    if (!$selectAllSources) {
+        $formGroupClause = ' AND (gibbonFormGroup.gibbonPersonIDTutor=:gibbonPersonID
+             OR gibbonFormGroup.gibbonPersonIDTutor2=:gibbonPersonID
+             OR gibbonFormGroup.gibbonPersonIDTutor3=:gibbonPersonID)';
+        $formGroupParams['gibbonPersonID'] = $gibbonPersonID;
+    }
     $formGroups = $pdo->select(
         "SELECT gibbonFormGroupID, name
          FROM gibbonFormGroup
-         WHERE gibbonSchoolYearID=:gibbonSchoolYearID
-           AND (gibbonPersonIDTutor=:gibbonPersonID
-             OR gibbonPersonIDTutor2=:gibbonPersonID
-             OR gibbonPersonIDTutor3=:gibbonPersonID)
+         WHERE gibbonSchoolYearID=:gibbonSchoolYearID"
+        .$formGroupClause."
          ORDER BY LENGTH(name), name",
-        ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
+        $formGroupParams
     )->fetchAll(PDO::FETCH_ASSOC);
 
-    $courseClasses = $pdo->select(
-        "SELECT gibbonCourse.nameShort AS courseName, gibbonCourseClass.gibbonCourseClassID,
-                gibbonCourseClass.nameShort AS className
-         FROM gibbonCourseClassPerson
-         JOIN gibbonCourseClass ON gibbonCourseClass.gibbonCourseClassID=gibbonCourseClassPerson.gibbonCourseClassID
-         JOIN gibbonCourse ON gibbonCourse.gibbonCourseID=gibbonCourseClass.gibbonCourseID
-         WHERE gibbonCourse.gibbonSchoolYearID=:gibbonSchoolYearID
-           AND gibbonCourseClassPerson.gibbonPersonID=:gibbonPersonID
-           AND gibbonCourseClassPerson.role IN ('Teacher', 'Assistant', 'Technician')
-           AND gibbonCourseClassPerson.role NOT LIKE '% - Left%'
-         ORDER BY gibbonCourse.nameShort, gibbonCourseClass.nameShort",
-        ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
-    )->fetchAll(PDO::FETCH_ASSOC);
+    if ($selectAllSources) {
+        $courseClasses = $pdo->select(
+            "SELECT gibbonCourse.nameShort AS courseName, gibbonCourseClass.gibbonCourseClassID,
+                    gibbonCourseClass.nameShort AS className
+             FROM gibbonCourseClass
+             JOIN gibbonCourse ON gibbonCourse.gibbonCourseID=gibbonCourseClass.gibbonCourseID
+             WHERE gibbonCourse.gibbonSchoolYearID=:gibbonSchoolYearID
+             ORDER BY gibbonCourse.nameShort, gibbonCourseClass.nameShort",
+            ['gibbonSchoolYearID' => $gibbonSchoolYearID]
+        )->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $courseClasses = $pdo->select(
+            "SELECT gibbonCourse.nameShort AS courseName, gibbonCourseClass.gibbonCourseClassID,
+                    gibbonCourseClass.nameShort AS className
+             FROM gibbonCourseClassPerson
+             JOIN gibbonCourseClass ON gibbonCourseClass.gibbonCourseClassID=gibbonCourseClassPerson.gibbonCourseClassID
+             JOIN gibbonCourse ON gibbonCourse.gibbonCourseID=gibbonCourseClass.gibbonCourseID
+             WHERE gibbonCourse.gibbonSchoolYearID=:gibbonSchoolYearID
+               AND gibbonCourseClassPerson.gibbonPersonID=:gibbonPersonID
+               AND gibbonCourseClassPerson.role IN ('Teacher', 'Assistant', 'Technician')
+               AND gibbonCourseClassPerson.role NOT LIKE '% - Left%'
+             ORDER BY gibbonCourse.nameShort, gibbonCourseClass.nameShort",
+            ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     $gibbonGroups = $pdo->select(
         "SELECT gibbonGroup.gibbonGroupID, gibbonGroup.name
@@ -342,6 +390,10 @@ function schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID): array
 
 function schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $sourceID, $gibbonPersonID): bool
 {
+    if (schoolCommunityCanSelectAllLinkedSources($gibbonPersonID)) {
+        return true;
+    }
+
     if ($sourceType === 'gibbonGroup') {
         return !empty($pdo->selectOne(
             "SELECT gibbonGroup.gibbonGroupID
@@ -566,11 +618,16 @@ function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCate
     }
 
     $allLinkedSources = $pdo->select(
-        "SELECT sourceType, sourceID FROM message_group
+        "SELECT sourceType, sourceID, categoryID FROM message_group
          WHERE sourceType IN ('formGroup', 'courseClass', 'gibbonGroup')"
     )->fetchAll(PDO::FETCH_ASSOC);
+    $selectAllSources = schoolCommunityCanSelectAllLinkedSources($currentPersonID);
     foreach ($allLinkedSources as $source) {
-        $linkedSources[$source['sourceType'].':'.$source['sourceID']] = true;
+        $sourceKey = $source['sourceType'].':'.$source['sourceID'];
+        $existsInThisCategory = (string) $source['categoryID'] === (string) $categoryID;
+        if (!$selectAllSources || !$existsInThisCategory) {
+            $linkedSources[$sourceKey] = true;
+        }
     }
 
     foreach (schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID) as $key => $label) {

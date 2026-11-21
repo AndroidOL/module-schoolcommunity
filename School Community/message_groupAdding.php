@@ -35,7 +35,12 @@ if (empty($categories)) {
 $sourceOptions = ['custom' => schoolCommunityT('Custom Group')]
     + schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
 
-$form = Form::create('schoolCommunityGroupAdd', $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php', 'post');
+$form = Form::create(
+    'schoolCommunityGroupAdd',
+    $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',
+    'post',
+    'standardForm disable-warnings'
+);
 $form->addHiddenValue('action', 'create');
 $form->setTitle(schoolCommunityT('Create Group'));
 $form->setDescription(schoolCommunityT('Choose a category carefully. Administrative and course classes automatically use the current school roster for future messages.'));

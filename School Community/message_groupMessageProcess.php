@@ -71,7 +71,7 @@ $actualRecipientSignature = hash('sha256', implode(',', $recipientIDs));
 $currentPersonIsRecipient = count(array_filter($recipientIDs, function ($recipientID) use ($currentPersonID) {
     return schoolCommunitySamePersonID($recipientID, $currentPersonID);
 })) === 1;
-if (!$currentPersonIsRecipient) {
+if (!$currentPersonIsRecipient && !schoolCommunityCanSelectAllLinkedSources($currentPersonID)) {
     $redirect('error0');
 }
 if ($expectedRecipientCount !== count($recipientIDs) || !hash_equals($actualRecipientSignature, $expectedRecipientSignature)) {

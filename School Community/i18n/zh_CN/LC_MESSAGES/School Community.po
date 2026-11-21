@@ -1013,6 +1013,9 @@ msgstr "直接消息用于一位收件人；群组消息可用于一次性多选
 msgid "Free Selection sends one message to at most 5 chosen people. Create a group for larger audiences."
 msgstr "自由选择会向最多 5 位所选人员发送消息；更多收件人请创建群组。"
 
+msgid "Larger Audience"
+msgstr "更多收件人"
+
 msgid "Next"
 msgstr "下一步"
 

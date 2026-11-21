@@ -66,7 +66,9 @@ if ($groupID !== '') {
         $page->addError(schoolCommunityT('The actual recipient list is empty. No message can be sent.'));
         return;
     }
-    if (!in_array($currentPersonID, $recipientIDs, true)) {
+    if (!in_array($currentPersonID, $recipientIDs, true)
+        && !schoolCommunityCanSelectAllLinkedSources($currentPersonID)
+    ) {
         $page->addError(schoolCommunityT('You do not have access to this page.'));
         return;
     }
@@ -81,7 +83,8 @@ if ($groupID !== '') {
     $form = Form::create(
         'schoolCommunityGroupCompose',
         $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupMessageProcess.php',
-        'post'
+        'post',
+        'standardForm disable-warnings'
     );
     $form->addHiddenValue('groupID', $groupID);
     $form->addHiddenValue('expectedRecipientSignature', $audienceSignature);
@@ -148,7 +151,8 @@ if (empty($people)) {
 $form = Form::create(
     'schoolCommunityFreeCompose',
     $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sendingProcess.php',
-    'post'
+    'post',
+    'standardForm disable-warnings'
 );
 $form->addHiddenValue('categoryID', $categoryID);
 $form->addHiddenValue('recipientMode', 'multi');

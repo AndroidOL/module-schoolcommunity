@@ -19,6 +19,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 window.schoolCommunitySetGroupTargetType = function (type) {
     const groupFields = document.querySelectorAll('.schoolCommunityGroupTargetField');
     const groupMode = Array.from(groupFields).some((field) => !field.classList.contains('hidden'));
+    const showFree = groupMode && type === 'free';
+
+    document.querySelectorAll('.schoolCommunityFreeNotice, .schoolCommunityFreeCreateGroup').forEach((row) => {
+        row.classList.toggle('hidden', !showFree);
+    });
 
     document.querySelectorAll('.schoolCommunityGroupTargetPicker').forEach((row) => {
         const active = groupMode && type !== '' && row.classList.contains('schoolCommunityGroupTargetPicker-'+type);
@@ -75,9 +80,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (event.target.id === 'targetType') {
             window.schoolCommunitySetGroupTargetType(event.target.value);
-        }
-        if (event.target.id === 'categoryID') {
-            event.target.form?.requestSubmit();
         }
     });
 });
