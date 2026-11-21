@@ -68,3 +68,11 @@ document.addEventListener('DOMContentLoaded', function () {
         window.schoolCommunitySetMessageMode(mode.value);
     }
 });
+
+['change', 'input'].forEach(function (eventName) {
+    document.addEventListener(eventName, function (event) {
+        if (event.target && event.target.id === 'groupMessage') {
+            window.schoolCommunitySetMessageMode(event.target.value);
+        }
+    });
+});

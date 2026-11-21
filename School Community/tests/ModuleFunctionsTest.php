@@ -354,12 +354,14 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertStringContainsString('&categoryID=', $process);
             $this->assertStringContainsString("addSelectPerson('recipientID')", $sendPage);
             $this->assertStringNotContainsString('chooseRecipient', $sendPage);
-            $this->assertStringContainsString('schoolCommunitySetMessageMode', $sendPage);
+            $this->assertStringContainsString("addToggle('groupMessage')->setYesNo()", $sendPage);
+            $this->assertStringNotContainsString('addYesNo(\'groupMessage\')', $sendPage);
             $this->assertStringContainsString("addSelect('targetType')", $sendPage);
             $this->assertStringContainsString("'formGroup', 'courseClass', 'existing'", $sendPage);
             $this->assertStringContainsString("addSearchSelect('groupTarget'.ucfirst(\$type))", $sendPage);
             $this->assertStringContainsString('schoolCommunitySetMessageMode', $script);
             $this->assertStringContainsString('schoolCommunitySetGroupTargetType', $script);
+            $this->assertStringContainsString("event.target.id === 'groupMessage'", $script);
             $this->assertStringNotContainsString('.submit(', $script);
         }
 

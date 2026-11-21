@@ -90,8 +90,7 @@ if ($groupMessagesEnabled) {
     $modeForm->setDescription(schoolCommunityT('Choose whether to send one direct message or open a group conversation.'));
     $row = $modeForm->addRow();
         $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
-        $row->addYesNo('groupMessage')->required()->selected($groupMode ? 'Y' : 'N')
-            ->setAttribute('onchange', 'schoolCommunitySetMessageMode(this.value)');
+        $row->addToggle('groupMessage')->setYesNo()->selected($groupMode ? 'Y' : 'N')->setSize('sm');
     $row = $modeForm->addRow()
         ->addClass('schoolCommunityTargetTypeRow'.($groupMode ? '' : ' hidden'));
         $row->addLabel('targetType', schoolCommunityT('Target Type'));
