@@ -116,8 +116,8 @@ if (!$groupMode && empty($people)) {
     $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
 }
 
-$directAction = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sendingProcess.php';
-$groupAction = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupTargetProcess.php';
+$directAction = $session->get('absoluteURL').'/modules/School Community/message_sendingProcess.php';
+$groupAction = $session->get('absoluteURL').'/modules/School Community/message_groupTargetProcess.php';
 
 $form = Form::create(
     'schoolCommunitySendMessage',

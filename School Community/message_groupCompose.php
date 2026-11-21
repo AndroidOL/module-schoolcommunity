@@ -82,7 +82,7 @@ if ($groupID !== '') {
 
     $form = Form::create(
         'schoolCommunityGroupCompose',
-        $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupMessageProcess.php',
+        $session->get('absoluteURL').'/modules/School Community/message_groupMessageProcess.php',
         'post',
         'standardForm disable-warnings'
     );
@@ -150,7 +150,7 @@ if (empty($people)) {
 
 $form = Form::create(
     'schoolCommunityFreeCompose',
-    $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sendingProcess.php',
+    $session->get('absoluteURL').'/modules/School Community/message_sendingProcess.php',
     'post',
     'standardForm disable-warnings'
 );
