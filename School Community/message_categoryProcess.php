@@ -67,6 +67,7 @@ $values = [
     'parent'  => ($_POST['parent'] ?? 'N') === 'Y' ? 'Y' : 'N',
     'other'   => ($_POST['other'] ?? 'N') === 'Y' ? 'Y' : 'N',
 ];
+$groupMessages = ($_POST['groupMessages'] ?? 'N') === 'Y' ? 'Y' : 'N';
 $accessControl = schoolCommunityPermissionValue($values);
 if ($accessControl === 0) {
     $redirect('error1');
@@ -74,9 +75,14 @@ if ($accessControl === 0) {
 
 if ($action === 'add') {
     $inserted = $pdo->insert(
-        "INSERT INTO message_category (categoryName, userID, accessControl)
-         VALUES (:categoryName, :userID, :accessControl)",
-        ['categoryName' => $categoryName, 'userID' => $currentPersonID, 'accessControl' => $accessControl]
+        "INSERT INTO message_category (categoryName, userID, accessControl, groupMessages)
+         VALUES (:categoryName, :userID, :accessControl, :groupMessages)",
+        [
+            'categoryName' => $categoryName,
+            'userID' => $currentPersonID,
+            'accessControl' => $accessControl,
+            'groupMessages' => $groupMessages,
+        ]
     );
     $redirect(empty($inserted) ? 'error2' : 'success0');
 }
@@ -92,8 +98,13 @@ if (empty($pdo->selectOne(
 }
 $pdo->update(
     "UPDATE message_category
-     SET categoryName=:categoryName, accessControl=:accessControl
+     SET categoryName=:categoryName, accessControl=:accessControl, groupMessages=:groupMessages
      WHERE categoryID=:categoryID",
-    ['categoryName' => $categoryName, 'accessControl' => $accessControl, 'categoryID' => $categoryID]
+    [
+        'categoryName' => $categoryName,
+        'accessControl' => $accessControl,
+        'groupMessages' => $groupMessages,
+        'categoryID' => $categoryID,
+    ]
 );
 $redirect('success1');

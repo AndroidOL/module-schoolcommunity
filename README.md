@@ -20,12 +20,15 @@ and a home-school communication workflow.
 
 ## Features
 
-- Create categories and select which role groups may use them.
+- Create categories, select which role groups may use them and control whether
+  each category supports group messages.
 - Send HTML-formatted messages to active Gibbon users.
-- Filter recipient choices by the selected category's allowed role groups.
+- Choose a direct recipient in a searchable modal filtered by the selected
+  category's allowed role groups.
 - Send a message to yourself without creating duplicate records.
-- Switch the normal send form to group mode and choose an existing group, an
-  administrative class or a course class.
+- Switch the normal send form to group mode and choose an existing School
+  Community group, an official Gibbon group, an administrative class or a
+  course class.
 - List sent, received and unread messages with previews, category and priority
   filters, and standard Open/Archive/Delete actions.
 - Search direct message replies and group names, messages and replies.
@@ -34,8 +37,9 @@ and a home-school communication workflow.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
 - Create category-controlled groups with owner-managed members.
-- Create one linked group per administrative class or course class; teachers
-  can select only classes they are assigned to.
+- Create one linked group per official Gibbon group, administrative class or
+  course class; senders can select only groups and classes they own or belong
+  to.
 - Synchronize linked class membership from the current Gibbon roster.
 - Review every resolved recipient before sending, with an explicit block when
   no eligible recipient remains, and freeze a send-time snapshot.
@@ -49,6 +53,8 @@ and a home-school communication workflow.
 ## Security
 
 - All write forms use Gibbon CSRF tokens and accept POST only.
+- Send workflows require both Send Message and View Messages access, so a
+  successful write always has an authorised confirmation page.
 - Message bodies are sanitized against Gibbon's configured HTML allow-list
   before storage and again before display.
 - Category permissions use a four-bit audience mask for Staff, Student, Parent

@@ -15,3 +15,25 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+window.schoolCommunityChooseRecipient = function (personID, label) {
+    const recipientID = document.getElementById('recipientID');
+    const recipientName = document.getElementById('recipientName');
+
+    if (!recipientID || !recipientName) {
+        return false;
+    }
+
+    recipientID.value = personID;
+    recipientName.value = label;
+    recipientID.dispatchEvent(new Event('change', { bubbles: true }));
+
+    if (window.Alpine && typeof window.Alpine.$data === 'function') {
+        const page = window.Alpine.$data(document.body);
+        if (page && typeof page.modalOpen !== 'undefined') {
+            page.modalOpen = false;
+        }
+    }
+
+    return false;
+};

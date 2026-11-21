@@ -25,8 +25,10 @@ $openGroup = function (string $groupID) use ($session) {
     exit;
 };
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')
-    || !isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
+if (!schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $redirect('error0');
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -41,11 +43,16 @@ if ($categoryID === '' || $groupTarget === '') {
     $redirect('error1');
 }
 $category = $pdo->selectOne(
-    "SELECT categoryID, accessControl FROM message_category WHERE categoryID=:categoryID",
+    "SELECT categoryID, accessControl, groupMessages
+     FROM message_category
+     WHERE categoryID=:categoryID",
     ['categoryID' => $categoryID]
 );
 if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
     $redirect('error0');
+}
+if (!schoolCommunityGroupMessagesAllowed($category)) {
+    $redirect('error1');
 }
 
 if (str_starts_with($groupTarget, 'group:')) {
@@ -59,7 +66,7 @@ if (str_starts_with($groupTarget, 'group:')) {
 
 [$sourceType, $sourceID] = array_pad(explode(':', $groupTarget, 2), 2, '');
 $sources = schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
-if (!in_array($sourceType, ['formGroup', 'courseClass'], true)
+if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true)
     || empty($sourceID)
     || !array_key_exists($groupTarget, $sources)) {
     $redirect('error0');

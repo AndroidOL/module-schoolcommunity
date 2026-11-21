@@ -5,6 +5,7 @@ Copyright © 2010, Gibbon Foundation
 */
 
 use Gibbon\Forms\Form;
+use Gibbon\Tables\Action;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -12,7 +13,10 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Messages'), 'message_reading.php')
     ->add(schoolCommunityT('Send Message'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
+if (!schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $page->addError(schoolCommunityT('You do not have access to this page.'));
     return;
 }
@@ -28,14 +32,14 @@ if (empty($categories)) {
         $actionForm = Form::createBlank('schoolCommunityNoCategories');
         $actionForm->addHeaderAction('categories', schoolCommunityT('Manage Message Categories'))
             ->setURL('/modules/School Community/message_categorySetting.php')
-            ->setIcon('settings')
+            ->setIcon('config')
             ->displayLabel();
         $page->write($actionForm->getOutput());
     }
     return;
 }
 $category = $categoryID !== '' ? $pdo->selectOne(
-    "SELECT categoryID, categoryName, accessControl
+    "SELECT categoryID, categoryName, accessControl, groupMessages
      FROM message_category
      WHERE categoryID=:categoryID",
     ['categoryID' => $categoryID]
@@ -58,18 +62,26 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
     return;
 }
 
-$groupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
-$modeForm = Form::create('schoolCommunityMessageMode', $session->get('absoluteURL').'/index.php', 'get');
-$modeForm->addHiddenValue('q', '/modules/School Community/message_sending.php');
-$modeForm->addHiddenValue('categoryID', $categoryID);
-$modeForm->setTitle(schoolCommunityT('Message Mode'));
-$row = $modeForm->addRow();
-    $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
-    $row->addYesNo('groupMessage')->required()->selected($groupMode ? 'Y' : 'N');
-$row = $modeForm->addRow();
-    $row->addFooter();
-    $row->addSubmit(schoolCommunityT('Continue'));
-$page->write($modeForm->getOutput());
+$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($category);
+$requestedGroupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
+$groupMode = $groupMessagesEnabled && $requestedGroupMode;
+if ($requestedGroupMode && !$groupMessagesEnabled) {
+    $page->addError(schoolCommunityT('Group messaging is disabled for this category.'));
+}
+
+if ($groupMessagesEnabled) {
+    $modeForm = Form::create('schoolCommunityMessageMode', $session->get('absoluteURL').'/index.php', 'get');
+    $modeForm->addHiddenValue('q', '/modules/School Community/message_sending.php');
+    $modeForm->addHiddenValue('categoryID', $categoryID);
+    $modeForm->setTitle(schoolCommunityT('Message Mode'));
+    $row = $modeForm->addRow();
+        $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
+        $row->addYesNo('groupMessage')->required()->selected($groupMode ? 'Y' : 'N');
+    $row = $modeForm->addRow();
+        $row->addFooter();
+        $row->addSubmit(schoolCommunityT('Continue'));
+    $page->write($modeForm->getOutput());
+}
 
 if ($groupMode) {
     $targets = schoolCommunityGroupSendTargetOptions(
@@ -111,6 +123,7 @@ if (empty($people)) {
 $form = Form::create('schoolCommunityMessage', $session->get('absoluteURL').'/modules/School Community/message_sendingProcess.php', 'post');
 $form->addHiddenValue('address', $session->get('address'));
 $form->addHiddenValue('categoryID', $categoryID);
+$form->addHiddenValue('recipientID', '');
 $form->setTitle(schoolCommunityT('Send Message'));
 $form->setDescription(schoolCommunityT('Recipients are limited by the selected category. You may also send a private note to yourself.'));
 
@@ -128,8 +141,20 @@ $row = $form->addRow();
 
 $row = $form->addRow();
     $row->addLabel('recipientID', schoolCommunityT('Recipient'));
-    $row->addSelectPerson('recipientID')->fromArray($people)->required()->placeholder()
-        ->setAttribute('autocomplete', 'off');
+    $row->addTextField('recipientName')
+        ->readonly()
+        ->placeholder(schoolCommunityT('No recipient selected'));
+
+$recipientChooser = (new Action('chooseRecipient', schoolCommunityT('Choose Recipient')))
+    ->setURL('/modules/School Community/message_recipientChooser.php')
+    ->addParam('categoryID', $categoryID)
+    ->setIcon('users')
+    ->modalWindow(700, 620)
+    ->displayLabel();
+$row = $form->addRow();
+    $row->addLabel('recipientChooser', schoolCommunityT('Recipient Search'))
+        ->description(schoolCommunityT('Open a searchable recipient list filtered by this category.'));
+    $row->addContent($recipientChooser->getOutput());
 
 $row = $form->addRow();
     $column = $row->addColumn();

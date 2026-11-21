@@ -90,7 +90,7 @@ foreach ($members as $member) {
         $removeForm->addRow()->addSubmit(schoolCommunityT('Remove'))->setClass('small');
         $remove = $removeForm->getOutput();
     } elseif (!$isLinkedGroup) {
-        $remove = '<span class="schoolCommunityOwnerLabel">'.schoolCommunityT('Owner').'</span>';
+        $remove = schoolCommunityT('Owner');
     }
 
     $rows[] = $member + [

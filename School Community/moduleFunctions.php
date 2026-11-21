@@ -43,6 +43,21 @@ function schoolCommunityCategoryAllows($accessControl, $roleCategory): bool
     return $bit > 0 && (((int) $accessControl & $bit) === $bit);
 }
 
+function schoolCommunityGroupMessagesAllowed(array $category): bool
+{
+    return ($category['groupMessages'] ?? 'N') === 'Y';
+}
+
+function schoolCommunityYesNoLabel($value): string
+{
+    return $value === 'Y' ? schoolCommunityT('Enabled') : schoolCommunityT('Disabled');
+}
+
+function schoolCommunityMessagingAccessAllowed(bool $canSend, bool $canRead): bool
+{
+    return $canSend && $canRead;
+}
+
 function schoolCommunitySamePersonID($left, $right): bool
 {
     if (!is_scalar($left) || !is_scalar($right)
@@ -77,17 +92,20 @@ function schoolCommunityPermissionLabel($accessControl): string
     return implode(', ', $labels);
 }
 
-function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = false): array
+function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = false, bool $groupMessagesOnly = false): array
 {
     $result = $pdo->select(
-        "SELECT categoryID, categoryName, accessControl
+        "SELECT categoryID, categoryName, accessControl, groupMessages
          FROM message_category
          ORDER BY categoryName"
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $options = [];
     foreach ($result as $category) {
-        if ($includeAll || schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
+        if (!$groupMessagesOnly || schoolCommunityGroupMessagesAllowed($category)) {
+            if (!$includeAll && !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
+                continue;
+            }
             $options[(string) $category['categoryID']] = $category['categoryName'];
         }
     }
@@ -134,6 +152,7 @@ function schoolCommunityGroupSourceLabel($sourceType): string
         'custom'     => schoolCommunityT('Custom Group'),
         'formGroup'  => schoolCommunityT('Administrative Class'),
         'courseClass'=> schoolCommunityT('Course Class'),
+        'gibbonGroup'=> schoolCommunityT('Gibbon Group'),
     ][$sourceType] ?? schoolCommunityT('Custom Group');
 }
 
@@ -164,6 +183,22 @@ function schoolCommunityLinkedSourceOptions($pdo, $gibbonPersonID, $gibbonSchool
         ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
     )->fetchAll(PDO::FETCH_ASSOC);
 
+    $gibbonGroups = $pdo->select(
+        "SELECT gibbonGroup.gibbonGroupID, gibbonGroup.name
+         FROM gibbonGroup
+         WHERE gibbonGroup.gibbonSchoolYearID=:gibbonSchoolYearID
+           AND (
+               gibbonGroup.gibbonPersonIDOwner=:gibbonPersonID
+               OR EXISTS (
+                   SELECT 1 FROM gibbonGroupPerson
+                   WHERE gibbonGroupPerson.gibbonGroupID=gibbonGroup.gibbonGroupID
+                     AND gibbonGroupPerson.gibbonPersonID=:gibbonPersonID
+               )
+           )
+         ORDER BY gibbonGroup.name",
+        ['gibbonSchoolYearID' => $gibbonSchoolYearID, 'gibbonPersonID' => $gibbonPersonID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
     $options = [];
     foreach ($formGroups as $formGroup) {
         $options['formGroup:'.$formGroup['gibbonFormGroupID']] = sprintf(
@@ -176,6 +211,12 @@ function schoolCommunityLinkedSourceOptions($pdo, $gibbonPersonID, $gibbonSchool
             schoolCommunityT('Course Class: %s.%s'),
             $courseClass['courseName'],
             $courseClass['className']
+        );
+    }
+    foreach ($gibbonGroups as $group) {
+        $options['gibbonGroup:'.$group['gibbonGroupID']] = sprintf(
+            schoolCommunityT('Gibbon Group: %s'),
+            $group['name']
         );
     }
 
@@ -233,11 +274,70 @@ function schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID): array
         )->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    if ($sourceType === 'gibbonGroup') {
+        return $pdo->select(
+            "SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                    gibbonPerson.surname, gibbonPerson.status, gibbonRole.category AS roleCategory
+             FROM gibbonGroup
+             JOIN gibbonSchoolYear
+               ON gibbonSchoolYear.gibbonSchoolYearID=gibbonGroup.gibbonSchoolYearID
+              AND gibbonSchoolYear.status='Current'
+             JOIN gibbonPerson
+               ON gibbonPerson.gibbonPersonID=gibbonGroup.gibbonPersonIDOwner
+             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+             WHERE gibbonGroup.gibbonGroupID=:sourceID
+               AND gibbonPerson.status='Full'
+               AND (gibbonPerson.dateStart IS NULL OR gibbonPerson.dateStart<=CURRENT_DATE)
+               AND (gibbonPerson.dateEnd IS NULL OR gibbonPerson.dateEnd>=CURRENT_DATE)
+             UNION
+             SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                    gibbonPerson.surname, gibbonPerson.status, gibbonRole.category AS roleCategory
+             FROM gibbonGroup
+             JOIN gibbonSchoolYear
+               ON gibbonSchoolYear.gibbonSchoolYearID=gibbonGroup.gibbonSchoolYearID
+              AND gibbonSchoolYear.status='Current'
+             JOIN gibbonGroupPerson ON gibbonGroupPerson.gibbonGroupID=gibbonGroup.gibbonGroupID
+             JOIN gibbonPerson ON gibbonPerson.gibbonPersonID=gibbonGroupPerson.gibbonPersonID
+             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+             WHERE gibbonGroup.gibbonGroupID=:sourceID
+               AND gibbonPerson.status='Full'
+               AND (gibbonPerson.dateStart IS NULL OR gibbonPerson.dateStart<=CURRENT_DATE)
+               AND (gibbonPerson.dateEnd IS NULL OR gibbonPerson.dateEnd>=CURRENT_DATE)
+             ORDER BY gibbonPerson.surname, gibbonPerson.preferredName",
+            ['sourceID' => $sourceID]
+        )->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     return [];
 }
 
 function schoolCommunityLinkedSourceAllowsPerson($pdo, $sourceType, $sourceID, $gibbonPersonID): bool
 {
+    if ($sourceType === 'gibbonGroup') {
+        return !empty($pdo->selectOne(
+            "SELECT gibbonGroup.gibbonGroupID
+             FROM gibbonGroup
+             JOIN gibbonSchoolYear
+               ON gibbonSchoolYear.gibbonSchoolYearID=gibbonGroup.gibbonSchoolYearID
+              AND gibbonSchoolYear.status='Current'
+             JOIN gibbonPerson AS currentPerson
+               ON currentPerson.gibbonPersonID=:gibbonPersonID
+              AND currentPerson.status='Full'
+              AND (currentPerson.dateStart IS NULL OR currentPerson.dateStart<=CURRENT_DATE)
+              AND (currentPerson.dateEnd IS NULL OR currentPerson.dateEnd>=CURRENT_DATE)
+             WHERE gibbonGroup.gibbonGroupID=:sourceID
+               AND (
+                   gibbonGroup.gibbonPersonIDOwner=:gibbonPersonID
+                   OR EXISTS (
+                       SELECT 1 FROM gibbonGroupPerson
+                       WHERE gibbonGroupPerson.gibbonGroupID=gibbonGroup.gibbonGroupID
+                         AND gibbonGroupPerson.gibbonPersonID=:gibbonPersonID
+                   )
+               )",
+            ['sourceID' => $sourceID, 'gibbonPersonID' => $gibbonPersonID]
+        ));
+    }
+
     foreach (schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID) as $member) {
         if (schoolCommunitySamePersonID($member['gibbonPersonID'], $gibbonPersonID)) {
             return true;
@@ -251,7 +351,7 @@ function schoolCommunitySyncLinkedGroupMembers($pdo, array $group): void
 {
     $sourceType = $group['sourceType'] ?? 'custom';
     $sourceID = $group['sourceID'] ?? null;
-    if (!in_array($sourceType, ['formGroup', 'courseClass'], true) || empty($sourceID)) {
+    if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true) || empty($sourceID)) {
         return;
     }
 
@@ -307,6 +407,7 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
 {
     $group = $pdo->selectOne(
         "SELECT message_group.*, message_category.categoryName, message_category.accessControl,
+                message_category.groupMessages,
                 member.gibbonPersonID AS groupMemberPersonID,
                 owner.title AS ownerTitle, owner.preferredName AS ownerPreferredName,
                 owner.surname AS ownerSurname, ownerRole.category AS ownerRoleCategory
@@ -346,7 +447,8 @@ function schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $gibbonPer
     $message = $pdo->selectOne(
         "SELECT message_group_message.*, message_group.categoryID, message_group.groupName,
                 message_group.ownerID, message_group.sourceType, message_group.sourceID,
-                message_category.categoryName, message_category.accessControl
+                message_category.categoryName, message_category.accessControl,
+                message_category.groupMessages
          FROM message_group_message
          JOIN message_group ON message_group.groupID=message_group_message.groupID
          JOIN message_category ON message_category.categoryID=message_group.categoryID
@@ -608,10 +710,14 @@ function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
         $otherName = $isSent
             ? trim($message['receiverPreferredName'].' '.$message['receiverSurname'])
             : trim($message['senderPreferredName'].' '.$message['senderSurname']);
+        $senderName = trim($message['senderTitle'].' '.$message['senderPreferredName'].' '.$message['senderSurname']);
+        $receiverName = trim($message['receiverTitle'].' '.$message['receiverPreferredName'].' '.$message['receiverSurname']);
 
         $rows[] = $message + [
             'direction'     => $isSelf ? schoolCommunityT('Sent / Received') : ($isSent ? schoolCommunityT('Sent') : schoolCommunityT('Received')),
             'otherPerson'   => trim($otherTitle.' '.$otherName),
+            'senderName'    => $senderName,
+            'receiverName'  => $receiverName,
             'priorityLabel' => schoolCommunityPriorityLabel($message['priority']),
             'isUnread'      => (!$isSent || $isSelf) && empty($message['readTimestamp']),
             'preview'       => schoolCommunityMessagePreview($message['body'] ?? ''),

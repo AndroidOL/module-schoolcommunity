@@ -6,7 +6,8 @@ $count = 0;
 
 // v1.4.0
 $sql[$count][0] = "1.4.0";
-$sql[$count][1] = "ALTER TABLE message_thread_state ADD COLUMN deletedAt TIMESTAMP NULL DEFAULT NULL AFTER archivedAt;end";
+$sql[$count][1] = "ALTER TABLE message_thread_state ADD COLUMN deletedAt TIMESTAMP NULL DEFAULT NULL AFTER archivedAt;end
+ALTER TABLE message_category ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y' AFTER accessControl;end";
 $count++;
 
 // v1.3.0

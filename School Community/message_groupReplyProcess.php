@@ -38,7 +38,7 @@ if ($groupMessageID === '' || $body === '' || mb_strlen(strip_tags($body)) > 500
 }
 
 $message = schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $currentPersonID, $roleCategory);
-if (empty($message)) {
+if (empty($message) || !schoolCommunityGroupMessagesAllowed($message)) {
     $redirect('error0');
 }
 $URL .= '&groupID='.urlencode($message['groupID']);

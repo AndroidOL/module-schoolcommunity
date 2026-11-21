@@ -3,17 +3,25 @@ CHANGELOG
 
 v1.4.0
 ------
+- Add a per-category Group Messages switch, defaulting to enabled for existing
+  and new categories, and enforce it in group creation and every send path.
 - Add a Group Message Y/N mode to the normal send-message workflow.
 - Send through an existing group or choose an eligible administrative/course
-  class and create its controlled group when needed.
-- Disable browser autocomplete on the direct recipient picker.
+  class or official current-year Gibbon group and create its controlled group
+  when needed.
+- Replace the direct recipient field with a searchable modal recipient chooser
+  that does not trigger browser autocomplete.
 - Show message previews and standard Open/Archive/Delete actions in message lists.
 - Add per-user Trash and restore for direct and group conversations without
   deleting shared messages or audit data.
 - Give group conversations the same Active, Archived and Trash mailbox filters.
 - Preview every resolved group recipient in a standard modal and block sends
   when the list is empty.
-- Compact message metadata and combine detail actions into one standard form.
+- Rebuild direct and group conversation details with official Gibbon form,
+  typography, action and icon components.
+- Require both Send Message and View Messages access before opening or
+  processing any send workflow, so a stored message never lands on an
+  unauthorised detail page.
 
 v1.3.1
 ------

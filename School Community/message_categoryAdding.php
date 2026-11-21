@@ -25,6 +25,11 @@ $row = $form->addRow();
     $row->addLabel('categoryName', schoolCommunityT('Name'));
     $row->addTextField('categoryName')->required()->maxLength(100);
 
+$row = $form->addRow();
+    $row->addLabel('groupMessages', schoolCommunityT('Group Messages'))
+        ->description(schoolCommunityT('Allow group messaging in this category.'));
+    $row->addYesNo('groupMessages')->required()->selected('Y');
+
 foreach (['staff' => 'Staff', 'student' => 'Student', 'parent' => 'Parent', 'other' => 'Other'] as $key => $label) {
     $row = $form->addRow();
         $row->addLabel($key, schoolCommunityT($label).' '.schoolCommunityT('Visible'));

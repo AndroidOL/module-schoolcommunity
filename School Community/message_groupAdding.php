@@ -12,8 +12,10 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Message Groups'), 'message_groups.php')
     ->add(schoolCommunityT('Create Group'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')
-    || !isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
+if (!schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $page->addError(schoolCommunityT('You do not have access to this page.'));
     return;
 }
@@ -21,9 +23,9 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
-$categories = schoolCommunityCategoryOptions($pdo, $roleCategory);
+$categories = schoolCommunityCategoryOptions($pdo, $roleCategory, false, true);
 if (empty($categories)) {
-    $page->addError(schoolCommunityT('No message categories are available for your role. Contact an administrator.'));
+    $page->addError(schoolCommunityT('No group-enabled message categories are available for your role. Contact an administrator.'));
     return;
 }
 

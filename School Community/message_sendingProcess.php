@@ -17,7 +17,10 @@ $redirect = function (string $return) use ($URL) {
     exit;
 };
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
+if (!schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $redirect('error0');
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {

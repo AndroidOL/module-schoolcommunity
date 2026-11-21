@@ -51,6 +51,7 @@ $moduleTables[] = 'CREATE TABLE `message_category` (
     `categoryName` VARCHAR(100) NOT NULL,
     `userID` INT(10) UNSIGNED ZEROFILL NOT NULL,
     `accessControl` TINYINT UNSIGNED NOT NULL,
+    `groupMessages` ENUM(\'Y\', \'N\') NOT NULL DEFAULT \'Y\',
     `createTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updateTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`categoryID`),
@@ -187,7 +188,7 @@ $actionRows[] = [
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
     'category'                  => 'Messages', // Optional: subgroups for the right hand side module menu
     'description'               => 'Send a categorised message to another school user.', // Text description
-    'URLList'                   => 'message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php', // List of pages included in this action
+    'URLList'                   => 'message_sending.php, message_sendingProcess.php, message_recipientChooser.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php', // List of pages included in this action
     'entryURL'                  => 'message_sending.php', // The landing action for the page.
     'entrySidebar'              => 'Y', // Whether or not there's a sidebar on entry to the action
     'menuShow'                  => 'Y', // Whether or not this action shows up in menus or if it's hidden

@@ -32,13 +32,17 @@ $page->return->addReturns([
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the group message.'),
     'error3'   => schoolCommunityT('The recipient list changed. Review the updated list and send again.'),
-    'error4'   => schoolCommunityT('A message group already exists for this class.'),
+    'error4'   => schoolCommunityT('A message group already exists for this source.'),
     'error9'   => schoolCommunityT('Your session expired. Refresh the page and try again.'),
 ]);
 
 $groupID = is_scalar($_GET['groupID'] ?? null) ? trim((string) $_GET['groupID']) : '';
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$canSend = schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+);
 $group = $groupID !== '' ? schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory) : null;
 
 if (empty($group)) {
@@ -49,47 +53,77 @@ if (empty($group)) {
 $threadState = schoolCommunityThreadState($pdo, 'group', $groupID, $currentPersonID);
 $isArchived = !empty($threadState['archivedAt']);
 $isDeleted = !empty($threadState['deletedAt']);
+$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($group);
 $threadActions = Form::create(
-    'schoolCommunityGroupActions',
+    'schoolCommunityGroupThread',
     $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
     'post'
 );
-$threadActions->setClass('noIntBorder w-full');
+$threadActions->setTitle(htmlPrep($group['groupName']));
+$threadActions->setDescription(schoolCommunityT('Group conversation'));
 $threadActions->addHiddenValue('threadType', 'group');
 $threadActions->addHiddenValue('threadID', $groupID);
+
+$ownerName = Format::name(
+    $group['ownerTitle'],
+    $group['ownerPreferredName'],
+    $group['ownerSurname'],
+    $group['ownerRoleCategory'] ?? 'Staff',
+    true
+);
+
+$row = $threadActions->addRow();
+    $row->addLabel('category', schoolCommunityT('Category'));
+    $row->addContent(htmlPrep($group['categoryName']));
+$row = $threadActions->addRow();
+    $row->addLabel('source', schoolCommunityT('Source'));
+    $row->addContent(htmlPrep(schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')));
+$row = $threadActions->addRow();
+    $row->addLabel('owner', schoolCommunityT('Owner'));
+    $row->addContent(htmlPrep($ownerName));
+$row = $threadActions->addRow();
+    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
+    $row->addContent($isDeleted
+        ? schoolCommunityT('Trash')
+        : ($isArchived ? schoolCommunityT('Archived') : schoolCommunityT('Active')));
+
+$isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
+if ($isOwner) {
+    $threadActions->addHeaderAction('members', schoolCommunityT('Manage Members'))
+        ->setURL('/modules/School Community/message_groupMembers.php')
+        ->addParam('groupID', $groupID)
+        ->setIcon('users')
+        ->displayLabel();
+}
+
 $row = $threadActions->addRow();
     $row->addFooter();
     if (!$isDeleted) {
         $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
             ->setName('action')
-            ->setValue($isArchived ? 'restore' : 'archive')
-            ->setColor('gray');
+            ->setAttribute('value', $isArchived ? 'restore' : 'archive')
+            ->setColor('gray')
+            ->setType('quickSubmit')
+            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive');
     }
 if (!$isDeleted) {
     $row->addSubmit(schoolCommunityT('Mark Unread'))
         ->setName('action')
-        ->setValue('unread')
-        ->setColor('gray');
+        ->setAttribute('value', 'unread')
+        ->setColor('gray')
+        ->setType('quickSubmit')
+        ->setIcon('solid', 'refresh');
 }
 $deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
     ->setName('action')
-    ->setValue($isDeleted ? 'restoreDelete' : 'delete')
-    ->setColor('gray');
+    ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
+    ->setColor($isDeleted ? 'gray' : 'red')
+    ->setType('quickSubmit')
+    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete');
 if (!$isDeleted) {
-    $deleteAction->setAttribute('onclick', 'return confirm("'.schoolCommunityT('Move this group to Trash?').'")');
+    $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this group to Trash?')).')');
 }
 $page->write($threadActions->getOutput());
-
-$isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
-if ($isOwner) {
-    $actionForm = Form::createBlank('schoolCommunityGroupActions');
-    $actionForm->addHeaderAction('members', schoolCommunityT('Manage Members'))
-        ->setURL('/modules/School Community/message_groupMembers.php')
-        ->addParam('groupID', $groupID)
-        ->setIcon('group')
-        ->displayLabel();
-    $page->write($actionForm->getOutput());
-}
 
 $pdo->statement(
     "INSERT IGNORE INTO message_group_read_receipt (groupMessageID, gibbonPersonID)
@@ -150,29 +184,8 @@ if (!empty($messages)) {
     }
 }
 
-$ownerName = Format::name(
-    $group['ownerTitle'],
-    $group['ownerPreferredName'],
-    $group['ownerSurname'],
-    $group['ownerRoleCategory'] ?? 'Staff',
-    true
-);
-$page->write('<div class="mb-6">'
-    .'<h2 class="mb-3 text-lg font-semibold text-gray-900">'.htmlPrep($group['groupName']).'</h2>'
-    .'<dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm text-gray-600 sm:grid-cols-2 lg:grid-cols-3">'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Category').'</dt><dd>'.htmlPrep($group['categoryName']).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Source').'</dt><dd>'.htmlPrep(schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Owner').'</dt><dd>'.htmlPrep($ownerName).'</dd></div>'
-    .($isDeleted
-        ? '<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Mailbox').'</dt><dd>'.schoolCommunityT('Trash').'</dd></div>'
-        : ($isArchived
-            ? '<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Mailbox').'</dt><dd>'.schoolCommunityT('Archived').'</dd></div>'
-            : ''))
-    .'</dl>'
-    .'</div>');
-
 if (empty($messages)) {
-    $page->write('<p class="schoolCommunityEmpty">'.schoolCommunityT('No group messages yet. Start the conversation below.').'</p>');
+    $page->write('<p class="mb-6">'.schoolCommunityT('No group messages yet. Start the conversation below.').'</p>');
 }
 
 foreach ($messages as $message) {
@@ -189,49 +202,74 @@ foreach ($messages as $message) {
         ? '<span>'.sprintf(schoolCommunityT('Read by %1$d of %2$d members'), $readCount, $memberCount).'</span>'
         : '';
 
-    $page->write('<article class="schoolCommunityMessage" id="group-message-'.htmlPrep($message['groupMessageID']).'">'
-        .'<h3>'.htmlPrep($message['title']).'</h3>'
-        .'<div class="schoolCommunityMessageMeta">'
-        .'<strong>'.htmlPrep($senderName).'</strong>'
-        .'<span>'.Format::dateTime($message['sendTimestamp']).'</span>'
-        .$readSummary
-        .'</div>'
-        .'<div class="schoolCommunityMessageBody innerContent">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>');
+    $messageForm = Form::create(
+        'schoolCommunityGroupMessage'.$message['groupMessageID'],
+        '',
+        'get'
+    );
+    $messageForm->setID('group-message-'.htmlPrep($message['groupMessageID']));
+    $messageForm->setTitle(htmlPrep($message['title']));
+    $messageForm->setDescription(schoolCommunityT('Group message'));
+    $row = $messageForm->addRow();
+        $row->addLabel('sender', schoolCommunityT('From'));
+        $row->addContent(htmlPrep($senderName));
+    $row = $messageForm->addRow();
+        $row->addLabel('sent', schoolCommunityT('Sent'));
+        $row->addContent(Format::dateTime($message['sendTimestamp']));
+    if (!empty($readSummary)) {
+        $row = $messageForm->addRow();
+            $row->addLabel('readReceipts', schoolCommunityT('Read Receipts'));
+            $row->addContent($readSummary);
+    }
+    $row = $messageForm->addRow();
+        $column = $row->addColumn();
+        $column->addLabel('body', schoolCommunityT('Message'));
+        $column->addContent('<div class="innerContent">'
+            .schoolCommunityBodyForDisplay($container, $message['body'])
+            .'</div>');
 
     if (!empty($repliesByMessage[(string) $message['groupMessageID']])) {
-    $page->write('<div class="schoolCommunityGroupReplies"><h4>'.schoolCommunityT('Replies').'</h4>');
         foreach ($repliesByMessage[(string) $message['groupMessageID']] as $reply) {
             $replyName = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], $reply['roleCategory'], true);
-            $page->write('<div class="schoolCommunityReply">'
-                .'<div class="schoolCommunityMessageMeta"><strong>'.htmlPrep($replyName).'</strong> '
-                .'<span>'.Format::dateTime($reply['sendTimestamp']).'</span></div>'
-                .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $reply['body']).'</div>'
-                .'</div>');
+            $row = $messageForm->addRow();
+                $row->addLabel('reply'.$reply['groupReplyID'], $replyName);
+                $row->addContent('<div class="text-xs text-gray-600">'.Format::dateTime($reply['sendTimestamp']).'</div>'
+                    .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $reply['body']).'</div>');
         }
-        $page->write('</div>');
     }
+    $page->write($messageForm->getOutput());
 
-    $replyForm = Form::create(
-        'schoolCommunityGroupReply'.$message['groupMessageID'],
-        $session->get('absoluteURL').'/modules/School Community/message_groupReplyProcess.php',
-        'post'
-    );
-    $replyForm->addHiddenValue('groupMessageID', $message['groupMessageID']);
-    $row = $replyForm->addRow();
-        $column = $row->addColumn();
-        $column->addLabel('body', schoolCommunityT('Reply'));
-        $column->addTextArea('body')->setRows(3)->required()->maxLength(5000);
-    $row = $replyForm->addRow();
-        $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Post Reply'));
-    if (!$isDeleted) {
-        $page->write('<details class="schoolCommunityReplyComposer"><summary>'.schoolCommunityT('Reply').'</summary>'.$replyForm->getOutput().'</details>');
+    if (!$isDeleted && $groupMessagesEnabled) {
+        $replyForm = Form::create(
+            'schoolCommunityGroupReply'.$message['groupMessageID'],
+            $session->get('absoluteURL').'/modules/School Community/message_groupReplyProcess.php',
+            'post'
+        );
+        $replyForm->addHiddenValue('groupMessageID', $message['groupMessageID']);
+        $replyForm->setTitle(schoolCommunityT('Reply'));
+        $row = $replyForm->addRow();
+            $column = $row->addColumn();
+            $column->addLabel('body', schoolCommunityT('Reply'));
+            $column->addTextArea('body')->setRows(3)->required()->maxLength(5000);
+        $row = $replyForm->addRow();
+            $row->addFooter();
+            $row->addSubmit(schoolCommunityT('Post Reply'))
+                ->setType('quickSubmit')
+                ->setIcon('solid', 'chat-bubble-text');
+        $page->write($replyForm->getOutput());
     }
-    $page->write('</article>');
 }
 
 if ($isDeleted) {
     $page->write('<p class="text-sm text-gray-600">'.schoolCommunityT('Restore this group from Trash before sending another message.').'</p>');
+    return;
+}
+if (!$groupMessagesEnabled) {
+    $page->addError(schoolCommunityT('Group messaging is disabled for this category. Existing messages remain available to read.'));
+    return;
+}
+if (!$canSend) {
+    $page->addError(schoolCommunityT('You do not have permission to send messages.'));
     return;
 }
 
@@ -258,18 +296,9 @@ if (empty($audience['eligible'])) {
 $recipientPreview = (new Action('view', schoolCommunityT('View Recipients')))
     ->setURL('/modules/School Community/message_groupRecipients.php')
     ->addParam('groupID', $groupID)
-    ->setIcon('group')
+    ->setIcon('users')
     ->modalWindow(700, 520)
     ->displayLabel();
-$audienceSummary = '<div class="text-sm text-gray-700">'
-    .'<strong>'.sprintf(schoolCommunityT('%d recipients'), count($audience['eligible'])).'</strong>'
-    .'</div>'
-    .'<div class="mt-2">'.$recipientPreview->getOutput($group).'</div>'
-    .'<p class="mt-2 text-sm text-gray-600">'.sprintf(
-    schoolCommunityT('%d group members will be excluded because their account is inactive or their role is not allowed by this category.'),
-    count($audience['excluded'])
-).'</p>';
-
 $form = Form::create('schoolCommunityGroupMessage', $session->get('absoluteURL').'/modules/School Community/message_groupMessageProcess.php', 'post');
 $form->addHiddenValue('groupID', $groupID);
 $form->addHiddenValue('expectedRecipientSignature', $audienceSignature);
@@ -279,7 +308,17 @@ $form->setDescription(schoolCommunityT('Review the recipient preview before send
 
 $row = $form->addRow();
     $row->addLabel('audience', schoolCommunityT('Recipients'));
-    $row->addContent($audienceSummary);
+    $row->addContent(sprintf(schoolCommunityT('%d recipients'), count($audience['eligible'])));
+$row = $form->addRow();
+    $row->addLabel('preview', schoolCommunityT('Recipient Preview'));
+    $row->addContent($recipientPreview->getOutput($group));
+if (!empty($audience['excluded'])) {
+    $row = $form->addRow();
+        $row->addAlert(sprintf(
+            schoolCommunityT('%d group members will be excluded because their account is inactive or their role is not allowed by this category.'),
+            count($audience['excluded'])
+        ), 'warning');
+}
 
 $row = $form->addRow();
     $row->addLabel('title', schoolCommunityT('Subject'));

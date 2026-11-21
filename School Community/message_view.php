@@ -56,54 +56,76 @@ $threadState = schoolCommunityThreadState($pdo, 'direct', $messageID, $currentPe
 $isArchived = !empty($threadState['archivedAt']);
 $isDeleted = !empty($threadState['deletedAt']);
 
-$page->write('<div class="mb-6">'
-    .'<h2 class="mb-3 text-lg font-semibold text-gray-900">'.htmlPrep($message['title']).'</h2>'
-    .'<dl class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm text-gray-600 sm:grid-cols-2 lg:grid-cols-3">'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('From').'</dt><dd>'.htmlPrep($senderName).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('To').'</dt><dd>'.htmlPrep($receiverName).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Category').'</dt><dd>'.htmlPrep($message['categoryName']).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Priority').'</dt><dd>'.htmlPrep(schoolCommunityPriorityLabel($message['priority'])).'</dd></div>'
-    .'<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Sent').'</dt><dd>'.Format::dateTime($message['sendTimestamp']).'</dd></div>'
-    .(schoolCommunitySamePersonID($message['senderID'], $currentPersonID) && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)
-        ? '<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Visibility').'</dt><dd>'.schoolCommunityT('Visible only to you').'</dd></div>'
-        : '')
-    .($isDeleted
-        ? '<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Mailbox').'</dt><dd>'.schoolCommunityT('Trash').'</dd></div>'
-        : ($isArchived
-            ? '<div><dt class="font-semibold text-gray-800">'.schoolCommunityT('Mailbox').'</dt><dd>'.schoolCommunityT('Archived').'</dd></div>'
-            : ''))
-    .'</dl>'
-    .'<div class="schoolCommunityMessageBody mt-5 text-gray-800">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>'
-    .'</div>');
-
 $threadActions = Form::create(
-    'schoolCommunityMessageActions',
+    'schoolCommunityMessage',
     $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
     'post'
 );
-$threadActions->setClass('noIntBorder w-full');
+$threadActions->setTitle(htmlPrep($message['title']));
+$threadActions->setDescription(schoolCommunityT('Direct message'));
 $threadActions->addHiddenValue('threadType', 'direct');
 $threadActions->addHiddenValue('threadID', $messageID);
+
+$row = $threadActions->addRow();
+    $row->addLabel('sender', schoolCommunityT('From'));
+    $row->addContent(htmlPrep($senderName));
+$row = $threadActions->addRow();
+    $row->addLabel('receiver', schoolCommunityT('To'));
+    $row->addContent(htmlPrep($receiverName));
+$row = $threadActions->addRow();
+    $row->addLabel('category', schoolCommunityT('Category'));
+    $row->addContent(htmlPrep($message['categoryName']));
+$row = $threadActions->addRow();
+    $row->addLabel('priority', schoolCommunityT('Priority'));
+    $row->addContent(htmlPrep(schoolCommunityPriorityLabel($message['priority'])));
+$row = $threadActions->addRow();
+    $row->addLabel('sent', schoolCommunityT('Sent'));
+    $row->addContent(Format::dateTime($message['sendTimestamp']));
+if (schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
+    && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
+    $row = $threadActions->addRow();
+        $row->addLabel('visibility', schoolCommunityT('Visibility'));
+        $row->addContent(schoolCommunityT('Visible only to you'));
+}
+$row = $threadActions->addRow();
+    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
+    $row->addContent($isDeleted
+        ? schoolCommunityT('Trash')
+        : ($isArchived ? schoolCommunityT('Archived') : schoolCommunityT('Active')));
+
+$row = $threadActions->addRow();
+    $column = $row->addColumn();
+    $column->addLabel('body', schoolCommunityT('Message'));
+    $column->addContent('<div class="innerContent">'
+        .schoolCommunityBodyForDisplay($container, $message['body'])
+        .'</div>');
+
 $row = $threadActions->addRow();
     $row->addFooter();
     if (!$isDeleted) {
         $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
             ->setName('action')
-            ->setValue($isArchived ? 'restore' : 'archive')
-            ->setColor('gray');
+            ->setAttribute('value', $isArchived ? 'restore' : 'archive')
+            ->setColor('gray')
+            ->setType('quickSubmit')
+            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive');
     }
 if (!$isDeleted && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
     $row->addSubmit(schoolCommunityT('Mark Unread'))
         ->setName('action')
-        ->setValue('unread')
-        ->setColor('gray');
+        ->setAttribute('value', 'unread')
+        ->setColor('gray')
+        ->setType('quickSubmit')
+        ->setIcon('solid', 'refresh');
 }
 $deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
     ->setName('action')
-    ->setValue($isDeleted ? 'restoreDelete' : 'delete')
-    ->setColor('gray');
+    ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
+    ->setColor($isDeleted ? 'gray' : 'red')
+    ->setType('quickSubmit')
+    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete');
 if (!$isDeleted) {
-    $deleteAction->setAttribute('onclick', 'return confirm("'.schoolCommunityT('Move this message to Trash?').'")');
+    $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this message to Trash?')).')');
 }
 $page->write($threadActions->getOutput());
 
@@ -117,15 +139,16 @@ $replies = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($replies)) {
-    $page->write('<h3>'.schoolCommunityT('Replies').'</h3>');
+    $replyList = Form::create('schoolCommunityReplies', '', 'get');
+    $replyList->setTitle(schoolCommunityT('Replies'));
     foreach ($replies as $reply) {
         $replyName = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], 'Staff');
-        $page->write('<div class="schoolCommunityReply">'
-            .'<div class="schoolCommunityMessageMeta"><strong>'.htmlPrep($replyName).'</strong> '
-            .'<span>'.Format::dateTime($reply['sendTimestamp']).'</span></div>'
-            .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $reply['body']).'</div>'
-            .'</div>');
+        $row = $replyList->addRow();
+            $row->addLabel('reply'.$reply['replyID'], $replyName);
+            $row->addContent('<div class="text-xs text-gray-600">'.Format::dateTime($reply['sendTimestamp']).'</div>'
+                .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $reply['body']).'</div>');
     }
+    $page->write($replyList->getOutput());
 }
 
 if ($isDeleted) {
@@ -137,10 +160,12 @@ if ($isDeleted) {
     $row = $form->addRow();
         $column = $row->addColumn();
         $column->addLabel('body', schoolCommunityT('Reply'));
-        $column->addEditor('body', $guid)->setRows(3)->required();
+        $column->addTextArea('body')->setRows(3)->required()->maxLength(5000);
     $row = $form->addRow();
         $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Post Reply'));
+        $row->addSubmit(schoolCommunityT('Post Reply'))
+            ->setType('quickSubmit')
+            ->setIcon('solid', 'chat-bubble-text');
 
     $page->write($form->getOutput());
 }

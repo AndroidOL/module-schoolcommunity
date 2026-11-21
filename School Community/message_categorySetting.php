@@ -48,7 +48,7 @@ if ($search !== '') {
     $params['search'] = '%'.$search.'%';
 }
 $categories = $pdo->select(
-    "SELECT categoryID, categoryName, accessControl, createTime, updateTime
+    "SELECT categoryID, categoryName, accessControl, groupMessages, createTime, updateTime
      FROM message_category
      {$where}
      ORDER BY categoryName",
@@ -57,6 +57,7 @@ $categories = $pdo->select(
 
 foreach ($categories as &$category) {
     $category['permissions'] = schoolCommunityPermissionLabel($category['accessControl']);
+    $category['groupMessagesLabel'] = schoolCommunityYesNoLabel($category['groupMessages']);
 }
 unset($category);
 
@@ -65,6 +66,7 @@ $table->setTitle(schoolCommunityT('Message Categories'));
 $table->setDescription(schoolCommunityT('Categories control which role groups can send messages in each category.'));
 $table->addColumn('categoryName', schoolCommunityT('Name'));
 $table->addColumn('permissions', schoolCommunityT('Visible To'));
+$table->addColumn('groupMessagesLabel', schoolCommunityT('Group Messages'));
 $table->addColumn('updateTime', schoolCommunityT('Updated'))->format(function ($category) {
     return Format::dateTime($category['updateTime']);
 });

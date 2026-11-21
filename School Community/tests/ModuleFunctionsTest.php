@@ -33,6 +33,51 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertFalse(\schoolCommunityCategoryAllows($value, 'Other'));
         }
 
+        public function testGroupMessagesAreEnabledOnlyByExplicitYes()
+        {
+            $this->assertTrue(\schoolCommunityGroupMessagesAllowed(['groupMessages' => 'Y']));
+            $this->assertFalse(\schoolCommunityGroupMessagesAllowed(['groupMessages' => 'N']));
+            $this->assertFalse(\schoolCommunityGroupMessagesAllowed([]));
+            $this->assertSame('Enabled', \schoolCommunityYesNoLabel('Y'));
+            $this->assertSame('Disabled', \schoolCommunityYesNoLabel('N'));
+        }
+
+        public function testMessagingRequiresBothSendAndReadAccess()
+        {
+            $this->assertTrue(\schoolCommunityMessagingAccessAllowed(true, true));
+            $this->assertFalse(\schoolCommunityMessagingAccessAllowed(true, false));
+            $this->assertFalse(\schoolCommunityMessagingAccessAllowed(false, true));
+            $this->assertFalse(\schoolCommunityMessagingAccessAllowed(false, false));
+        }
+
+        public function testGroupCategoryOptionsExcludeDisabledAndIneligibleCategories()
+        {
+            $pdo = new class {
+                public function select($query)
+                {
+                    return new class {
+                        public function fetchAll()
+                        {
+                            return [
+                                ['categoryID' => '1', 'categoryName' => 'Staff group', 'accessControl' => 8, 'groupMessages' => 'Y'],
+                                ['categoryID' => '2', 'categoryName' => 'Staff direct', 'accessControl' => 8, 'groupMessages' => 'N'],
+                                ['categoryID' => '3', 'categoryName' => 'Student group', 'accessControl' => 4, 'groupMessages' => 'Y'],
+                            ];
+                        }
+                    };
+                }
+            };
+
+            $this->assertSame(
+                ['1' => 'Staff group', '2' => 'Staff direct'],
+                \schoolCommunityCategoryOptions($pdo, 'Staff')
+            );
+            $this->assertSame(
+                ['1' => 'Staff group'],
+                \schoolCommunityCategoryOptions($pdo, 'Staff', false, true)
+            );
+        }
+
         public function testPriorityMapping()
         {
             $this->assertSame(1, \schoolCommunityPriorityToDatabase('h'));
@@ -132,6 +177,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('Custom Group', \schoolCommunityGroupSourceLabel('custom'));
             $this->assertSame('Administrative Class', \schoolCommunityGroupSourceLabel('formGroup'));
             $this->assertSame('Course Class', \schoolCommunityGroupSourceLabel('courseClass'));
+            $this->assertSame('Gibbon Group', \schoolCommunityGroupSourceLabel('gibbonGroup'));
             $this->assertSame('Custom Group', \schoolCommunityGroupSourceLabel('unknown'));
         }
 
@@ -176,6 +222,8 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('1', $rows[0]['threadID']);
             $this->assertFalse($rows[0]['isArchived']);
             $this->assertFalse($rows[0]['isDeleted']);
+            $this->assertSame('Ada Current', $rows[0]['senderName']);
+            $this->assertSame('Ada Current', $rows[0]['receiverName']);
         }
 
         public function testGroupTableCarriesMailboxStateAndPreview()
@@ -204,6 +252,46 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertTrue($rows[0]['isArchived']);
             $this->assertFalse($rows[0]['isDeleted']);
             $this->assertTrue($rows[0]['isOwner']);
+        }
+
+        public function testFreshInstallAndMigrationDefineSafeGroupMessageDefaults()
+        {
+            $moduleTables = [];
+            $actionRows = [];
+            require dirname(__DIR__).'/manifest.php';
+
+            $categoryTable = implode("\n", array_filter($moduleTables, function ($sql) {
+                return str_contains($sql, 'CREATE TABLE `message_category`');
+            }));
+            $this->assertStringContainsString("`groupMessages` ENUM('Y', 'N') NOT NULL DEFAULT 'Y'", $categoryTable);
+
+            $sendAction = implode("\n", array_map(function ($action) {
+                return implode("\n", $action);
+            }, $actionRows));
+            $this->assertStringContainsString('message_recipientChooser.php', $sendAction);
+
+            $sql = [];
+            require dirname(__DIR__).'/CHANGEDB.php';
+            $migration = '';
+            foreach ($sql as $statement) {
+                if (($statement[0] ?? '') === '1.4.0') {
+                    $migration = (string) ($statement[1] ?? '');
+                }
+            }
+            $this->assertStringContainsString(
+                "ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y'",
+                $migration
+            );
+        }
+
+        public function testThreadActionButtonsKeepLocalizedTextAndMachineValuesSeparate()
+        {
+            foreach (['message_view.php', 'message_groupView.php'] as $page) {
+                $source = file_get_contents(dirname(__DIR__).'/'.$page);
+                $this->assertStringContainsString("->setAttribute('value',", $source);
+                $this->assertStringNotContainsString("->setValue('unread')", $source);
+                $this->assertStringNotContainsString("->setValue('restoreDelete'", $source);
+            }
         }
     }
 }

@@ -134,8 +134,9 @@ $table->addColumn('title', schoolCommunityT('Subject'))->context('primary')->for
     return $prefix.'<a href="'.htmlPrep($message['url']).'">'.htmlPrep($message['title']).'</a>'.$suffix.$preview;
 });
 $table->addColumn('categoryName', schoolCommunityT('Category'));
-$table->addColumn('otherPerson', schoolCommunityT('From / To'));
 $table->addColumn('direction', schoolCommunityT('Direction'))->context('secondary');
+$table->addColumn('senderName', schoolCommunityT('Sender'))->context('secondary');
+$table->addColumn('receiverName', schoolCommunityT('Recipient'))->context('secondary');
 $table->addColumn('priorityLabel', schoolCommunityT('Priority'));
 $table->addColumn('sendTimestamp', schoolCommunityT('Sent'))->context('secondary')->format(function ($message) {
     return Format::dateTime($message['sendTimestamp']);
@@ -147,7 +148,7 @@ $table->addActionColumn()->format(function ($message, $actions) {
 
     if (!empty($message['isDeleted'])) {
         $actions->addAction('restoreDelete', schoolCommunityT('Restore from Trash'))
-            ->setIcon('arrow-uturn-left')
+            ->setIcon('arrow-left-circle')
             ->setURL('/modules/School Community/message_threadConfirm.php')
             ->addParam('threadType', 'direct')
             ->addParam('threadID', $message['messageID'])
@@ -156,12 +157,13 @@ $table->addActionColumn()->format(function ($message, $actions) {
     }
 
     $actions->addAction('archive', !empty($message['isArchived']) ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
-        ->setIcon(!empty($message['isArchived']) ? 'arrow-uturn-left' : 'archive-box')
+        ->setIcon(!empty($message['isArchived']) ? 'arrow-left-circle' : 'archive')
         ->setURL('/modules/School Community/message_threadConfirm.php')
         ->addParam('threadType', 'direct')
         ->addParam('threadID', $message['messageID'])
         ->addParam('action', !empty($message['isArchived']) ? 'restore' : 'archive');
     $actions->addAction('delete', schoolCommunityT('Delete'))
+        ->setIcon('delete')
         ->setURL('/modules/School Community/message_threadConfirm.php')
         ->addParam('threadType', 'direct')
         ->addParam('threadID', $message['messageID'])
@@ -170,17 +172,21 @@ $table->addActionColumn()->format(function ($message, $actions) {
 
 $table->addHeaderAction('groups', schoolCommunityT('Message Groups'))
     ->setURL('/modules/School Community/message_groups.php')
-    ->setIcon('group')
+    ->setIcon('users')
     ->displayLabel();
-if (isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
+if (schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $table->addHeaderAction('send', schoolCommunityT('Send Message'))
         ->setURL('/modules/School Community/message_sending.php')
-        ->setIcon('messenger')
+        ->setIcon('chat-bubble-text')
         ->displayLabel();
 }
 if (isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
     $table->addHeaderAction('categories', schoolCommunityT('Manage Categories'))
         ->setURL('/modules/School Community/message_categorySetting.php')
+        ->setIcon('config')
         ->displayLabel();
 }
 

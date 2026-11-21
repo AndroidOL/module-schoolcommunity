@@ -19,7 +19,9 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 
 $categoryID = is_scalar($_GET['CategoryID'] ?? null) ? trim((string) $_GET['CategoryID']) : '';
 $category = $categoryID !== '' ? $pdo->selectOne(
-    "SELECT categoryID, categoryName, accessControl FROM message_category WHERE categoryID=:categoryID",
+    "SELECT categoryID, categoryName, accessControl, groupMessages
+     FROM message_category
+     WHERE categoryID=:categoryID",
     ['categoryID' => $categoryID]
 ) : null;
 
@@ -41,6 +43,11 @@ $form->setTitle(schoolCommunityT('Edit Category'));
 $row = $form->addRow();
     $row->addLabel('categoryName', schoolCommunityT('Name'));
     $row->addTextField('categoryName')->required()->maxLength(100)->setValue($category['categoryName']);
+
+$row = $form->addRow();
+    $row->addLabel('groupMessages', schoolCommunityT('Group Messages'))
+        ->description(schoolCommunityT('Allow group messaging in this category.'));
+    $row->addYesNo('groupMessages')->required()->selected($category['groupMessages'] === 'Y' ? 'Y' : 'N');
 
 foreach (['staff' => 'Staff', 'student' => 'Student', 'parent' => 'Parent', 'other' => 'Other'] as $key => $label) {
     $row = $form->addRow();

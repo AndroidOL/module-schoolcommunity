@@ -103,7 +103,7 @@ $groups = $pdo->select(
        AND threadState.threadID=message_group.groupID
        AND threadState.gibbonPersonID=:currentPersonID
      WHERE ((message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
-        OR message_group.sourceType IN ('formGroup', 'courseClass'))
+        OR message_group.sourceType IN ('formGroup', 'courseClass', 'gibbonGroup'))
        AND (".($mailbox === 'trash'
             ? 'threadState.deletedAt IS NOT NULL'
             : ($mailbox === 'archived'
@@ -136,17 +136,10 @@ $groups = $pdo->select(
 
 $groups = array_values(array_filter($groups, function ($group) use ($pdo, $currentPersonID, $roleCategory) {
     if (($group['sourceType'] ?? 'custom') !== 'custom') {
-        $sourceMembers = schoolCommunityLinkedSourceMembers($pdo, $group['sourceType'], $group['sourceID'] ?? '');
-        $sourceAllowed = false;
-        foreach ($sourceMembers as $sourceMember) {
-            if (schoolCommunitySamePersonID($sourceMember['gibbonPersonID'], $currentPersonID)) {
-                $sourceAllowed = true;
-                break;
-            }
-        }
-        if (!$sourceAllowed) {
+        if (!schoolCommunityLinkedSourceAllowsPerson($pdo, $group['sourceType'], $group['sourceID'] ?? '', $currentPersonID)) {
             return false;
         }
+        $sourceMembers = schoolCommunityLinkedSourceMembers($pdo, $group['sourceType'], $group['sourceID'] ?? '');
         $group['groupMemberPersonID'] = $currentPersonID;
         $group['memberCount'] = count($sourceMembers);
     }
@@ -163,7 +156,7 @@ $table->addColumn('groupName', schoolCommunityT('Group'))->context('primary')->f
     $unread = (int) $group['unreadCount'];
     $label = '<a href="'.htmlPrep($group['url']).'">'.htmlPrep($group['groupName']).'</a>';
     if ($unread > 0) {
-        $label .= ' <span class="schoolCommunityUnreadBadge">'.$unread.'</span>';
+        $label .= ' '.Format::tag((string) $unread, 'message ml-2');
     }
     if (!empty($group['latestPreview'])) {
         $label .= '<div class="mt-1 text-sm font-normal text-gray-600">'.htmlPrep($group['latestPreview']).'</div>';
@@ -185,7 +178,7 @@ $table->addActionColumn()->format(function ($group, $actions) {
 
     if (!empty($group['isDeleted'])) {
         $actions->addAction('restoreDelete', schoolCommunityT('Restore from Trash'))
-            ->setIcon('arrow-uturn-left')
+            ->setIcon('arrow-left-circle')
             ->setURL('/modules/School Community/message_threadConfirm.php')
             ->addParam('threadType', 'group')
             ->addParam('threadID', $group['groupID'])
@@ -194,19 +187,23 @@ $table->addActionColumn()->format(function ($group, $actions) {
     }
 
     $actions->addAction('archive', !empty($group['isArchived']) ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
-        ->setIcon(!empty($group['isArchived']) ? 'arrow-uturn-left' : 'archive-box')
+        ->setIcon(!empty($group['isArchived']) ? 'arrow-left-circle' : 'archive')
         ->setURL('/modules/School Community/message_threadConfirm.php')
         ->addParam('threadType', 'group')
         ->addParam('threadID', $group['groupID'])
         ->addParam('action', !empty($group['isArchived']) ? 'restore' : 'archive');
     $actions->addAction('delete', schoolCommunityT('Delete'))
+        ->setIcon('delete')
         ->setURL('/modules/School Community/message_threadConfirm.php')
         ->addParam('threadType', 'group')
         ->addParam('threadID', $group['groupID'])
         ->addParam('action', 'delete');
 });
 
-if (isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
+if (schoolCommunityMessagingAccessAllowed(
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
+    isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+)) {
     $table->addHeaderAction('createGroup', schoolCommunityT('Create Group'))
         ->setURL('/modules/School Community/message_groupAdding.php')
         ->setIcon('plus')

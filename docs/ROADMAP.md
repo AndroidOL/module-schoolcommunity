@@ -2,7 +2,8 @@
 
 ## Released scope
 
-- Category management with Staff/Student/Parent/Other audience masks.
+- Category management with Staff/Student/Parent/Other audience masks and a
+  per-category group-message switch.
 - Direct messages with priority and sanitized rich text.
 - Inbox, sent, unread and category filtering with message previews and standard
   conversation action menus.
@@ -15,8 +16,11 @@
   current-roster synchronization.
 - Unified direct/group search, per-user Active/Archived/Trash states and
   mark-unread actions.
-- Group-message mode in the normal send workflow with class/group target
-  selection, full recipient preview and empty-audience blocking.
+- Group-message mode in the normal send workflow with School Community,
+  official Gibbon group, administrative-class and course-class targets, full
+  recipient preview and empty-audience blocking.
+- Official Gibbon form, action, icon and table components across message
+  details, lists, category settings and recipient selection.
 
 ## Next candidates
 

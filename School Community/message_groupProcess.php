@@ -26,9 +26,10 @@ if (!in_array($action, ['create', 'addMember', 'removeMember'], true)) {
     $redirect('error1');
 }
 
-$permissionPage = $action === 'create' ? 'message_sending.php' : 'message_reading.php';
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/'.$permissionPage)
-    || ($action === 'create' && !isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php'))) {
+$canRead = isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php');
+$canSend = isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php');
+if (($action === 'create' && !schoolCommunityMessagingAccessAllowed($canSend, $canRead))
+    || ($action !== 'create' && !$canRead)) {
     $redirect('error0');
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -56,7 +57,7 @@ if ($action === 'create') {
             $redirect('error0');
         }
         [$sourceType, $sourceID] = array_pad(explode(':', $linkedSource, 2), 2, null);
-        if (!in_array($sourceType, ['formGroup', 'courseClass'], true) || empty($sourceID)) {
+        if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true) || empty($sourceID)) {
             $redirect('error1');
         }
         if ($groupName === '') {
@@ -70,10 +71,14 @@ if ($action === 'create') {
     }
 
     $category = $pdo->selectOne(
-        "SELECT categoryID, accessControl FROM message_category WHERE categoryID=:categoryID",
+        "SELECT categoryID, accessControl, groupMessages
+         FROM message_category
+         WHERE categoryID=:categoryID",
         ['categoryID' => $categoryID]
     );
-    if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
+    if (empty($category)
+        || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)
+        || !schoolCommunityGroupMessagesAllowed($category)) {
         $redirect('error0');
     }
 
