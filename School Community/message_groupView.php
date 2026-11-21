@@ -138,13 +138,16 @@ foreach ($messages as $message) {
     );
     $readCount = (int) $message['readCount'];
     $memberCount = (int) $message['memberCount'];
+    $readSummary = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
+        ? '<span>'.sprintf(schoolCommunityT('Read by %1$d of %2$d members'), $readCount, $memberCount).'</span>'
+        : '';
 
     $page->write('<article class="schoolCommunityMessage" id="group-message-'.htmlPrep($message['groupMessageID']).'">'
         .'<h3>'.htmlPrep($message['title']).'</h3>'
         .'<div class="schoolCommunityMessageMeta">'
         .'<strong>'.htmlPrep($senderName).'</strong>'
         .'<span>'.Format::dateTime($message['sendTimestamp']).'</span>'
-        .'<span>'.sprintf(schoolCommunityT('Read by %1$d of %2$d members'), $readCount, $memberCount).'</span>'
+        .$readSummary
         .'</div>'
         .'<div class="schoolCommunityMessageBody innerContent">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>');
 

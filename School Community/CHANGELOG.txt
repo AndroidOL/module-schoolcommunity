@@ -1,6 +1,10 @@
 CHANGELOG
 =========
 
+v1.1.2
+------
+- Show group read totals only to the author of each group message.
+
 v1.1.1
 ------
 - Match Gibbon person IDs consistently when session and database values use
