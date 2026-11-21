@@ -6,6 +6,7 @@ Copyright © 2010, Gibbon Foundation
 
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
+use Gibbon\Tables\Action;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -245,9 +246,6 @@ $groupMembers = $pdo->select(
     ['groupID' => $groupID]
 )->fetchAll(PDO::FETCH_ASSOC);
 $audience = schoolCommunityGroupAudience($groupMembers, $group['accessControl']);
-$recipientNames = array_map(function ($member) {
-    return Format::name($member['title'], $member['preferredName'], $member['surname'], $member['roleCategory'], true);
-}, $audience['eligible']);
 $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
 sort($recipientIDs, SORT_STRING);
 $audienceSignature = hash('sha256', implode(',', $recipientIDs));
@@ -257,13 +255,17 @@ if (empty($audience['eligible'])) {
     return;
 }
 
-$audienceSummary = '<div class="font-semibold text-gray-800">'
-    .sprintf(schoolCommunityT('%d recipients'), count($audience['eligible']))
-    .'</div><ul class="mt-2 max-h-64 space-y-1 overflow-y-auto text-sm text-gray-700">';
-foreach ($recipientNames as $recipientName) {
-    $audienceSummary .= '<li>'.htmlPrep($recipientName).'</li>';
-}
-$audienceSummary .= '</ul><p class="mt-2 text-sm text-gray-600">'.sprintf(
+$recipientPreview = (new Action('view', schoolCommunityT('View Recipients')))
+    ->setURL('/modules/School Community/message_groupRecipients.php')
+    ->addParam('groupID', $groupID)
+    ->setIcon('group')
+    ->modalWindow(700, 520)
+    ->displayLabel();
+$audienceSummary = '<div class="text-sm text-gray-700">'
+    .'<strong>'.sprintf(schoolCommunityT('%d recipients'), count($audience['eligible'])).'</strong>'
+    .'</div>'
+    .'<div class="mt-2">'.$recipientPreview->getOutput($group).'</div>'
+    .'<p class="mt-2 text-sm text-gray-600">'.sprintf(
     schoolCommunityT('%d group members will be excluded because their account is inactive or their role is not allowed by this category.'),
     count($audience['excluded'])
 ).'</p>';
@@ -273,7 +275,7 @@ $form->addHiddenValue('groupID', $groupID);
 $form->addHiddenValue('expectedRecipientSignature', $audienceSignature);
 $form->addHiddenValue('expectedRecipientCount', count($audience['eligible']));
 $form->setTitle(schoolCommunityT('Send Group Message'));
-$form->setDescription(schoolCommunityT('Review this send-time recipient list. The message will only be visible to the confirmed snapshot, not to people added later.'));
+$form->setDescription(schoolCommunityT('Review the recipient preview before sending. The message will only be visible to the confirmed snapshot, not to people added later.'));
 
 $row = $form->addRow();
     $row->addLabel('audience', schoolCommunityT('Recipients'));
