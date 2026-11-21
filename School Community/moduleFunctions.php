@@ -53,6 +53,21 @@ function schoolCommunityYesNoLabel($value): string
     return $value === 'Y' ? schoolCommunityT('Enabled') : schoolCommunityT('Disabled');
 }
 
+function schoolCommunityUsesWideMetadataTags($i18nCode): bool
+{
+    return str_starts_with(strtolower((string) $i18nCode), 'zh');
+}
+
+function schoolCommunityMetadataTag(string $text, $i18nCode): string
+{
+    $text = htmlPrep($text);
+    $label = schoolCommunityUsesWideMetadataTags($i18nCode)
+        ? '【'.$text.'】'
+        : '['.$text.']';
+
+    return Format::tag($label, 'message');
+}
+
 function schoolCommunityMessagingAccessAllowed(bool $canSend, bool $canRead): bool
 {
     return $canSend && $canRead;
@@ -497,15 +512,24 @@ function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCate
         ['gibbonPersonID' => $currentPersonID, 'categoryID' => $categoryID]
     )->fetchAll(PDO::FETCH_ASSOC);
 
-    $options = [];
+    $options = [
+        'formGroup'   => [],
+        'courseClass' => [],
+        'existing'    => [],
+    ];
     $linkedSources = [];
     foreach ($groups as $group) {
-        if (($group['sourceType'] ?? 'custom') !== 'custom') {
-            $linkedSources[$group['sourceType'].':'.$group['sourceID']] = true;
+        $sourceType = $group['sourceType'] ?? 'custom';
+        if ($sourceType !== 'custom') {
+            $linkedSources[$sourceType.':'.$group['sourceID']] = true;
         }
         if (schoolCommunityGroupAccessAllowed($group, $currentPersonID, $roleCategory)) {
-            $options['group:'.$group['groupID']] = schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')
-                .' · '.$group['groupName'];
+            $optionKey = 'group:'.$group['groupID'];
+            $existingLabel = schoolCommunityGroupSourceLabel($sourceType).' · '.$group['groupName'];
+            $options['existing'][$optionKey] = $existingLabel;
+            if (isset($options[$sourceType])) {
+                $options[$sourceType][$optionKey] = $group['groupName'];
+            }
         }
     }
 
@@ -519,7 +543,13 @@ function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCate
 
     foreach (schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID) as $key => $label) {
         if (!isset($linkedSources[$key])) {
-            $options[$key] = $label.' · '.schoolCommunityT('Create Group');
+            [$sourceType] = array_pad(explode(':', $key, 2), 2, '');
+            if (isset($options[$sourceType])) {
+                $options[$sourceType][$key] = $label;
+            }
+            if ($sourceType === 'gibbonGroup') {
+                $options['existing'][$key] = $label;
+            }
         }
     }
 

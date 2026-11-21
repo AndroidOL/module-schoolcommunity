@@ -23,12 +23,12 @@ and a home-school communication workflow.
 - Create categories, select which role groups may use them and control whether
   each category supports group messages.
 - Send HTML-formatted messages to active Gibbon users.
-- Choose a direct recipient in a searchable modal filtered by the selected
-  category's allowed role groups.
+- Choose a direct recipient with the normal searchable input filtered by the
+  selected category's allowed role groups.
 - Send a message to yourself without creating duplicate records.
-- Switch the normal send form to group mode and choose an existing School
-  Community group, an official Gibbon group, an administrative class or a
-  course class.
+- Switch in place between direct and group mode; group mode exposes one
+  searchable list of School Community, official Gibbon, administrative-class
+  and course-class targets.
 - List sent, received and unread messages with previews, category and priority
   filters, and standard Open/Archive/Delete actions.
 - Search direct message replies and group names, messages and replies.

@@ -7,6 +7,12 @@ namespace {
             return $text;
         }
     }
+    if (!function_exists('htmlPrep')) {
+        function htmlPrep($text)
+        {
+            return htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+    }
 }
 
 namespace Gibbon\Module\SchoolCommunity\Tests {
@@ -48,6 +54,20 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertFalse(\schoolCommunityMessagingAccessAllowed(true, false));
             $this->assertFalse(\schoolCommunityMessagingAccessAllowed(false, true));
             $this->assertFalse(\schoolCommunityMessagingAccessAllowed(false, false));
+        }
+
+        public function testMetadataTagsFollowTheCurrentLocale()
+        {
+            $this->assertTrue(\schoolCommunityUsesWideMetadataTags('zh_CN'));
+            $this->assertFalse(\schoolCommunityUsesWideMetadataTags('en_GB'));
+            $this->assertSame(
+                '<span class="tag message" title="">【仅您可见】</span>',
+                \schoolCommunityMetadataTag('仅您可见', 'zh_CN')
+            );
+            $this->assertSame(
+                '<span class="tag message" title="">[Visible only to you]</span>',
+                \schoolCommunityMetadataTag('Visible only to you', 'en_GB')
+            );
         }
 
         public function testGroupCategoryOptionsExcludeDisabledAndIneligibleCategories()
@@ -259,7 +279,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $moduleTables = [];
             $actionRows = [];
             require dirname(__DIR__).'/manifest.php';
-            $this->assertSame('1.4.1', $version);
+            $this->assertSame('1.4.2', $version);
 
             $categoryTable = implode("\n", array_filter($moduleTables, function ($sql) {
                 return str_contains($sql, 'CREATE TABLE `message_category`');
@@ -269,7 +289,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $sendAction = implode("\n", array_map(function ($action) {
                 return implode("\n", $action);
             }, $actionRows));
-            $this->assertStringContainsString('message_recipientChooser.php', $sendAction);
+            $this->assertStringNotContainsString('message_recipientChooser.php', $sendAction);
             $manifestUrlLists = array_column($actionRows, 'URLList', 'name');
 
             $sql = [];
@@ -282,28 +302,22 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
                 'ADD COLUMN groupMessages',
                 $migrations['1.4.0']
             );
-            $this->assertStringContainsString(
-                "SET `URLList`='".$manifestUrlLists['Send Message']."'",
-                $migrations['1.4.0']
-            );
-            $this->assertStringContainsString(
-                "SET `URLList`='".$manifestUrlLists['View Messages']."'",
-                $migrations['1.4.0']
-            );
+            foreach (['1.4.0', '1.4.1', '1.4.2'] as $version) {
+                $this->assertStringContainsString(
+                    "SET `URLList`='".$manifestUrlLists['Send Message']."'",
+                    $migrations[$version]
+                );
+                $this->assertStringContainsString(
+                    "SET `URLList`='".$manifestUrlLists['View Messages']."'",
+                    $migrations[$version]
+                );
+            }
             $this->assertStringContainsString(
                 'information_schema.COLUMNS',
                 $migrations['1.4.1']
             );
             $this->assertStringContainsString(
                 'PREPARE schoolCommunityAddGroupMessagesStmt',
-                $migrations['1.4.1']
-            );
-            $this->assertStringContainsString(
-                "SET `URLList`='".$manifestUrlLists['Send Message']."'",
-                $migrations['1.4.1']
-            );
-            $this->assertStringContainsString(
-                "SET `URLList`='".$manifestUrlLists['View Messages']."'",
                 $migrations['1.4.1']
             );
             $this->assertStringContainsString(
@@ -321,6 +335,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             foreach (['message_view.php', 'message_groupView.php'] as $page) {
                 $source = file_get_contents(dirname(__DIR__).'/'.$page);
                 $this->assertStringContainsString("->setAttribute('value',", $source);
+                $this->assertGreaterThanOrEqual(3, substr_count($source, "->setSize('sm')"));
                 $this->assertStringNotContainsString("->setValue('unread')", $source);
                 $this->assertStringNotContainsString("->setValue('restoreDelete'", $source);
             }
@@ -330,12 +345,22 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
         {
             $sendPage = file_get_contents(dirname(__DIR__).'/message_sending.php');
             $process = file_get_contents(dirname(__DIR__).'/message_sendingProcess.php');
+            $script = file_get_contents(dirname(__DIR__).'/js/module.js');
 
             foreach (['error0', 'error1', 'error2', 'error9'] as $returnCode) {
                 $this->assertStringContainsString("'{$returnCode}'", $sendPage);
             }
             $this->assertStringContainsString('$postedCategoryID', $process);
             $this->assertStringContainsString('&categoryID=', $process);
+            $this->assertStringContainsString("addSelectPerson('recipientID')", $sendPage);
+            $this->assertStringNotContainsString('chooseRecipient', $sendPage);
+            $this->assertStringContainsString('schoolCommunitySetMessageMode', $sendPage);
+            $this->assertStringContainsString("addSelect('targetType')", $sendPage);
+            $this->assertStringContainsString("'formGroup', 'courseClass', 'existing'", $sendPage);
+            $this->assertStringContainsString("addSearchSelect('groupTarget'.ucfirst(\$type))", $sendPage);
+            $this->assertStringContainsString('schoolCommunitySetMessageMode', $script);
+            $this->assertStringContainsString('schoolCommunitySetGroupTargetType', $script);
+            $this->assertStringNotContainsString('.submit(', $script);
         }
 
         public function testLinkedSourceLookupSuppressesEverySupportedSourceType()
@@ -353,10 +378,20 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
         {
             $po = file_get_contents(dirname(__DIR__).'/i18n/zh_CN/LC_MESSAGES/School Community.po');
 
-            $this->assertStringContainsString('Project-Id-Version: School Community 1.4.1', $po);
+            $this->assertStringContainsString('Project-Id-Version: School Community 1.4.2', $po);
             $this->assertStringNotContainsString('Project-Id-Version: School Community 1.4.0', $po);
-            $this->assertMatchesRegularExpression('/POT-Creation-Date: 2026-11-21 17:56\+0800/', $po);
-            $this->assertMatchesRegularExpression('/PO-Revision-Date: 2026-11-21 17:56\+0800/', $po);
+            $this->assertMatchesRegularExpression('/POT-Creation-Date: 2026-11-21 18:39\+0800/', $po);
+            $this->assertMatchesRegularExpression('/PO-Revision-Date: 2026-11-21 18:39\+0800/', $po);
+        }
+
+        public function testDetailMetadataUsesCompactLocaleAwareTags()
+        {
+            foreach (['message_view.php', 'message_groupView.php'] as $page) {
+                $source = file_get_contents(dirname(__DIR__).'/'.$page);
+                $this->assertStringContainsString('schoolCommunityMetadataTag(', $source);
+                $this->assertStringNotContainsString("addLabel('category'", $source);
+                $this->assertStringNotContainsString("addLabel('priority'", $source);
+            }
         }
     }
 }

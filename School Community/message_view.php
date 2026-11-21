@@ -66,27 +66,26 @@ $threadActions->setDescription(schoolCommunityT('Direct message'));
 $threadActions->addHiddenValue('threadType', 'direct');
 $threadActions->addHiddenValue('threadID', $messageID);
 
+$i18nCode = (string) $session->get(['i18n', 'code']);
+$labelSeparator = schoolCommunityUsesWideMetadataTags($i18nCode) ? '：' : ': ';
+$visibilityTag = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
+    && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)
+    ? ' '.schoolCommunityMetadataTag(schoolCommunityT('Visible only to you'), $i18nCode)
+    : '';
+
 $row = $threadActions->addRow();
-    $row->addLabel('sender', schoolCommunityT('From'));
-    $row->addContent(htmlPrep($senderName));
-$row = $threadActions->addRow();
-    $row->addLabel('receiver', schoolCommunityT('To'));
-    $row->addContent(htmlPrep($receiverName));
-$row = $threadActions->addRow();
-    $row->addLabel('category', schoolCommunityT('Category'));
-    $row->addContent(htmlPrep($message['categoryName']));
-$row = $threadActions->addRow();
-    $row->addLabel('priority', schoolCommunityT('Priority'));
-    $row->addContent(htmlPrep(schoolCommunityPriorityLabel($message['priority'])));
-$row = $threadActions->addRow();
-    $row->addLabel('sent', schoolCommunityT('Sent'));
-    $row->addContent(Format::dateTime($message['sendTimestamp']));
-if (schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
-    && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
-    $row = $threadActions->addRow();
-        $row->addLabel('visibility', schoolCommunityT('Visibility'));
-        $row->addContent(schoolCommunityT('Visible only to you'));
-}
+    $column = $row->addColumn();
+    $column->addContent(
+        '<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-800">'
+        .'<span class="mr-6"><span class="font-semibold">'.schoolCommunityT('From').$labelSeparator.'</span>'.htmlPrep($senderName).'</span>'
+        .'<span><span class="font-semibold">'.schoolCommunityT('To').$labelSeparator.'</span>'.htmlPrep($receiverName).$visibilityTag.'</span>'
+        .'</div>'
+        .'<div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-800">'
+        .'<span class="mr-6"><span class="font-semibold">'.schoolCommunityT('Category').$labelSeparator.'</span>'.htmlPrep($message['categoryName']).'</span>'
+        .schoolCommunityMetadataTag(schoolCommunityPriorityLabel($message['priority']), $i18nCode)
+        .'<span><span class="font-semibold">'.schoolCommunityT('Sent').$labelSeparator.'</span>'.Format::dateTime($message['sendTimestamp']).'</span>'
+        .'</div>'
+    );
 $row = $threadActions->addRow();
     $column = $row->addColumn();
     $column->addLabel('body', schoolCommunityT('Message'));
@@ -102,7 +101,8 @@ $row = $threadActions->addRow();
             ->setAttribute('value', $isArchived ? 'restore' : 'archive')
             ->setColor('gray')
             ->setType('quickSubmit')
-            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive');
+            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive')
+            ->setSize('sm');
     }
 if (!$isDeleted && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
     $row->addSubmit(schoolCommunityT('Mark Unread'))
@@ -110,14 +110,16 @@ if (!$isDeleted && schoolCommunitySamePersonID($message['receiverID'], $currentP
         ->setAttribute('value', 'unread')
         ->setColor('gray')
         ->setType('quickSubmit')
-        ->setIcon('solid', 'refresh');
+        ->setIcon('solid', 'refresh')
+        ->setSize('sm');
 }
 $deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
     ->setName('action')
     ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
     ->setColor($isDeleted ? 'gray' : 'red')
     ->setType('quickSubmit')
-    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete');
+    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete')
+    ->setSize('sm');
 if (!$isDeleted) {
     $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this message to Trash?')).')');
 }

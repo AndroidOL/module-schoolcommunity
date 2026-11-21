@@ -73,14 +73,22 @@ $ownerName = Format::name(
 );
 
 $row = $threadActions->addRow();
-    $row->addLabel('category', schoolCommunityT('Category'));
-    $row->addContent(htmlPrep($group['categoryName']));
-$row = $threadActions->addRow();
-    $row->addLabel('source', schoolCommunityT('Source'));
-    $row->addContent(htmlPrep(schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')));
-$row = $threadActions->addRow();
-    $row->addLabel('owner', schoolCommunityT('Owner'));
-    $row->addContent(htmlPrep($ownerName));
+    $i18nCode = (string) $session->get(['i18n', 'code']);
+    $labelSeparator = schoolCommunityUsesWideMetadataTags($i18nCode) ? '：' : ': ';
+    $column = $row->addColumn();
+    $column->addContent(
+        '<div class="flex flex-wrap items-center gap-2 text-sm text-gray-800">'
+        .'<span><span class="font-semibold">'.schoolCommunityT('Category').$labelSeparator.'</span>'.htmlPrep($group['categoryName']).'</span>'
+        .schoolCommunityMetadataTag(
+            schoolCommunityT('Group Messages').$labelSeparator.schoolCommunityYesNoLabel($group['groupMessages']),
+            $i18nCode
+        )
+        .'</div>'
+        .'<div class="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-800">'
+        .'<span class="mr-6"><span class="font-semibold">'.schoolCommunityT('Source').$labelSeparator.'</span>'.htmlPrep(schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom')).'</span>'
+        .'<span><span class="font-semibold">'.schoolCommunityT('Owner').$labelSeparator.'</span>'.htmlPrep($ownerName).'</span>'
+        .'</div>'
+    );
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
 if ($isOwner) {
     $threadActions->addHeaderAction('members', schoolCommunityT('Manage Members'))
@@ -98,7 +106,8 @@ $row = $threadActions->addRow();
             ->setAttribute('value', $isArchived ? 'restore' : 'archive')
             ->setColor('gray')
             ->setType('quickSubmit')
-            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive');
+            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive')
+            ->setSize('sm');
     }
 if (!$isDeleted) {
     $row->addSubmit(schoolCommunityT('Mark Unread'))
@@ -106,14 +115,16 @@ if (!$isDeleted) {
         ->setAttribute('value', 'unread')
         ->setColor('gray')
         ->setType('quickSubmit')
-        ->setIcon('solid', 'refresh');
+        ->setIcon('solid', 'refresh')
+        ->setSize('sm');
 }
 $deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
     ->setName('action')
     ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
     ->setColor($isDeleted ? 'gray' : 'red')
     ->setType('quickSubmit')
-    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete');
+    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete')
+    ->setSize('sm');
 if (!$isDeleted) {
     $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this group to Trash?')).')');
 }

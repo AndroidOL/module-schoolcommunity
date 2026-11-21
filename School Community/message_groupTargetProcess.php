@@ -14,8 +14,18 @@ $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
 $categoryID = is_scalar($_POST['categoryID'] ?? null) ? trim((string) $_POST['categoryID']) : '';
-$groupTarget = is_scalar($_POST['groupTarget'] ?? null) ? trim((string) $_POST['groupTarget']) : '';
-$URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sending.php&categoryID='.urlencode($categoryID).'&groupMessage=Y';
+$targetType = is_scalar($_POST['targetType'] ?? null) ? (string) $_POST['targetType'] : '';
+$targetFields = [
+    'formGroup'   => 'groupTargetFormGroup',
+    'courseClass' => 'groupTargetCourseClass',
+    'existing'    => 'groupTargetExisting',
+];
+$targetField = $targetFields[$targetType] ?? '';
+$groupTarget = $targetField !== '' && is_scalar($_POST[$targetField] ?? null)
+    ? trim((string) $_POST[$targetField])
+    : '';
+$URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sending.php&categoryID='.urlencode($categoryID)
+    .'&groupMessage=Y&targetType='.urlencode(array_key_exists($targetType, $targetFields) ? $targetType : 'free');
 $redirect = function (string $return) use ($URL) {
     header('Location: '.$URL.'&return='.$return);
     exit;
@@ -39,7 +49,7 @@ if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
 }
 
 $_POST = $container->get(Validator::class)->sanitize($_POST);
-if ($categoryID === '' || $groupTarget === '') {
+if ($categoryID === '' || $targetField === '' || $groupTarget === '') {
     $redirect('error1');
 }
 $category = $pdo->selectOne(
@@ -61,12 +71,23 @@ if (str_starts_with($groupTarget, 'group:')) {
     if (empty($group) || (string) $group['categoryID'] !== $categoryID) {
         $redirect('error0');
     }
+    $groupSourceType = $group['sourceType'] ?? 'custom';
+    if (($targetType === 'formGroup' && $groupSourceType !== 'formGroup')
+        || ($targetType === 'courseClass' && $groupSourceType !== 'courseClass')
+        || ($targetType === 'existing' && !in_array($groupSourceType, ['custom', 'formGroup', 'courseClass', 'gibbonGroup'], true))) {
+        $redirect('error0');
+    }
     $openGroup($groupID);
 }
 
 [$sourceType, $sourceID] = array_pad(explode(':', $groupTarget, 2), 2, '');
 $sources = schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
-if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true)
+$targetSourceTypes = [
+    'formGroup'   => ['formGroup'],
+    'courseClass' => ['courseClass'],
+    'existing'    => ['gibbonGroup'],
+];
+if (!in_array($sourceType, $targetSourceTypes[$targetType] ?? [], true)
     || empty($sourceID)
     || !array_key_exists($groupTarget, $sources)) {
     $redirect('error0');

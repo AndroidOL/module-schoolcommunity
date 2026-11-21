@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+v1.4.2
+------
+- Replace the separate recipient chooser with the original searchable direct
+  recipient input.
+- Switch group and direct modes in place without a page reload, and show the
+  searchable class/group target only when Group Message is enabled.
+- Keep a group target choice from submitting or triggering form validation.
+- Compact detail metadata into localised inline lines and use smaller standard
+  action buttons.
+
 v1.4.1
 ------
 - Add a repeat-safe 1.4.1 upgrade for installations that already consumed the

@@ -4,6 +4,12 @@
 $sql = [];
 $count = 0;
 
+// v1.4.2
+$sql[$count][0] = "1.4.2";
+$sql[$count][1] = "UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
+UPDATE `gibbonAction` SET `URLList`='message_reading.php, message_view.php, message_replyProcess.php, message_threadProcess.php, message_threadConfirm.php, message_groups.php, message_groupView.php, message_groupRecipients.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php' WHERE `entryURL`='message_reading.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end";
+$count++;
+
 // v1.4.1
 $sql[$count][0] = "1.4.1";
 $sql[$count][1] = "SET @schoolCommunityGroupMessagesMissing = (SELECT COUNT(*)=0 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='message_category' AND COLUMN_NAME='groupMessages');end
@@ -11,7 +17,7 @@ SET @schoolCommunityAddGroupMessages = IF(@schoolCommunityGroupMessagesMissing, 
 PREPARE schoolCommunityAddGroupMessagesStmt FROM @schoolCommunityAddGroupMessages;end
 EXECUTE schoolCommunityAddGroupMessagesStmt;end
 DEALLOCATE PREPARE schoolCommunityAddGroupMessagesStmt;end
-UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_recipientChooser.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
+UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
 UPDATE `gibbonAction` SET `URLList`='message_reading.php, message_view.php, message_replyProcess.php, message_threadProcess.php, message_threadConfirm.php, message_groups.php, message_groupView.php, message_groupRecipients.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php' WHERE `entryURL`='message_reading.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end";
 $count++;
 
@@ -23,7 +29,7 @@ SET @schoolCommunityAddGroupMessagesBase = IF(@schoolCommunityGroupMessagesMissi
 PREPARE schoolCommunityAddGroupMessagesBaseStmt FROM @schoolCommunityAddGroupMessagesBase;end
 EXECUTE schoolCommunityAddGroupMessagesBaseStmt;end
 DEALLOCATE PREPARE schoolCommunityAddGroupMessagesBaseStmt;end
-UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_recipientChooser.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
+UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
 UPDATE `gibbonAction` SET `URLList`='message_reading.php, message_view.php, message_replyProcess.php, message_threadProcess.php, message_threadConfirm.php, message_groups.php, message_groupView.php, message_groupRecipients.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php' WHERE `entryURL`='message_reading.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end";
 $count++;
 
