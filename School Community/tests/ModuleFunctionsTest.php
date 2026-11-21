@@ -412,7 +412,11 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $view = file_get_contents(dirname(__DIR__).'/message_view.php');
             $groupView = file_get_contents(dirname(__DIR__).'/message_groupView.php');
 
-            $this->assertStringContainsString('DataTable::create', $view);
+            // Message detail presents the subject and body as the focus, not a cramped metadata table.
+            $this->assertStringContainsString('<section class="w-full', $view);
+            $this->assertStringContainsString('schoolCommunityBodyForDisplay(', $view);
+            $this->assertStringContainsString('Format::tag(', $view);
+            $this->assertStringNotContainsString("addColumn('senderName'", $view);
             $this->assertStringNotContainsString('grid grid-cols-1', $view);
             $this->assertStringContainsString('schoolCommunityMetadataTag(', $groupView);
         }

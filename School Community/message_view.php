@@ -4,10 +4,8 @@ Gibbon: the flexible, open school platform
 Copyright © 2010, Gibbon Foundation
 */
 
-use Gibbon\Domain\DataSet;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
-use Gibbon\Tables\DataTable;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -104,48 +102,33 @@ $privateNote = schoolCommunitySamePersonID($message['senderID'], $currentPersonI
     ? schoolCommunityT('Visible only to you')
     : '';
 
-$messageTable = DataTable::create('schoolCommunityMessageView');
-$messageTable->setTitle(htmlPrep($message['title']));
-$messageTable->setDescription(
-    schoolCommunityT('Direct message')
-    .($privateNote !== '' ? ' · '.$privateNote : '')
-);
-$messageTable->addMetaData('allowHTML', ['body']);
-$messageTable->addColumn('senderName', schoolCommunityT('From'))
-    ->context('primary')
-    ->format(function ($message) {
-        return htmlPrep((string) $message['senderName']);
-    });
-$messageTable->addColumn('receiverName', schoolCommunityT('To'))
-    ->context('primary')
-    ->format(function ($message) {
-        return htmlPrep((string) $message['receiverName']);
-    });
-$messageTable->addColumn('categoryName', schoolCommunityT('Category'))
-    ->context('secondary')
-    ->format(function ($message) {
-        return htmlPrep((string) $message['categoryName']);
-    });
-$messageTable->addColumn('priority', schoolCommunityT('Priority'))
-    ->context('secondary')
-    ->format(function ($message) {
-        return Format::tag(schoolCommunityPriorityLabel($message['priority']), 'message');
-    });
-$messageTable->addColumn('sendTimestamp', schoolCommunityT('Sent'))
-    ->context('secondary')
-    ->format(function ($message) {
-        return Format::dateTime($message['sendTimestamp']);
-    });
-$messageTable->addColumn('body', schoolCommunityT('Message'))
-    ->context('primary')
-    ->format(function ($message) use ($container) {
-        return schoolCommunityBodyForDisplay($container, $message['body']);
-    });
+$metaTags = [Format::tag(schoolCommunityPriorityLabel($message['priority']), 'message')];
+if ($privateNote !== '') {
+    $metaTags[] = Format::tag($privateNote, 'message');
+}
 
-$page->write($messageTable->render(new DataSet([$message + [
-    'senderName' => $senderName,
-    'receiverName' => $receiverName,
-]])));
+// The subject and body are the focus; metadata is a single compact line beneath the subject.
+$page->write(
+    '<section class="w-full p-4 bg-white border border-gray-200 rounded-md">'
+    .'<div class="flex flex-wrap items-center gap-2 mb-2">'
+    .'<span class="text-xs uppercase text-gray-500">'.schoolCommunityT('Category').'</span>'
+    .'<span class="text-sm font-medium text-gray-900">'.htmlPrep((string) $message['categoryName']).'</span>'
+    .'</div>'
+    .'<h1 class="text-2xl font-semibold text-gray-900 leading-tight">'.htmlPrep((string) $message['title']).'</h1>'
+    .'<div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-600">'
+    .'<span class="font-medium text-gray-900">'.htmlPrep($senderName).'</span>'
+    .'<span>→</span>'
+    .'<span>'.htmlPrep($receiverName).'</span>'
+    .'<span>·</span>'
+    .'<span>'.Format::dateTime($message['sendTimestamp']).'</span>'
+    .implode('', $metaTags)
+    .'</div>'
+    .'<div class="border-b border-gray-200 mt-4 mb-4"></div>'
+    .'<div class="text-sm leading-6 text-gray-800">'
+    .schoolCommunityBodyForDisplay($container, $message['body'])
+    .'</div>'
+    .'</section>'
+);
 
 $replies = $pdo->select(
     "SELECT message_reply.*, gibbonPerson.title, gibbonPerson.preferredName, gibbonPerson.surname
@@ -157,27 +140,22 @@ $replies = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($replies)) {
-    foreach ($replies as &$reply) {
-        $reply['senderName'] = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], 'Staff', true);
+    $replyHTML = '<section class="w-full mt-4">'
+        .'<h2 class="text-lg font-semibold text-gray-900 mb-2">'.schoolCommunityT('Replies').'</h2>';
+    foreach ($replies as $reply) {
+        $replySender = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], 'Staff', true);
+        $replyHTML .= '<div class="border border-gray-200 rounded-md bg-white p-3 mb-2">'
+            .'<div class="flex flex-wrap items-center justify-between gap-2 mb-2">'
+            .'<span class="font-medium text-gray-900">'.htmlPrep($replySender).'</span>'
+            .'<span class="text-xs text-gray-500">'.Format::dateTime($reply['sendTimestamp']).'</span>'
+            .'</div>'
+            .'<div class="text-sm leading-6 text-gray-800">'
+            .schoolCommunityBodyForDisplay($container, $reply['body'])
+            .'</div>'
+            .'</div>';
     }
-    unset($reply);
-
-    $replyTable = DataTable::create('schoolCommunityMessageReplies');
-    $replyTable->setTitle(schoolCommunityT('Replies'));
-    $replyTable->addMetaData('allowHTML', ['body']);
-    $replyTable->addColumn('senderName', schoolCommunityT('From'))
-        ->context('primary')
-        ->format(function ($reply) {
-            return htmlPrep((string) $reply['senderName']).'<div class="text-xs text-gray-600">'
-                .Format::dateTime($reply['sendTimestamp']).'</div>';
-        });
-    $replyTable->addColumn('body', schoolCommunityT('Reply'))
-        ->context('primary')
-        ->format(function ($reply) use ($container) {
-            return schoolCommunityBodyForDisplay($container, $reply['body']);
-        });
-
-    $page->write($replyTable->render(new DataSet($replies)));
+    $replyHTML .= '</section>';
+    $page->write($replyHTML);
 }
 
 if ($isDeleted) {

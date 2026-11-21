@@ -75,7 +75,7 @@ $row = $form->addRow();
 $row = $form->addRow();
     $row->addContent(
         '<div class="flex items-center justify-end gap-2">'
-        .'<span class="text-xs uppercase tracking-wide text-gray-500">'.schoolCommunityT('Selected').'</span>'
+        .'<span class="text-xs uppercase text-gray-500">'.schoolCommunityT('Selected').'</span>'
         .'<span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">'
         .'<span id="schoolCommunityFreeRecipientCount">'.count($selected).'</span>'
         .'<span class="mx-1 text-blue-400">/</span>5'
