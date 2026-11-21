@@ -69,12 +69,18 @@ $row = $form->addRow();
         ->checked($selected)
         ->alignLeft()
         ->required()
-        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 p-2');
+        ->setLabelClass('leading-compact flex-1 text-sm text-gray-800 py-2 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
+        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
 
 $row = $form->addRow();
     $row->addContent(
-        '<span class="text-sm text-gray-600">'.schoolCommunityT('Selected').': '
-        .'<span id="schoolCommunityFreeRecipientCount" class="font-semibold">'.count($selected).'</span> / 5</span>'
+        '<div class="flex items-center justify-end gap-2">'
+        .'<span class="text-xs uppercase tracking-wide text-gray-500">'.schoolCommunityT('Selected').'</span>'
+        .'<span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-semibold text-blue-700">'
+        .'<span id="schoolCommunityFreeRecipientCount">'.count($selected).'</span>'
+        .'<span class="mx-1 text-blue-400">/</span>5'
+        .'</span>'
+        .'</div>'
     );
 
 $row = $form->addRow();
