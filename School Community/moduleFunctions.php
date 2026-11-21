@@ -85,7 +85,7 @@ function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = 
     return $options;
 }
 
-function schoolCommunityPersonOptions($pdo, $excludePersonID): array
+function schoolCommunityPersonOptions($pdo, $excludePersonID, ?int $accessControl = null): array
 {
     $result = $pdo->select(
         "SELECT gibbonPersonID, title, preferredName, surname, username, roleCategory
@@ -103,6 +103,9 @@ function schoolCommunityPersonOptions($pdo, $excludePersonID): array
 
     $options = [];
     foreach ($result as $person) {
+        if ($accessControl !== null && !schoolCommunityCategoryAllows($accessControl, $person['roleCategory'])) {
+            continue;
+        }
         $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
         $options[(string) $person['gibbonPersonID']] = $name.' ('.schoolCommunityT($person['roleCategory']).')';
     }

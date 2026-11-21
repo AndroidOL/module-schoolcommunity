@@ -18,6 +18,9 @@ msgstr "全部"
 msgid "Categories control which role groups can send messages in each category."
 msgstr "分类用于控制哪些角色组可以在该分类中发送消息。"
 
+msgid "Choose Category"
+msgstr "选择分类"
+
 msgid "Category"
 msgstr "分类"
 
@@ -32,6 +35,9 @@ msgstr "分类已更新。"
 
 msgid "Clear search"
 msgstr "清空搜索"
+
+msgid "Continue"
+msgstr "继续"
 
 msgid "Delete"
 msgstr "删除"
@@ -96,6 +102,9 @@ msgstr "%s 回复了：%s"
 msgid "No message categories are available for your role. Contact an administrator."
 msgstr "您的角色没有可用的消息分类，请联系管理员。"
 
+msgid "No eligible recipients are available for this category."
+msgstr "该分类没有符合条件的收件人。"
+
 msgid "No message recipients are available."
 msgstr "没有可用的消息收件人。"
 
@@ -143,6 +152,9 @@ msgstr "搜索分类"
 
 msgid "Search Messages"
 msgstr "搜索消息"
+
+msgid "Select a category first so only eligible recipients are shown."
+msgstr "请先选择分类，系统只会显示该分类允许的收件人。"
 
 msgid "Send Message"
 msgstr "发送消息"

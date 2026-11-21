@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+v1.0.3
+------
+- Filter recipients by the selected category audience before rendering the form
+  and enforce the same rule again on submission.
+
 v1.0.2
 ------
 - Complete the reviewed Simplified Chinese translation pass.

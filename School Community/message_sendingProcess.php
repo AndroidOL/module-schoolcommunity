@@ -52,10 +52,13 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
 }
 
 $recipient = $pdo->selectOne(
-    "SELECT gibbonPersonID FROM gibbonPerson WHERE gibbonPersonID=:gibbonPersonID AND status='Full'",
+    "SELECT gibbonPerson.gibbonPersonID, gibbonRole.category AS roleCategory
+     FROM gibbonPerson
+     JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+     WHERE gibbonPerson.gibbonPersonID=:gibbonPersonID AND gibbonPerson.status='Full'",
     ['gibbonPersonID' => $recipientID]
 );
-if (empty($recipient)) {
+if (empty($recipient) || !schoolCommunityCategoryAllows($category['accessControl'], $recipient['roleCategory'])) {
     $redirect('error1');
 }
 

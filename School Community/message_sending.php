@@ -20,7 +20,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 $gibbonPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $categories = schoolCommunityCategoryOptions($pdo, $roleCategory);
-$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID);
+$categoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
 
 if (empty($categories)) {
     $page->addError(schoolCommunityT('No message categories are available for your role. Contact an administrator.'));
@@ -34,13 +34,39 @@ if (empty($categories)) {
     }
     return;
 }
+$category = $categoryID !== '' ? $pdo->selectOne(
+    "SELECT categoryID, categoryName, accessControl
+     FROM message_category
+     WHERE categoryID=:categoryID",
+    ['categoryID' => $categoryID]
+) : null;
+
+if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
+    $form = Form::create('schoolCommunityCategoryChoose', $session->get('absoluteURL').'/index.php', 'get');
+    $form->addHiddenValue('q', '/modules/School Community/message_sending.php');
+    $form->setTitle(schoolCommunityT('Choose Category'));
+    $form->setDescription(schoolCommunityT('Select a category first so only eligible recipients are shown.'));
+
+    $row = $form->addRow();
+        $row->addLabel('categoryID', schoolCommunityT('Category'));
+        $row->addSelect('categoryID')->fromArray($categories)->required()->placeholder();
+    $row = $form->addRow();
+        $row->addFooter();
+        $row->addSubmit(schoolCommunityT('Continue'));
+
+    echo $form->getOutput();
+    return;
+}
+
+$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl']);
 if (empty($people)) {
-    $page->addError(schoolCommunityT('No message recipients are available.'));
+    $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
     return;
 }
 
 $form = Form::create('schoolCommunityMessage', $session->get('absoluteURL').'/modules/School Community/message_sendingProcess.php', 'post');
 $form->addHiddenValue('address', $session->get('address'));
+$form->addHiddenValue('categoryID', $categoryID);
 $form->setTitle(schoolCommunityT('Send Message'));
 
 $row = $form->addRow();
@@ -49,7 +75,7 @@ $row = $form->addRow();
 
 $row = $form->addRow();
     $row->addLabel('categoryID', schoolCommunityT('Category'));
-    $row->addSelect('categoryID')->fromArray($categories)->required()->placeholder();
+    $row->addTextField('categoryName')->readonly()->setValue($category['categoryName']);
 
 $row = $form->addRow();
     $row->addLabel('priority', schoolCommunityT('Priority'));

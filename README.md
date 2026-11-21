@@ -22,6 +22,7 @@ and a home-school communication workflow.
 
 - Create categories and select which role groups may use them.
 - Send HTML-formatted messages to active Gibbon users.
+- Filter recipient choices by the selected category's allowed role groups.
 - List sent, received and unread messages with category and priority filters.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
