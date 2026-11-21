@@ -58,13 +58,16 @@ msgid "From / To"
 msgstr "发件人 / 收件人"
 
 msgid "High"
-msgstr "紧急"
+msgstr "高"
 
 msgid "Mailbox"
 msgstr "信箱"
 
 msgid "Manage Categories"
 msgstr "管理分类"
+
+msgid "Manage Message Categories"
+msgstr "管理消息分类"
 
 msgid "Message"
 msgstr "消息"
@@ -79,7 +82,7 @@ msgid "Message sent."
 msgstr "消息已发送。"
 
 msgid "Messages you sent or received. Unread messages are marked in the title."
-msgstr "你发送或收到的消息。未读消息会在标题中标记。"
+msgstr "您发送或收到的消息。未读消息会在标题中标记。"
 
 msgid "Name"
 msgstr "名称"
@@ -91,13 +94,13 @@ msgid "New reply from %s: %s"
 msgstr "%s 回复了：%s"
 
 msgid "No message categories are available for your role. Contact an administrator."
-msgstr "你的角色没有可用的消息分类，请联系管理员。"
+msgstr "您的角色没有可用的消息分类，请联系管理员。"
 
 msgid "No message recipients are available."
 msgstr "没有可用的消息收件人。"
 
 msgid "Normal"
-msgstr "正常"
+msgstr "普通"
 
 msgid "Notice"
 msgstr "通知"
@@ -148,7 +151,7 @@ msgid "Sent"
 msgstr "发送的"
 
 msgid "Staff"
-msgstr "员工"
+msgstr "教职工"
 
 msgid "Student"
 msgstr "学生"
