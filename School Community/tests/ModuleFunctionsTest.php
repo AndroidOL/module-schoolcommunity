@@ -58,5 +58,90 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('Helloalert(1)', \schoolCommunityBodyForDisplay($container, $body));
             $this->assertSame('Legacyalert(1)', \schoolCommunityBodyForDisplay($container, $legacy));
         }
+
+        public function testSelfMessagingCanIncludeCurrentUserWithoutLosingAudienceFiltering()
+        {
+            $pdo = new class {
+                public function select($query)
+                {
+                    return new class {
+                        public function fetchAll()
+                        {
+                            return [
+                                ['gibbonPersonID' => '10', 'title' => 'Ms', 'preferredName' => 'Ada', 'surname' => 'Current', 'username' => 'ada', 'roleCategory' => 'Staff'],
+                                ['gibbonPersonID' => '11', 'title' => 'Mr', 'preferredName' => 'Ben', 'surname' => 'Staff', 'username' => 'ben', 'roleCategory' => 'Staff'],
+                                ['gibbonPersonID' => '12', 'title' => 'Mrs', 'preferredName' => 'Cara', 'surname' => 'Parent', 'username' => 'cara', 'roleCategory' => 'Parent'],
+                                ['gibbonPersonID' => '13', 'title' => 'Sam', 'preferredName' => 'Drew', 'surname' => 'Student', 'username' => 'drew', 'roleCategory' => 'Student'],
+                            ];
+                        }
+                    };
+                }
+            };
+
+            $withoutSelf = \schoolCommunityPersonOptions($pdo, '10', 10, false);
+            $withSelf = \schoolCommunityPersonOptions($pdo, '10', 10, true);
+
+            $this->assertArrayNotHasKey('10', $withoutSelf);
+            $this->assertArrayHasKey('11', $withoutSelf);
+            $this->assertArrayHasKey('12', $withoutSelf);
+            $this->assertArrayNotHasKey('13', $withoutSelf);
+            $this->assertArrayHasKey('10', $withSelf);
+            $this->assertStringContainsString('Self (visible only to you)', $withSelf['10']);
+        }
+
+        public function testGroupAccessRequiresCurrentMembershipAudienceAndOwnerWhenRequested()
+        {
+            $group = [
+                'groupMemberPersonID' => '10',
+                'ownerID' => '10',
+                'accessControl' => 10,
+            ];
+
+            $this->assertTrue(\schoolCommunityGroupAccessAllowed($group, '10', 'Staff'));
+            $this->assertTrue(\schoolCommunityGroupAccessAllowed($group, '10', 'Staff', true));
+            $this->assertFalse(\schoolCommunityGroupAccessAllowed($group, '10', 'Student'));
+            $this->assertFalse(\schoolCommunityGroupAccessAllowed($group, '11', 'Staff'));
+
+            $group['ownerID'] = '11';
+            $this->assertFalse(\schoolCommunityGroupAccessAllowed($group, '10', 'Staff', true));
+        }
+
+        public function testGroupAudienceExcludesInactiveAndIneligibleMembers()
+        {
+            $audience = \schoolCommunityGroupAudience([
+                ['gibbonPersonID' => '10', 'status' => 'Full', 'roleCategory' => 'Staff'],
+                ['gibbonPersonID' => '11', 'status' => 'Full', 'roleCategory' => 'Parent'],
+                ['gibbonPersonID' => '12', 'status' => 'Full', 'roleCategory' => 'Student'],
+                ['gibbonPersonID' => '13', 'status' => 'Left', 'roleCategory' => 'Staff'],
+            ], 10);
+
+            $this->assertSame(['10', '11'], array_column($audience['eligible'], 'gibbonPersonID'));
+            $this->assertSame(['12', '13'], array_column($audience['excluded'], 'gibbonPersonID'));
+        }
+
+        public function testSelfMessageAppearsOnceAndRemainsUnreadUntilOpened()
+        {
+            $table = \schoolCommunityMessageTable([[
+                'messageID' => '1',
+                'senderID' => '10',
+                'receiverID' => '10',
+                'senderTitle' => '',
+                'senderPreferredName' => 'Ada',
+                'senderSurname' => 'Current',
+                'receiverTitle' => '',
+                'receiverPreferredName' => 'Ada',
+                'receiverSurname' => 'Current',
+                'priority' => null,
+                'title' => 'Reminder',
+                'body' => 'Private note',
+                'readTimestamp' => null,
+            ]], '10');
+
+            $rows = $table->toArray();
+            $this->assertCount(1, $rows);
+            $this->assertSame('Sent / Received', $rows[0]['direction']);
+            $this->assertTrue($rows[0]['isUnread']);
+            $this->assertSame('Ada Current', $rows[0]['otherPerson']);
+        }
     }
 }

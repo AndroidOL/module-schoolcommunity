@@ -41,6 +41,12 @@ if ($action === 'delete') {
         "SELECT 1 FROM message_totals WHERE categoryID=:categoryID LIMIT 1",
         ['categoryID' => $categoryID]
     );
+    if (empty($inUse)) {
+        $inUse = $pdo->selectOne(
+            "SELECT 1 FROM message_group WHERE categoryID=:categoryID LIMIT 1",
+            ['categoryID' => $categoryID]
+        );
+    }
     if (!empty($inUse)) {
         $redirect('error3');
     }

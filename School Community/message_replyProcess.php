@@ -48,13 +48,15 @@ if (!empty($inserted)) {
         $recipientID = (string) $message['senderID'] === $currentPersonID
             ? (string) $message['receiverID']
             : (string) $message['senderID'];
-        $replyAuthor = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
-        $container->get(NotificationGateway::class)->insertNotification([
-            'gibbonPersonID' => $recipientID,
-            'text'           => sprintf(schoolCommunityT('New reply from %s: %s'), $replyAuthor, $message['title']),
-            'moduleName'     => 'School Community',
-            'actionLink'     => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($messageID),
-        ]);
+        if ($recipientID !== $currentPersonID) {
+            $replyAuthor = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
+            $container->get(NotificationGateway::class)->insertNotification([
+                'gibbonPersonID' => $recipientID,
+                'text'           => sprintf(schoolCommunityT('New reply from %s: %s'), $replyAuthor, $message['title']),
+                'moduleName'     => 'School Community',
+                'actionLink'     => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($messageID),
+            ]);
+        }
     } catch (\Throwable $e) {
         // The reply is already stored; notification failure must not lose it.
     }

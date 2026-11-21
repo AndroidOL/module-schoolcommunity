@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+v1.1.0
+------
+- Allow users to send a category-eligible message to themselves.
+- Add category-controlled message groups with owner-managed membership.
+- Add recipient review, a frozen send-time recipient snapshot, group messages,
+  replies, unread counts, read receipts and notifications.
+- Prevent people added after a group message from seeing the earlier message,
+  its replies or its receipt details.
+- Require membership, active account and category audience checks for every
+  group read and write.
+- Add a 1.0.3 to 1.1.0 database upgrade for installed sites.
+
 v1.0.3
 ------
 - Filter recipients by the selected category audience before rendering the form

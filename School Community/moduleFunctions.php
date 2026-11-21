@@ -85,7 +85,7 @@ function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = 
     return $options;
 }
 
-function schoolCommunityPersonOptions($pdo, $excludePersonID, ?int $accessControl = null): array
+function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessControl = null, bool $includeCurrent = false): array
 {
     $result = $pdo->select(
         "SELECT gibbonPersonID, title, preferredName, surname, username, roleCategory
@@ -95,22 +95,136 @@ function schoolCommunityPersonOptions($pdo, $excludePersonID, ?int $accessContro
              FROM gibbonPerson
              JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
              WHERE gibbonPerson.status='Full'
-               AND gibbonPerson.gibbonPersonID<>:gibbonPersonID
          ) AS people
-         ORDER BY surname, preferredName",
-        ['gibbonPersonID' => $excludePersonID]
+         ORDER BY surname, preferredName"
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $options = [];
     foreach ($result as $person) {
+        if (!$includeCurrent && (string) $person['gibbonPersonID'] === (string) $currentPersonID) {
+            continue;
+        }
         if ($accessControl !== null && !schoolCommunityCategoryAllows($accessControl, $person['roleCategory'])) {
             continue;
         }
         $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
-        $options[(string) $person['gibbonPersonID']] = $name.' ('.schoolCommunityT($person['roleCategory']).')';
+        $label = $name.' ('.schoolCommunityT($person['roleCategory']).')';
+        if ($includeCurrent && (string) $person['gibbonPersonID'] === (string) $currentPersonID) {
+            $label .= ' — '.schoolCommunityT('Self (visible only to you)');
+        }
+        $options[(string) $person['gibbonPersonID']] = $label;
     }
 
     return $options;
+}
+
+function schoolCommunityGroupAccessAllowed(array $group, $gibbonPersonID, $roleCategory, bool $ownerOnly = false): bool
+{
+    if ((string) ($group['groupMemberPersonID'] ?? '') !== (string) $gibbonPersonID) {
+        return false;
+    }
+    if ($ownerOnly && (string) ($group['ownerID'] ?? '') !== (string) $gibbonPersonID) {
+        return false;
+    }
+
+    return schoolCommunityCategoryAllows($group['accessControl'] ?? 0, $roleCategory);
+}
+
+function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCategory, bool $ownerOnly = false): ?array
+{
+    $group = $pdo->selectOne(
+        "SELECT message_group.*, message_category.categoryName, message_category.accessControl,
+                member.gibbonPersonID AS groupMemberPersonID,
+                owner.title AS ownerTitle, owner.preferredName AS ownerPreferredName,
+                owner.surname AS ownerSurname, ownerRole.category AS ownerRoleCategory
+         FROM message_group
+         JOIN message_category ON message_category.categoryID=message_group.categoryID
+         JOIN message_group_member AS member
+            ON member.groupID=message_group.groupID
+           AND member.gibbonPersonID=:gibbonPersonID
+         JOIN gibbonPerson AS owner ON owner.gibbonPersonID=message_group.ownerID
+         JOIN gibbonRole AS ownerRole ON ownerRole.gibbonRoleID=owner.gibbonRoleIDPrimary
+         WHERE message_group.groupID=:groupID",
+        ['groupID' => $groupID, 'gibbonPersonID' => $gibbonPersonID]
+    );
+
+    if (empty($group) || !schoolCommunityGroupAccessAllowed($group, $gibbonPersonID, $roleCategory, $ownerOnly)) {
+        return null;
+    }
+
+    return $group;
+}
+
+function schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $gibbonPersonID, $roleCategory): ?array
+{
+    $message = $pdo->selectOne(
+        "SELECT message_group_message.*, message_group.categoryID, message_group.groupName, message_group.ownerID,
+                message_category.categoryName, message_category.accessControl,
+                member.gibbonPersonID AS groupMemberPersonID
+         FROM message_group_message
+         JOIN message_group ON message_group.groupID=message_group_message.groupID
+         JOIN message_category ON message_category.categoryID=message_group.categoryID
+         JOIN message_group_member AS member
+            ON member.groupID=message_group.groupID
+           AND member.gibbonPersonID=:gibbonPersonID
+         JOIN message_group_message_recipient AS recipient
+            ON recipient.groupMessageID=message_group_message.groupMessageID
+           AND recipient.gibbonPersonID=:gibbonPersonID
+         WHERE message_group_message.groupMessageID=:groupMessageID",
+        ['groupMessageID' => $groupMessageID, 'gibbonPersonID' => $gibbonPersonID]
+    );
+
+    if (empty($message) || !schoolCommunityGroupAccessAllowed($message, $gibbonPersonID, $roleCategory)) {
+        return null;
+    }
+
+    return $message;
+}
+
+function schoolCommunityGroupMemberOptions($pdo, $group, $currentPersonID, array $existingMemberIDs): array
+{
+    $people = schoolCommunityPersonOptions($pdo, $currentPersonID, (int) $group['accessControl']);
+
+    foreach ($existingMemberIDs as $memberID) {
+        unset($people[(string) $memberID]);
+    }
+
+    return $people;
+}
+
+function schoolCommunityGroupAudience(array $members, $accessControl): array
+{
+    $audience = ['eligible' => [], 'excluded' => []];
+    foreach ($members as $member) {
+        $isEligible = ($member['status'] ?? '') === 'Full'
+            && schoolCommunityCategoryAllows($accessControl, $member['roleCategory'] ?? '');
+        $audience[$isEligible ? 'eligible' : 'excluded'][] = $member;
+    }
+
+    return $audience;
+}
+
+function schoolCommunityGroupTable(array $groups, $gibbonPersonID): DataSet
+{
+    $rows = [];
+    foreach ($groups as $group) {
+        $ownerName = Format::name(
+            $group['ownerTitle'],
+            $group['ownerPreferredName'],
+            $group['ownerSurname'],
+            $group['ownerRoleCategory'] ?? 'Staff',
+            true
+        );
+
+        $rows[] = $group + [
+            'ownerName'  => $ownerName,
+            'isOwner'    => (string) $group['ownerID'] === (string) $gibbonPersonID,
+            'unreadLabel'=> (int) $group['unreadCount'] > 0 ? (string) (int) $group['unreadCount'] : '',
+            'url'        => '/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($group['groupID']),
+        ];
+    }
+
+    return new DataSet($rows);
 }
 
 function schoolCommunityPriorityOptions(): array
@@ -166,16 +280,17 @@ function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
     $rows = [];
     foreach ($messages as $message) {
         $isSent = (string) $message['senderID'] === (string) $gibbonPersonID;
+        $isSelf = $isSent && (string) $message['receiverID'] === (string) $gibbonPersonID;
         $otherTitle = $isSent ? $message['receiverTitle'] : $message['senderTitle'];
         $otherName = $isSent
             ? trim($message['receiverPreferredName'].' '.$message['receiverSurname'])
             : trim($message['senderPreferredName'].' '.$message['senderSurname']);
 
         $rows[] = $message + [
-            'direction'     => $isSent ? schoolCommunityT('Sent') : schoolCommunityT('Received'),
+            'direction'     => $isSelf ? schoolCommunityT('Sent / Received') : ($isSent ? schoolCommunityT('Sent') : schoolCommunityT('Received')),
             'otherPerson'   => trim($otherTitle.' '.$otherName),
             'priorityLabel' => schoolCommunityPriorityLabel($message['priority']),
-            'isUnread'      => !$isSent && empty($message['readTimestamp']),
+            'isUnread'      => (!$isSent || $isSelf) && empty($message['readTimestamp']),
             'url'           => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($message['messageID']),
         ];
     }

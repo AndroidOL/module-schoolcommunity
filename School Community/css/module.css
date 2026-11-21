@@ -38,3 +38,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .schoolCommunityMessageBody {
     overflow-wrap: anywhere;
 }
+
+.schoolCommunityGroupHeader {
+    margin-bottom: 1rem;
+}
+
+.schoolCommunityUnreadBadge {
+    display: inline-block;
+    min-width: 1.5rem;
+    margin-left: 0.35rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: #b91c1c;
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+    text-align: center;
+}
+
+.schoolCommunityGroupReplies {
+    margin: 1rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid #e5e7eb;
+}
+
+.schoolCommunityReplyComposer {
+    margin-top: 1rem;
+}
+
+.schoolCommunityReplyComposer > summary {
+    cursor: pointer;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+
+.schoolCommunityOwnerLabel,
+.schoolCommunityEmpty {
+    color: #6b7280;
+}

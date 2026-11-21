@@ -7,10 +7,13 @@
 - Inbox, sent, unread and category filtering.
 - Read receipts and participant-only replies.
 - In-product notifications for new messages and replies.
+- Self-addressed messages.
+- Category-controlled groups with owner-managed membership, group messages,
+  recipient review, snapshots, replies, unread counts and read receipts.
 
 ## Next candidates
 
 - Add attachments through Gibbon's file uploader with virus-scan integration.
-- Add announcements and controlled group recipients.
+- Add group and reply search plus per-user message archiving.
 - Add moderation, reporting and retention policies.
 - Add full-text search and archive exports for large installations.

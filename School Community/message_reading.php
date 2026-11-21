@@ -101,7 +101,7 @@ $table->addColumn('title', schoolCommunityT('Subject'))->format(function ($messa
     $prefix = !empty($message['isUnread']) ? '<strong>' : '';
     $suffix = !empty($message['isUnread']) ? '</strong>' : '';
 
-    return $prefix.Format::link($message['url'], $message['title']).$suffix;
+    return $prefix.'<a href="'.htmlPrep($message['url']).'">'.htmlPrep($message['title']).'</a>'.$suffix;
 });
 $table->addColumn('categoryName', schoolCommunityT('Category'));
 $table->addColumn('otherPerson', schoolCommunityT('From / To'));
@@ -111,6 +111,10 @@ $table->addColumn('sendTimestamp', schoolCommunityT('Sent'))->format(function ($
     return Format::dateTime($message['sendTimestamp']);
 });
 
+$table->addHeaderAction('groups', schoolCommunityT('Message Groups'))
+    ->setURL('/modules/School Community/message_groups.php')
+    ->setIcon('group')
+    ->displayLabel();
 if (isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
     $table->addHeaderAction('send', schoolCommunityT('Send Message'))
         ->setURL('/modules/School Community/message_sending.php')

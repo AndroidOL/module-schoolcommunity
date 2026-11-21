@@ -58,7 +58,7 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
     return;
 }
 
-$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl']);
+$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl'], true);
 if (empty($people)) {
     $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
     return;
@@ -68,6 +68,7 @@ $form = Form::create('schoolCommunityMessage', $session->get('absoluteURL').'/mo
 $form->addHiddenValue('address', $session->get('address'));
 $form->addHiddenValue('categoryID', $categoryID);
 $form->setTitle(schoolCommunityT('Send Message'));
+$form->setDescription(schoolCommunityT('Recipients are limited by the selected category. You may also send a private note to yourself.'));
 
 $row = $form->addRow();
     $row->addLabel('title', schoolCommunityT('Subject'));

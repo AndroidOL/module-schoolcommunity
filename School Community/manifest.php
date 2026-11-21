@@ -21,11 +21,11 @@ along with this program.  If not, see <http:// www.gnu.org/licenses/>.
 
 // Basic variables
 $name        = 'School Community';            // The name of the module as it appears to users. Needs to be unique to installation. Also the name of the folder that holds the unit.
-$description = 'Categorised, auditable messages between staff, students and families.';            // Short text description
+$description = 'Categorised direct and group messages between staff, students and families.';            // Short text description
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.0.3';            // Version number
+$version     = '1.1.0';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 
@@ -78,6 +78,69 @@ $moduleTables[] = 'CREATE TABLE `message_reply` (
     FOREIGN KEY (`messageID`) REFERENCES `message_totals`(`messageID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
 
+$moduleTables[] = 'CREATE TABLE `message_group` (
+    `groupID` INT(10) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `groupName` VARCHAR(100) NOT NULL,
+    `categoryID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `ownerID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updatedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupID`),
+    KEY `categoryID` (`categoryID`),
+    KEY `ownerID` (`ownerID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_group_member` (
+    `groupID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `gibbonPersonID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `joinedAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupID`, `gibbonPersonID`),
+    KEY `gibbonPersonID` (`gibbonPersonID`),
+    FOREIGN KEY (`groupID`) REFERENCES `message_group`(`groupID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_group_message` (
+    `groupMessageID` INT(12) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `groupID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `senderID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `title` VARCHAR(100) NOT NULL,
+    `body` MEDIUMTEXT NOT NULL,
+    `sendTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupMessageID`),
+    KEY `groupID` (`groupID`),
+    FOREIGN KEY (`groupID`) REFERENCES `message_group`(`groupID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_group_message_recipient` (
+    `groupMessageID` INT(12) UNSIGNED ZEROFILL NOT NULL,
+    `gibbonPersonID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `deliveredAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupMessageID`, `gibbonPersonID`),
+    KEY `gibbonPersonID` (`gibbonPersonID`),
+    FOREIGN KEY (`groupMessageID`) REFERENCES `message_group_message`(`groupMessageID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_group_reply` (
+    `groupReplyID` INT(12) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `groupMessageID` INT(12) UNSIGNED ZEROFILL NOT NULL,
+    `senderID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `body` MEDIUMTEXT NOT NULL,
+    `sendTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupReplyID`),
+    KEY `groupMessageID` (`groupMessageID`),
+    FOREIGN KEY (`groupMessageID`) REFERENCES `message_group_message`(`groupMessageID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_group_read_receipt` (
+    `groupReadReceiptID` INT(12) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `groupMessageID` INT(12) UNSIGNED ZEROFILL NOT NULL,
+    `gibbonPersonID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `readTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`groupReadReceiptID`),
+    UNIQUE KEY `messagePerson` (`groupMessageID`, `gibbonPersonID`),
+    FOREIGN KEY (`groupMessageID`) REFERENCES `message_group_message`(`groupMessageID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
 // Add gibbonSettings entries
 // $gibbonSetting[] = "";
 
@@ -107,7 +170,7 @@ $actionRows[] = [
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
     'category'                  => 'Messages', // Optional: subgroups for the right hand side module menu
     'description'               => 'Send a categorised message to another school user.', // Text description
-    'URLList'                   => 'message_sending.php, message_sendingProcess.php', // List of pages included in this action
+    'URLList'                   => 'message_sending.php, message_sendingProcess.php, message_groupAdding.php, message_groupProcess.php', // List of pages included in this action
     'entryURL'                  => 'message_sending.php', // The landing action for the page.
     'entrySidebar'              => 'Y', // Whether or not there's a sidebar on entry to the action
     'menuShow'                  => 'Y', // Whether or not this action shows up in menus or if it's hidden
@@ -127,7 +190,7 @@ $actionRows[] = [
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
     'category'                  => 'Messages', // Optional: subgroups for the right hand side module menu
     'description'               => 'View sent and received messages, receipts and replies.', // Text description
-    'URLList'                   => 'message_reading.php, message_view.php, message_replyProcess.php', // List of pages included in this action
+    'URLList'                   => 'message_reading.php, message_view.php, message_replyProcess.php, message_groups.php, message_groupView.php, message_groupMembers.php, message_groupMessageProcess.php, message_groupReplyProcess.php', // List of pages included in this action
     'entryURL'                  => 'message_reading.php', // The landing action for the page.
     'entrySidebar'              => 'Y', // Whether or not there's a sidebar on entry to the action
     'menuShow'                  => 'Y', // Whether or not this action shows up in menus or if it's hidden

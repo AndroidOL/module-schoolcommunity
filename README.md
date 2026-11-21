@@ -23,11 +23,18 @@ and a home-school communication workflow.
 - Create categories and select which role groups may use them.
 - Send HTML-formatted messages to active Gibbon users.
 - Filter recipient choices by the selected category's allowed role groups.
+- Send a message to yourself without creating duplicate records.
 - List sent, received and unread messages with category and priority filters.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
+- Create category-controlled groups with owner-managed members.
+- Review resolved recipients before sending and freeze a send-time snapshot.
+- Send group messages and replies with unread counts, read receipts and
+  notifications; later members cannot see earlier messages.
 - Notify recipients about new messages and replies.
 - Restrict direct message visibility to the sender and recipient.
+- Restrict group visibility and all group writes to current members whose role
+  is still allowed by the group category.
 
 ## Security
 
@@ -36,6 +43,10 @@ and a home-school communication workflow.
   before storage and again before display.
 - Category permissions use a four-bit audience mask for Staff, Student, Parent
   and Other roles.
+- Group member changes and role changes are checked again on every page load
+  and write request.
+- Group submissions compare the reviewed recipient signature with a fresh
+  server-side resolution before storage.
 - Categories cannot be deleted while messages still use them.
 
 ## Development

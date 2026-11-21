@@ -1,217 +1,579 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: School Community 1.0.0\n"
-"Language: zh_CN\n"
-"PO-Revision-Date: 2026-11-21 11:00+0800\n"
+"Project-Id-Version: School Community 1.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-21 12:48+0800\n"
+"PO-Revision-Date: 2026-11-21 12:48+0800\n"
 "Last-Translator: AndroidOL\n"
 "Language-Team: Gibbon zh_CN\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Add Category"
-msgstr "添加分类"
-
-msgid "All"
-msgstr "全部"
-
-msgid "Categories control which role groups can send messages in each category."
-msgstr "分类用于控制哪些角色组可以在该分类中发送消息。"
-
-msgid "Choose Category"
-msgstr "选择分类"
-
-msgid "Category"
-msgstr "分类"
-
-msgid "Category created."
-msgstr "分类已创建。"
-
-msgid "Category deleted."
-msgstr "分类已删除。"
-
-msgid "Category updated."
-msgstr "分类已更新。"
-
-msgid "Clear search"
-msgstr "清空搜索"
-
-msgid "Continue"
-msgstr "继续"
-
-msgid "Delete"
-msgstr "删除"
-
-msgid "Delete Category"
-msgstr "删除分类"
-
-msgid "Delete category \"%s\"? This cannot be undone."
-msgstr "删除分类“%s”？此操作不可撤销。"
-
-msgid "Direction"
-msgstr "方向"
-
-msgid "Edit"
-msgstr "编辑"
-
-msgid "Edit Category"
-msgstr "编辑分类"
-
-msgid "From"
-msgstr "发件人"
-
-msgid "From / To"
-msgstr "发件人 / 收件人"
-
-msgid "High"
-msgstr "高"
-
-msgid "Mailbox"
-msgstr "信箱"
-
-msgid "Manage Categories"
-msgstr "管理分类"
-
-msgid "Manage Message Categories"
-msgstr "管理消息分类"
-
-msgid "Message"
-msgstr "消息"
-
-msgid "Message Categories"
-msgstr "消息分类"
-
-msgid "Messages"
-msgstr "消息"
-
-msgid "Message sent."
-msgstr "消息已发送。"
-
-msgid "Messages you sent or received. Unread messages are marked in the title."
-msgstr "您发送或收到的消息。未读消息会在标题中标记。"
-
-msgid "Name"
-msgstr "名称"
-
-msgid "New message from %s: %s"
-msgstr "%s 发来新消息：%s"
-
+#: ⁨School Community/message_replyProcess.php⁩:55
+#, php-format
 msgid "New reply from %s: %s"
 msgstr "%s 回复了：%s"
 
-msgid "No message categories are available for your role. Contact an administrator."
-msgstr "您的角色没有可用的消息分类，请联系管理员。"
+#: ⁨School Community/message_groupMembers.php⁩:14
+#: ⁨School Community/message_groupView.php⁩:13
+#: ⁨School Community/message_reading.php⁩:114
+#: ⁨School Community/message_groups.php⁩:15
+#: ⁨School Community/message_groups.php⁩:74
+#: ⁨School Community/message_groupAdding.php⁩:12
+msgid "Message Groups"
+msgstr "消息群组"
 
-msgid "No eligible recipients are available for this category."
-msgstr "该分类没有符合条件的收件人。"
+#: ⁨School Community/message_groupMembers.php⁩:15
+msgid "Manage Group Members"
+msgstr "管理群组成员"
 
-msgid "No message recipients are available."
-msgstr "没有可用的消息收件人。"
-
-msgid "Normal"
-msgstr "普通"
-
-msgid "Notice"
-msgstr "通知"
-
-msgid "Other"
-msgstr "其他"
-
-msgid "Parent"
-msgstr "家长"
-
-msgid "Post Reply"
-msgstr "发布回复"
-
-msgid "Priority"
-msgstr "优先程度"
-
-msgid "Received"
-msgstr "收到的"
-
-msgid "Recipient"
-msgstr "收件人"
-
-msgid "Replies"
-msgstr "回复"
-
-msgid "Reply"
-msgstr "回复"
-
-msgid "Reply posted."
-msgstr "回复已发布。"
-
-msgid "Save Changes"
-msgstr "保存修改"
-
-msgid "Search"
-msgstr "搜索"
-
-msgid "Search Categories"
-msgstr "搜索分类"
-
-msgid "Search Messages"
-msgstr "搜索消息"
-
-msgid "Select a category first so only eligible recipients are shown."
-msgstr "请先选择分类，系统只会显示该分类允许的收件人。"
-
-msgid "Send Message"
-msgstr "发送消息"
-
-msgid "Sent"
-msgstr "发送的"
-
-msgid "Staff"
-msgstr "教职工"
-
-msgid "Student"
-msgstr "学生"
-
-msgid "Subject"
-msgstr "标题"
-
-msgid "The category is in use and cannot be deleted."
-msgstr "分类正在使用中，不能删除。"
-
-msgid "The specified record does not exist."
-msgstr "指定的记录不存在。"
-
-msgid "The submitted data is invalid."
-msgstr "提交的数据无效。"
-
-msgid "Title or message text"
-msgstr "标题或消息内容"
-
-msgid "To"
-msgstr "收件人"
-
-msgid "Unable to save the category."
-msgstr "保存分类失败。"
-
-msgid "Unable to save the message."
-msgstr "保存消息失败。"
-
-msgid "Unread"
-msgstr "未读"
-
-msgid "Updated"
-msgstr "更新时间"
-
-msgid "View Message"
-msgstr "查看消息"
-
-msgid "Visible"
-msgstr "可见"
-
-msgid "Visible To"
-msgstr "可见角色"
-
+#: ⁨School Community/message_groupMembers.php⁩:18
+#: ⁨School Community/message_categorySetting.php⁩:16
+#: ⁨School Community/message_categoryEditing.php⁩:16
+#: ⁨School Community/message_sending.php⁩:16
+#: ⁨School Community/message_categoryDelete.php⁩:16
+#: ⁨School Community/message_groupView.php⁩:17
+#: ⁨School Community/message_categoryAdding.php⁩:16
+#: ⁨School Community/message_reading.php⁩:16
+#: ⁨School Community/message_groups.php⁩:18
+#: ⁨School Community/message_groupAdding.php⁩:17
+#: ⁨School Community/message_view.php⁩:17
 msgid "You do not have access to this page."
 msgstr "您没有权限访问该页面。"
 
+#: ⁨School Community/message_groupMembers.php⁩:23
+#: ⁨School Community/message_groups.php⁩:24
+msgid "Group member added."
+msgstr "群组成员已添加。"
+
+#: ⁨School Community/message_groupMembers.php⁩:24
+#: ⁨School Community/message_groups.php⁩:25
+msgid "Group member removed."
+msgstr "群组成员已移除。"
+
+#: ⁨School Community/message_groupMembers.php⁩:25
+#: ⁨School Community/message_categorySetting.php⁩:24
+#: ⁨School Community/message_groupView.php⁩:25
+#: ⁨School Community/message_groups.php⁩:26 ⁨School Community/message_view.php⁩:24
 msgid "You do not have permission to perform this action."
 msgstr "您没有权限执行该操作。"
 
+#: ⁨School Community/message_groupMembers.php⁩:26
+#: ⁨School Community/message_categorySetting.php⁩:25
+#: ⁨School Community/message_groupView.php⁩:26
+#: ⁨School Community/message_groups.php⁩:27 ⁨School Community/message_view.php⁩:25
+msgid "The submitted data is invalid."
+msgstr "提交的数据无效。"
+
+#: ⁨School Community/message_groupMembers.php⁩:27
+#: ⁨School Community/message_groups.php⁩:28
+msgid "Unable to save the message group."
+msgstr "保存消息群组失败。"
+
+#: ⁨School Community/message_groupMembers.php⁩:28
+#: ⁨School Community/message_categorySetting.php⁩:28
+#: ⁨School Community/message_groupView.php⁩:29
+#: ⁨School Community/message_groups.php⁩:29 ⁨School Community/message_view.php⁩:27
 msgid "Your session expired. Refresh the page and try again."
 msgstr "会话已过期，请刷新页面后重试。"
+
+#: ⁨School Community/message_groupMembers.php⁩:37
+#: ⁨School Community/message_categoryEditing.php⁩:27
+#: ⁨School Community/message_categoryDelete.php⁩:27
+#: ⁨School Community/message_groupView.php⁩:38
+#: ⁨School Community/message_view.php⁩:35
+msgid "The specified record does not exist."
+msgstr "指定的记录不存在。"
+
+#: ⁨School Community/message_groupMembers.php⁩:60
+msgid "Add Group Member"
+msgstr "添加群组成员"
+
+#: ⁨School Community/message_groupMembers.php⁩:61
+msgid ""
+"Only active users whose role is allowed by this group category can be added."
+msgstr "只能添加账号有效且角色符合该群组分类权限的人员。"
+
+#: ⁨School Community/message_groupMembers.php⁩:63
+msgid "Person"
+msgstr "人员"
+
+#: ⁨School Community/message_groupMembers.php⁩:67
+msgid "Add Member"
+msgstr "添加成员"
+
+#: ⁨School Community/message_groupMembers.php⁩:70
+msgid "There are no other eligible people to add to this group."
+msgstr "没有其他符合条件的人员可以加入该群组。"
+
+#: ⁨School Community/message_groupMembers.php⁩:86
+msgid "Remove"
+msgstr "移除"
+
+#: ⁨School Community/message_groupMembers.php⁩:89
+#: ⁨School Community/message_groupView.php⁩:123
+#: ⁨School Community/message_groups.php⁩:88
+msgid "Owner"
+msgstr "群主"
+
+#: ⁨School Community/message_groupMembers.php⁩:99
+#, php-format
+msgid "%s Members"
+msgstr "%s 成员"
+
+#: ⁨School Community/message_groupMembers.php⁩:101
+#: ⁨School Community/message_categorySetting.php⁩:66
+#: ⁨School Community/message_categoryEditing.php⁩:42
+#: ⁨School Community/message_categoryAdding.php⁩:25
+msgid "Name"
+msgstr "名称"
+
+#: ⁨School Community/message_groupMembers.php⁩:102
+msgid "Role"
+msgstr "角色"
+
+#: ⁨School Community/message_groupMembers.php⁩:105
+msgid "Username"
+msgstr "用户名"
+
+#: ⁨School Community/message_groupMembers.php⁩:106
+msgid "Joined"
+msgstr "加入时间"
+
+#: ⁨School Community/message_groupMembers.php⁩:109
+msgid "Action"
+msgstr "操作"
+
+#: ⁨School Community/message_groupMessageProcess.php⁩:109
+#, php-format
+msgid "New group message from %s in %s: %s"
+msgstr "%s 在 %s 发来群组消息：%s"
+
+#: ⁨School Community/message_categorySetting.php⁩:13
+#: ⁨School Community/message_categorySetting.php⁩:64
+#: ⁨School Community/message_categoryEditing.php⁩:12
+#: ⁨School Community/message_categoryDelete.php⁩:12
+#: ⁨School Community/message_categoryAdding.php⁩:12
+msgid "Message Categories"
+msgstr "消息分类"
+
+#: ⁨School Community/message_categorySetting.php⁩:21
+msgid "Category created."
+msgstr "分类已创建。"
+
+#: ⁨School Community/message_categorySetting.php⁩:22
+msgid "Category updated."
+msgstr "分类已更新。"
+
+#: ⁨School Community/message_categorySetting.php⁩:23
+msgid "Category deleted."
+msgstr "分类已删除。"
+
+#: ⁨School Community/message_categorySetting.php⁩:26
+msgid "Unable to save the category."
+msgstr "保存分类失败。"
+
+#: ⁨School Community/message_categorySetting.php⁩:27
+msgid "The category is in use and cannot be deleted."
+msgstr "分类正在使用中，不能删除。"
+
+#: ⁨School Community/message_categorySetting.php⁩:34
+msgid "Search Categories"
+msgstr "搜索分类"
+
+#: ⁨School Community/message_categorySetting.php⁩:38
+#: ⁨School Community/message_reading.php⁩:33
+msgid "Search"
+msgstr "搜索"
+
+#: ⁨School Community/message_categorySetting.php⁩:41
+#: ⁨School Community/message_reading.php⁩:53
+msgid "Clear search"
+msgstr "清空搜索"
+
+#: ⁨School Community/message_categorySetting.php⁩:65
+msgid ""
+"Categories control which role groups can send messages in each category."
+msgstr "分类用于控制哪些角色组可以在该分类中发送消息。"
+
+#: ⁨School Community/message_categorySetting.php⁩:67
+msgid "Visible To"
+msgstr "可见角色"
+
+#: ⁨School Community/message_categorySetting.php⁩:68
+msgid "Updated"
+msgstr "更新时间"
+
+#: ⁨School Community/message_categorySetting.php⁩:71
+#: ⁨School Community/message_categoryAdding.php⁩:13
+#: ⁨School Community/message_categoryAdding.php⁩:22
+#: ⁨School Community/message_categoryAdding.php⁩:36
+msgid "Add Category"
+msgstr "添加分类"
+
+#: ⁨School Community/message_categorySetting.php⁩:79
+msgid "Edit"
+msgstr "编辑"
+
+#: ⁨School Community/message_categorySetting.php⁩:82
+msgid "Delete"
+msgstr "删除"
+
+#: ⁨School Community/message_categoryEditing.php⁩:13
+#: ⁨School Community/message_categoryEditing.php⁩:39
+msgid "Edit Category"
+msgstr "编辑分类"
+
+#: ⁨School Community/message_categoryEditing.php⁩:47
+#: ⁨School Community/message_categoryAdding.php⁩:30
+msgid "Visible"
+msgstr "可见"
+
+#: ⁨School Community/message_categoryEditing.php⁩:53
+msgid "Save Changes"
+msgstr "保存修改"
+
+#: ⁨School Community/message_sendingProcess.php⁩:87
+#, php-format
+msgid "New message from %s: %s"
+msgstr "%s 发来新消息：%s"
+
+#: ⁨School Community/moduleFunctions.php⁩:113
+msgid "Self (visible only to you)"
+msgstr "自己（仅自己可见）"
+
+#: ⁨School Community/moduleFunctions.php⁩:233
+#: ⁨School Community/moduleFunctions.php⁩:247
+msgid "High"
+msgstr "高"
+
+#: ⁨School Community/moduleFunctions.php⁩:234
+#: ⁨School Community/moduleFunctions.php⁩:253
+msgid "Normal"
+msgstr "普通"
+
+#: ⁨School Community/moduleFunctions.php⁩:235
+#: ⁨School Community/moduleFunctions.php⁩:250
+msgid "Notice"
+msgstr "通知"
+
+#: ⁨School Community/moduleFunctions.php⁩:290
+msgid "Sent / Received"
+msgstr "已发送 / 已收到"
+
+#: ⁨School Community/moduleFunctions.php⁩:290
+#: ⁨School Community/message_reading.php⁩:48
+#: ⁨School Community/message_reading.php⁩:110
+#: ⁨School Community/message_view.php⁩:58
+msgid "Sent"
+msgstr "发送的"
+
+#: ⁨School Community/moduleFunctions.php⁩:290
+#: ⁨School Community/message_reading.php⁩:47
+msgid "Received"
+msgstr "收到的"
+
+#: ⁨School Community/message_sending.php⁩:12
+#: ⁨School Community/message_reading.php⁩:13
+#: ⁨School Community/message_reading.php⁩:96
+#: ⁨School Community/message_groups.php⁩:14 ⁨School Community/message_view.php⁩:13
+msgid "Messages"
+msgstr "消息"
+
+#: ⁨School Community/message_sending.php⁩:13
+#: ⁨School Community/message_sending.php⁩:70
+#: ⁨School Community/message_sending.php⁩:96
+#: ⁨School Community/message_reading.php⁩:119
+msgid "Send Message"
+msgstr "发送消息"
+
+#: ⁨School Community/message_sending.php⁩:26
+#: ⁨School Community/message_groupAdding.php⁩:24
+msgid ""
+"No message categories are available for your role. Contact an administrator."
+msgstr "您的角色没有可用的消息分类，请联系管理员。"
+
+#: ⁨School Community/message_sending.php⁩:29
+msgid "Manage Message Categories"
+msgstr "管理消息分类"
+
+#: ⁨School Community/message_sending.php⁩:47
+msgid "Choose Category"
+msgstr "选择分类"
+
+#: ⁨School Community/message_sending.php⁩:48
+msgid "Select a category first so only eligible recipients are shown."
+msgstr "请先选择分类，系统只会显示该分类允许的收件人。"
+
+#: ⁨School Community/message_sending.php⁩:51
+#: ⁨School Community/message_sending.php⁩:78
+#: ⁨School Community/message_groupView.php⁩:122
+#: ⁨School Community/message_reading.php⁩:37
+#: ⁨School Community/message_reading.php⁩:106
+#: ⁨School Community/message_groups.php⁩:87
+#: ⁨School Community/message_groupAdding.php⁩:38
+#: ⁨School Community/message_view.php⁩:56
+msgid "Category"
+msgstr "分类"
+
+#: ⁨School Community/message_sending.php⁩:55
+msgid "Continue"
+msgstr "继续"
+
+#: ⁨School Community/message_sending.php⁩:63
+msgid "No eligible recipients are available for this category."
+msgstr "该分类没有符合条件的收件人。"
+
+#: ⁨School Community/message_sending.php⁩:71
+msgid ""
+"Recipients are limited by the selected category. You may also send a private "
+"note to yourself."
+msgstr "收件人受所选分类限制，您也可以给自己发送仅自己可见的私人备忘。"
+
+#: ⁨School Community/message_sending.php⁩:74
+#: ⁨School Community/message_groupView.php⁩:220
+#: ⁨School Community/message_reading.php⁩:100
+msgid "Subject"
+msgstr "标题"
+
+#: ⁨School Community/message_sending.php⁩:82
+#: ⁨School Community/message_reading.php⁩:109
+#: ⁨School Community/message_view.php⁩:57
+msgid "Priority"
+msgstr "优先程度"
+
+#: ⁨School Community/message_sending.php⁩:86
+msgid "Recipient"
+msgstr "收件人"
+
+#: ⁨School Community/message_sending.php⁩:91
+#: ⁨School Community/message_groupView.php⁩:225
+msgid "Message"
+msgstr "消息"
+
+#: ⁨School Community/message_groupReplyProcess.php⁩:68
+#, php-format
+msgid "New group reply from %s in %s: %s"
+msgstr "%s 在 %s 发布了群组回复：%s"
+
+#: ⁨School Community/message_categoryDelete.php⁩:13
+#: ⁨School Community/message_categoryDelete.php⁩:34
+#: ⁨School Community/message_categoryDelete.php⁩:38
+msgid "Delete Category"
+msgstr "删除分类"
+
+#: ⁨School Community/message_categoryDelete.php⁩:35
+#, php-format
+msgid "Delete category \"%s\"? This cannot be undone."
+msgstr "删除分类“%s”？此操作不可撤销。"
+
+#: ⁨School Community/message_groupView.php⁩:14
+msgid "View Group"
+msgstr "查看群组"
+
+#: ⁨School Community/message_groupView.php⁩:22
+msgid "Group message sent."
+msgstr "群组消息已发送。"
+
+#: ⁨School Community/message_groupView.php⁩:23
+msgid "Group reply posted."
+msgstr "群组回复已发布。"
+
+#: ⁨School Community/message_groupView.php⁩:24
+#: ⁨School Community/message_groups.php⁩:23
+msgid "Message group created."
+msgstr "消息群组已创建。"
+
+#: ⁨School Community/message_groupView.php⁩:27
+msgid "Unable to save the group message."
+msgstr "保存群组消息失败。"
+
+#: ⁨School Community/message_groupView.php⁩:28
+msgid "The recipient list changed. Review the updated list and send again."
+msgstr "收件人名单已变化，请重新查看名单后再发送。"
+
+#: ⁨School Community/message_groupView.php⁩:45
+msgid "Manage Members"
+msgstr "管理成员"
+
+#: ⁨School Community/message_groupView.php⁩:128
+msgid "No group messages yet. Start the conversation below."
+msgstr "尚无群组消息，可在下方开始交流。"
+
+#: ⁨School Community/message_groupView.php⁩:147
+#, php-format
+msgid "Read by %1$d of %2$d members"
+msgstr "已读 %1$d / %2$d 人"
+
+#: ⁨School Community/message_groupView.php⁩:152
+#: ⁨School Community/message_view.php⁩:76
+msgid "Replies"
+msgstr "回复"
+
+#: ⁨School Community/message_groupView.php⁩:172
+#: ⁨School Community/message_groupView.php⁩:177
+#: ⁨School Community/message_view.php⁩:89 ⁨School Community/message_view.php⁩:92
+msgid "Reply"
+msgstr "回复"
+
+#: ⁨School Community/message_groupView.php⁩:176
+#: ⁨School Community/message_view.php⁩:96
+msgid "Post Reply"
+msgstr "发布回复"
+
+#: ⁨School Community/message_groupView.php⁩:199
+#, php-format
+msgid "%d recipients"
+msgstr "%d 名收件人"
+
+#: ⁨School Community/message_groupView.php⁩:204
+#, php-format
+msgid ""
+"%d group members will be excluded because their account is inactive or their "
+"role is not allowed by this category."
+msgstr "%d 名群组成员将因账号停用或角色不符合该分类权限而被排除。"
+
+#: ⁨School Community/message_groupView.php⁩:212
+#: ⁨School Community/message_groupView.php⁩:234
+msgid "Send Group Message"
+msgstr "发送群组消息"
+
+#: ⁨School Community/message_groupView.php⁩:213
+msgid ""
+"Review this send-time recipient list. The message will only be visible to "
+"the confirmed snapshot, not to people added later."
+msgstr ""
+"请核对发送时的收件人名单。消息仅对本次确认的收件人可见，之后新加入的成员看不"
+"到这条消息。"
+
+#: ⁨School Community/message_groupView.php⁩:216
+msgid "Recipients"
+msgstr "收件人名单"
+
+#: ⁨School Community/message_groupView.php⁩:229
+msgid "I have reviewed the recipient list above."
+msgstr "我已核对上方收件人名单。"
+
+#: ⁨School Community/message_reading.php⁩:28
+msgid "Search Messages"
+msgstr "搜索消息"
+
+#: ⁨School Community/message_reading.php⁩:33
+msgid "Title or message text"
+msgstr "标题或消息内容"
+
+#: ⁨School Community/message_reading.php⁩:44
+msgid "Mailbox"
+msgstr "信箱"
+
+#: ⁨School Community/message_reading.php⁩:46
+msgid "All"
+msgstr "全部"
+
+#: ⁨School Community/message_reading.php⁩:49
+msgid "Unread"
+msgstr "未读"
+
+#: ⁨School Community/message_reading.php⁩:97
+msgid "Messages you sent or received. Unread messages are marked in the title."
+msgstr "您发送或收到的消息。未读消息会在标题中标记。"
+
+#: ⁨School Community/message_reading.php⁩:107
+msgid "From / To"
+msgstr "发件人 / 收件人"
+
+#: ⁨School Community/message_reading.php⁩:108
+msgid "Direction"
+msgstr "方向"
+
+#: ⁨School Community/message_reading.php⁩:125
+msgid "Manage Categories"
+msgstr "管理分类"
+
+#: ⁨School Community/message_groups.php⁩:75
+msgid ""
+"Groups you belong to. A group only accepts members whose role is allowed by "
+"its category."
+msgstr "您所属的群组。只有角色符合群组分类权限的人员才能加入。"
+
+#: ⁨School Community/message_groups.php⁩:78
+msgid "Group"
+msgstr "群组"
+
+#: ⁨School Community/message_groups.php⁩:89
+msgid "Members"
+msgstr "成员"
+
+#: ⁨School Community/message_groups.php⁩:90
+msgid "Latest Message"
+msgstr "最新消息"
+
+#: ⁨School Community/message_groups.php⁩:91
+msgid "No messages yet"
+msgstr "尚无消息"
+
+#: ⁨School Community/message_groups.php⁩:95
+#: ⁨School Community/message_groupAdding.php⁩:13
+#: ⁨School Community/message_groupAdding.php⁩:30
+#: ⁨School Community/message_groupAdding.php⁩:43
+msgid "Create Group"
+msgstr "创建群组"
+
+#: ⁨School Community/message_groupAdding.php⁩:31
+msgid ""
+"Choose a category carefully: every member and every group message must match "
+"its audience permissions."
+msgstr "请谨慎选择分类：所有成员和群组消息都必须符合该分类的权限范围。"
+
+#: ⁨School Community/message_groupAdding.php⁩:34
+msgid "Group Name"
+msgstr "群组名称"
+
+#: ⁨School Community/message_view.php⁩:14
+msgid "View Message"
+msgstr "查看消息"
+
+#: ⁨School Community/message_view.php⁩:22
+msgid "Message sent."
+msgstr "消息已发送。"
+
+#: ⁨School Community/message_view.php⁩:23
+msgid "Reply posted."
+msgstr "回复已发布。"
+
+#: ⁨School Community/message_view.php⁩:26
+msgid "Unable to save the message."
+msgstr "保存消息失败。"
+
+#: ⁨School Community/message_view.php⁩:54
+msgid "From"
+msgstr "发件人"
+
+#: ⁨School Community/message_view.php⁩:55
+msgid "To"
+msgstr "收件人"
+
+#: ⁨School Community/message_view.php⁩:60
+msgid "Visibility"
+msgstr "可见范围"
+
+#: ⁨School Community/message_view.php⁩:60
+msgid "Visible only to you"
+msgstr "仅您可见"
+
+#~ msgid "No message recipients are available."
+#~ msgstr "没有可用的消息收件人。"
+
+#~ msgid "Other"
+#~ msgstr "其他"
+
+#~ msgid "Parent"
+#~ msgstr "家长"
+
+#~ msgid "Staff"
+#~ msgstr "教职工"
+
+#~ msgid "Student"
+#~ msgstr "学生"

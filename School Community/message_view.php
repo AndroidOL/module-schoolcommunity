@@ -56,6 +56,9 @@ $page->write('<div class="schoolCommunityMessage">'
     .'<span><strong>'.schoolCommunityT('Category').':</strong> '.htmlPrep($message['categoryName']).'</span>'
     .'<span><strong>'.schoolCommunityT('Priority').':</strong> '.htmlPrep(schoolCommunityPriorityLabel($message['priority'])).'</span>'
     .'<span><strong>'.schoolCommunityT('Sent').':</strong> '.Format::dateTime($message['sendTimestamp']).'</span>'
+    .((string) $message['senderID'] === $currentPersonID && (string) $message['receiverID'] === $currentPersonID
+        ? '<span><strong>'.schoolCommunityT('Visibility').':</strong> '.schoolCommunityT('Visible only to you').'</span>'
+        : '')
     .'</div>'
     .'<div class="schoolCommunityMessageBody innerContent">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>'
     .'</div>');

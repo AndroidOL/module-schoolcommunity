@@ -39,7 +39,7 @@ $recipientID = is_scalar($_POST['recipientID'] ?? null) ? trim((string) $_POST['
 
 if ($title === '' || mb_strlen($title) > 100 || $body === '' || mb_strlen(strip_tags($body)) > 10000
     || $categoryID === '' || !array_key_exists($priority, schoolCommunityPriorityOptions())
-    || $recipientID === '' || $recipientID === $currentPersonID) {
+    || $recipientID === '') {
     $redirect('error1');
 }
 
@@ -79,16 +79,18 @@ if (empty($inserted)) {
     $redirect('error2');
 }
 
-try {
-    $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
-    $container->get(NotificationGateway::class)->insertNotification([
-        'gibbonPersonID' => $recipientID,
-        'text'           => sprintf(schoolCommunityT('New message from %s: %s'), $senderName, $title),
-        'moduleName'     => 'School Community',
-        'actionLink'     => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode((string) $inserted),
-    ]);
-} catch (\Throwable $e) {
-    // The message is already stored; notification failure must not lose it.
+if ($recipientID !== $currentPersonID) {
+    try {
+        $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
+        $container->get(NotificationGateway::class)->insertNotification([
+            'gibbonPersonID' => $recipientID,
+            'text'           => sprintf(schoolCommunityT('New message from %s: %s'), $senderName, $title),
+            'moduleName'     => 'School Community',
+            'actionLink'     => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode((string) $inserted),
+        ]);
+    } catch (\Throwable $e) {
+        // The message is already stored; notification failure must not lose it.
+    }
 }
 
 header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode((string) $inserted).'&return=success0');
