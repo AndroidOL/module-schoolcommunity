@@ -239,10 +239,9 @@ msgstr "自定义群组"
 
 #: ⁨School Community/message_groupAdding.php⁩:38
 msgid ""
-"Choose a category carefully. Administrative and course classes automatically "
-"use the current school roster for future messages."
-msgstr ""
-"请谨慎选择分类。行政班和课程班会自动使用当前班级名册作为之后的收件人来源。"
+"Choose a category carefully. Class membership is captured once when the "
+"group is created and can be edited afterwards."
+msgstr "请谨慎选择分类。班级成员名单在创建群组时一次性生成，之后可手动编辑。"
 
 #: ⁨School Community/message_groupAdding.php⁩:41
 msgid "Group Source"

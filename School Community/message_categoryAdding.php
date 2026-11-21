@@ -40,4 +40,4 @@ $row = $form->addRow();
     $row->addFooter();
     $row->addSubmit(schoolCommunityT('Add Category'));
 
-echo $form->getOutput();
+$page->write($form->getOutput());

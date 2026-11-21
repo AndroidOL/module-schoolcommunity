@@ -17,7 +17,7 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
     return;
 }
 
-$categoryID = is_scalar($_GET['CategoryID'] ?? null) ? trim((string) $_GET['CategoryID']) : '';
+$categoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
 $category = $categoryID !== '' ? $pdo->selectOne(
     "SELECT categoryID, categoryName, accessControl, groupMessages
      FROM message_category
@@ -59,4 +59,4 @@ $row = $form->addRow();
     $row->addFooter();
     $row->addSubmit(schoolCommunityT('Save Changes'));
 
-echo $form->getOutput();
+$page->write($form->getOutput());

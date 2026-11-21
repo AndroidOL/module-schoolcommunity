@@ -43,7 +43,7 @@ $form = Form::create(
 );
 $form->addHiddenValue('action', 'create');
 $form->setTitle(schoolCommunityT('Create Group'));
-$form->setDescription(schoolCommunityT('Choose a category carefully. Administrative and course classes automatically use the current school roster for future messages.'));
+$form->setDescription(schoolCommunityT('Choose a category carefully. Class membership is captured once when the group is created and can be edited afterwards.'));
 
 $row = $form->addRow();
     $row->addLabel('linkedSource', schoolCommunityT('Group Source'))->description(schoolCommunityT('Teachers can select only their own administrative and course classes.'));

@@ -76,7 +76,7 @@ $table->addHeaderAction('add', schoolCommunityT('Add Category'))
     ->displayLabel();
 
 $table->addActionColumn()
-    ->addParam('CategoryID')
+    ->addParam('categoryID')
     ->format(function ($category, $actions) {
         $actions->addAction('edit', schoolCommunityT('Edit'))
             ->setIcon('edit')
