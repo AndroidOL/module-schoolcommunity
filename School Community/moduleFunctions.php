@@ -1,209 +1,194 @@
 <?php
 /*
-Gibbon, Flexible & Open School System
-Copyright (C) 2010, Ross Parker
+Gibbon: the flexible, open school platform
+Copyright © 2010, Gibbon Foundation
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-use Gibbon\Domain\System\SettingGateway;
-use Gibbon\Domain\User\RoleGateway;
 use Gibbon\Domain\DataSet;
-use Gibbon\Module\HelpDesk\Data\Setting;
-use Gibbon\Module\HelpDesk\Data\SettingManager;
-use Psr\Container\ContainerInterface;
+use Gibbon\Data\Validator;
+use Gibbon\Services\Format;
 
-function getSettings(ContainerInterface $container) {
-    $settingManager = new SettingManager($container->get(SettingGateway::class), 'Help Desk');
+function schoolCommunityT($text, array $params = []): string
+{
+    global $session;
 
-    $settingManager->addSetting('simpleCategories')
-        ->setRenderer(function($data, $row) {
-            $row->addCheckbox($data['name'])
-                ->checked(intval($data['value']));
-        })
-        ->setProcessor(function($data) {
-            return $data !== null ? 1 : 0;
-        });
+    if (function_exists('__m') && is_object($session) && method_exists($session, 'has') && $session->has('module')) {
+        $translated = __m($text, $params);
 
-    $settingManager->addSetting('issueCategory')
-        ->setRenderer(function($data, $row) {
-            $row->addTextArea($data['name'])
-                ->setValue($data['value']);
-        })
-        ->setProcessor(function($data) {
-            return implode(',', explodeTrim($data ?? ''));
-        });
+        return $translated !== $text ? $translated : __($text, $params);
+    }
 
-    $settingManager->addSetting('issuePriority')
-        ->setRenderer(function($data, $row) {
-            $row->addTextArea($data['name'])
-                ->setValue($data['value']);
-        })
-        ->setProcessor(function($data) {
-            return implode(',', explodeTrim($data ?? ''));
-        });
-
-    $settingManager->addSetting('issuePriorityName')
-        ->setRenderer(function($data, $row) {
-            $row->addTextField($data['name'])
-                ->setValue($data['value'])
-                ->required();
-        })
-        ->setProcessor(function($data) {
-            return empty($data) ? false : $data;
-        });
-
-    $settingManager->addSetting('techNotes')
-        ->setRenderer(function($data, $row) {
-            $row->addCheckbox($data['name'])
-                ->checked(intval($data['value']));
-        })
-        ->setProcessor(function($data) {
-            return $data !== null ? 1 : 0;
-        });
-
-    return $settingManager;
+    return __($text, $params);
 }
 
-
-function explodeTrim($commaSeperatedString) {
-    //This could, in theory, be made for effiicent, however, I don't care to do so.
-    return array_filter(array_map('trim', explode(',', $commaSeperatedString)));
+function schoolCommunityRoleBit($roleCategory): int
+{
+    return [
+        'Staff'   => 8,
+        'Student' => 4,
+        'Parent'  => 2,
+        'Other'   => 1,
+    ][$roleCategory] ?? 0;
 }
 
-function getRoles(ContainerInterface $container) {
-	$roleGateway = $container->get(RoleGateway::class);
-    $criteria = $roleGateway->newQueryCriteria()
-        ->sortBy(['gibbonRole.name']);
+function schoolCommunityCategoryAllows($accessControl, $roleCategory): bool
+{
+    $bit = schoolCommunityRoleBit($roleCategory);
 
-    return array_reduce($roleGateway->queryRoles($criteria)->toArray(), function ($group, $role) {
-        $group[$role['gibbonRoleID']] = __($role['name']) . ' (' . __($role['category']) . ')';
-        return $group; 
-    }, []);
+    return $bit > 0 && (((int) $accessControl & $bit) === $bit);
 }
 
-function statsOverview(DataSet $logs) {
-    //Count each log entry
-	$items = array_count_values($logs->getColumn('title'));
-
-    //Sort by the title of the entry
-    ksort($items);
-
-    //Map the associative array to be displayed in the table
-    array_walk($items, function (&$value, $key) {
-        $value = ['name' => $key, 'value' => $value];
-    });
-
-    return $items;
-}
-
-function formatExpandableSection($title, $content) {
-    $output = '';
-
-    $output .= '<h6>' . $title . '</h6></br>';
-    $output .= nl2brr($content);
-
-    return $output;
-}
-
-/**
- * 计算权限值
- *
- * @param string $staff   默认 "N"，当为 "Y" 时表示有 staff 权限（权值 8）
- * @param string $student 默认 "N"，当为 "Y" 时表示有 student 权限（权值 4）
- * @param string $parent  默认 "N"，当为 "Y" 时表示有 parent 权限（权值 2）
- * @param string $other   默认 "N"，当为 "Y" 时表示有 other 权限（权值 1）
- *
- * @return int 返回权限值的整数表示
- */
-function calcPermission($staff = "N", $student = "N", $parent = "N", $other = "N") {
-    // 确保所有输入都是字符串，否则转换为 "N"
-    $staff   = is_string($staff)   ? $staff   : "N";
-    $student = is_string($student) ? $student : "N";
-    $parent  = is_string($parent)  ? $parent  : "N";
-    $other   = is_string($other)   ? $other   : "N";
-
-    // 只有当参数严格等于 "Y" 时才认为是 "Y"，否则统一识别为 "N"
-    $staff   = ($staff === "Y")   ? "Y" : "N";
-    $student = ($student === "Y") ? "Y" : "N";
-    $parent  = ($parent === "Y")  ? "Y" : "N";
-    $other   = ($other === "Y")   ? "Y" : "N";
-
+function schoolCommunityPermissionValue(array $values): int
+{
     $value = 0;
-    // 按照题目要求，映射对应的二进制位：
-    // staff -> 8 (二进制 1000)
-    // student -> 4 (二进制 0100)
-    // parent -> 2 (二进制 0010)
-    // other -> 1 (二进制 0001)
-    if ($staff === "Y") {
-        $value |= 8;
+    foreach (['staff' => 8, 'student' => 4, 'parent' => 2, 'other' => 1] as $key => $bit) {
+        if (($values[$key] ?? 'N') === 'Y') {
+            $value |= $bit;
+        }
     }
-    if ($student === "Y") {
-        $value |= 4;
-    }
-    if ($parent === "Y") {
-        $value |= 2;
-    }
-    if ($other === "Y") {
-        $value |= 1;
-    }
+
     return $value;
 }
 
-/**
- * 将一个0-15的整数转换为4位二进制字符串，并将1替换为Y、0替换为N
- *
- * @param int $num 要转换的数字
- * @return string 转换后的字符串，如15转换为"YYYY"，0转换为"NNNN"
- */
-function convertIntToYN($num) {
-    // 如果传入的数字不在0-15范围内，则置为0
-    if ($num < 0 || $num > 15) {
-        $num = 0;
+function schoolCommunityPermissionLabel($accessControl): string
+{
+    $labels = [];
+    foreach (['Staff' => 8, 'Student' => 4, 'Parent' => 2, 'Other' => 1] as $label => $bit) {
+        if (((int) $accessControl & $bit) === $bit) {
+            $labels[] = schoolCommunityT($label);
+        }
     }
-    
-    // 将数字转换为二进制字符串，并补齐到4位（不足4位的前面补0）
-    $binary = str_pad(decbin($num), 4, '0', STR_PAD_LEFT);
-    
-    // 将二进制字符串中的'1'替换为'Y'，'0'替换为'N'
-    $result = strtr($binary, ['1' => 'Y', '0' => 'N']);
-    
-    return $result;
+
+    return implode(', ', $labels);
 }
 
-/**
- * 获取数字在第 $position 位的值，数字范围限定在 0～15（超出视为 0）
- * 位编号从右侧开始：第1位为最低有效位，依次向左
- *
- * @param int $num      输入数字
- * @param int $position 位的位置（1～4）
- * @return int          返回 1 或 0
- */
-function getBitAtPosition($num, $position) {
-    // 如果传入的是字符串且是数值，则将其转换为整数（使用 base 10 转换，防止出现八进制问题）
-    if (is_string($value) && is_numeric($value)) {
-        $value = intval($value, 10);
-    } else {
-        // 对于其他类型，也直接转为整数
-        $value = (int)$value;
+function schoolCommunityCategoryOptions($pdo, $roleCategory, bool $includeAll = false): array
+{
+    $result = $pdo->select(
+        "SELECT categoryID, categoryName, accessControl
+         FROM message_category
+         ORDER BY categoryName"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $options = [];
+    foreach ($result as $category) {
+        if ($includeAll || schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
+            $options[(string) $category['categoryID']] = $category['categoryName'];
+        }
     }
-    if ($num < 0 || $num > 15) {
-        $num = 0;
+
+    return $options;
+}
+
+function schoolCommunityPersonOptions($pdo, $excludePersonID): array
+{
+    $result = $pdo->select(
+        "SELECT gibbonPersonID, title, preferredName, surname, username, roleCategory
+         FROM (
+             SELECT gibbonPerson.gibbonPersonID, gibbonPerson.title, gibbonPerson.preferredName,
+                    gibbonPerson.surname, gibbonPerson.username, gibbonRole.category AS roleCategory
+             FROM gibbonPerson
+             JOIN gibbonRole ON gibbonRole.gibbonRoleID=gibbonPerson.gibbonRoleIDPrimary
+             WHERE gibbonPerson.status='Full'
+               AND gibbonPerson.gibbonPersonID<>:gibbonPersonID
+         ) AS people
+         ORDER BY surname, preferredName",
+        ['gibbonPersonID' => $excludePersonID]
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $options = [];
+    foreach ($result as $person) {
+        $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
+        $options[(string) $person['gibbonPersonID']] = $name.' ('.schoolCommunityT($person['roleCategory']).')';
     }
-    if ($position < 1 || $position > 4) {
-        return 0;
+
+    return $options;
+}
+
+function schoolCommunityPriorityOptions(): array
+{
+    return [
+        'h' => schoolCommunityT('High'),
+        'm' => schoolCommunityT('Normal'),
+        'l' => schoolCommunityT('Notice'),
+    ];
+}
+
+function schoolCommunityPriorityToDatabase($priority)
+{
+    return ['h' => 1, 'm' => null, 'l' => 0][$priority] ?? null;
+}
+
+function schoolCommunityPriorityLabel($priority): string
+{
+    if ($priority === 1 || $priority === '1' || $priority === true) {
+        return schoolCommunityT('High');
     }
-    // 对于 4 位数，从左数时，相当于右移 (4 - $position) 位
-    return (($num >> (4 - $position)) & 1) ? 'Y' : 'N';
+    if ($priority === 0 || $priority === '0' || $priority === false) {
+        return schoolCommunityT('Notice');
+    }
+
+    return schoolCommunityT('Normal');
+}
+
+function schoolCommunityAccessibleMessage($pdo, $messageID, $gibbonPersonID): ?array
+{
+    $message = $pdo->selectOne(
+        "SELECT message_totals.*, message_category.categoryName,
+                sender.title AS senderTitle, sender.preferredName AS senderPreferredName, sender.surname AS senderSurname,
+                receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname
+         FROM message_totals
+         JOIN message_category ON message_category.categoryID=message_totals.categoryID
+         JOIN gibbonPerson AS sender ON sender.gibbonPersonID=message_totals.senderID
+         JOIN gibbonPerson AS receiver ON receiver.gibbonPersonID=message_totals.receiverID
+         WHERE message_totals.messageID=:messageID
+           AND (message_totals.senderID=:senderID OR message_totals.receiverID=:receiverID)",
+        [
+            'messageID' => $messageID,
+            'senderID'  => $gibbonPersonID,
+            'receiverID'=> $gibbonPersonID,
+        ]
+    );
+
+    return empty($message) ? null : $message;
+}
+
+function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
+{
+    $rows = [];
+    foreach ($messages as $message) {
+        $isSent = (string) $message['senderID'] === (string) $gibbonPersonID;
+        $otherTitle = $isSent ? $message['receiverTitle'] : $message['senderTitle'];
+        $otherName = $isSent
+            ? trim($message['receiverPreferredName'].' '.$message['receiverSurname'])
+            : trim($message['senderPreferredName'].' '.$message['senderSurname']);
+
+        $rows[] = $message + [
+            'direction'     => $isSent ? schoolCommunityT('Sent') : schoolCommunityT('Received'),
+            'otherPerson'   => trim($otherTitle.' '.$otherName),
+            'priorityLabel' => schoolCommunityPriorityLabel($message['priority']),
+            'isUnread'      => !$isSent && empty($message['readTimestamp']),
+            'url'           => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($message['messageID']),
+        ];
+    }
+
+    return new DataSet($rows);
+}
+
+function schoolCommunityBodyForDisplay($container, $body): string
+{
+    $body = (string) $body;
+    $decoded = base64_decode($body, true);
+    if ($decoded !== false && (strpos($decoded, '<') !== false || strpos($decoded, '>') !== false)) {
+        $body = $decoded;
+    }
+
+    $validated = $container->get(Validator::class)->sanitize(['body' => $body], ['body' => 'HTML']);
+
+    return $validated['body'];
 }

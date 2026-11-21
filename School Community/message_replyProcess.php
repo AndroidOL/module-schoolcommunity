@@ -1,0 +1,45 @@
+<?php
+/*
+Gibbon: the flexible, open school platform
+Copyright © 2010, Gibbon Foundation
+*/
+
+use Gibbon\Data\Validator;
+use Gibbon\Session\TokenHandler;
+
+require_once '../../gibbon.php';
+require_once __DIR__.'/moduleFunctions.php';
+
+$messageID = is_scalar($_POST['messageID'] ?? null) ? trim((string) $_POST['messageID']) : '';
+$URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($messageID);
+$redirect = function (string $return) use ($URL) {
+    header('Location: '.$URL.'&return='.$return);
+    exit;
+};
+
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
+    $redirect('error0');
+}
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    $redirect('error1');
+}
+if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
+    $redirect('error9');
+}
+
+$_POST = $container->get(Validator::class)->sanitize($_POST, ['body' => 'HTML']);
+$body = is_scalar($_POST['body'] ?? null) ? trim((string) $_POST['body']) : '';
+$currentPersonID = (string) $session->get('gibbonPersonID');
+
+if ($messageID === '' || $body === '' || mb_strlen(strip_tags($body)) > 5000
+    || empty(schoolCommunityAccessibleMessage($pdo, $messageID, $currentPersonID))) {
+    $redirect('error1');
+}
+
+$inserted = $pdo->insert(
+    "INSERT INTO message_reply (messageID, senderID, body)
+     VALUES (:messageID, :senderID, :body)",
+    ['messageID' => $messageID, 'senderID' => $currentPersonID, 'body' => $body]
+);
+
+$redirect(empty($inserted) ? 'error2' : 'success1');

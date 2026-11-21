@@ -16,3 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
+.schoolCommunityMessage,
+.schoolCommunityReply {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background: #fff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.schoolCommunityMessageMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: 0.5rem 0 1rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+}
+
+.schoolCommunityMessageBody {
+    overflow-wrap: anywhere;
+}

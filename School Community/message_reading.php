@@ -1,107 +1,126 @@
 <?php
 /*
 Gibbon: the flexible, open school platform
-Founded by Ross Parker at ICHK Secondary. Built by Ross Parker, Sandra Kuipers and the Gibbon community (https://gibbonedu.org/about/)
 Copyright © 2010, Gibbon Foundation
-Gibbon™, Gibbon Education Ltd. (Hong Kong)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-use Gibbon\Domain\System\SettingGateway;
-use Gibbon\Forms\DatabaseFormFactory;
 use Gibbon\Forms\Form;
+use Gibbon\Services\Format;
 use Gibbon\Tables\DataTable;
-use Gibbon\Module\SchoolCommunity\Tables\MessageList;
-use Gibbon\Module\SchoolCommunity\Domain\CategoryGateway;
-use Gibbon\Domain\School\FacilityGateway;
 
-require_once __DIR__ . '/moduleFunctions.php';
+require_once __DIR__.'/moduleFunctions.php';
 
-$page->breadcrumbs->add(__('查看所有消息'));
+$page->breadcrumbs->add(schoolCommunityT('Messages'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/' .'School Community' . '/message_reading.php')) {
-    //Acess denied
-    $page->addError(__('您没有权限访问该页面。'));
-} else {
-
-    $search = isset($_GET['search'])? $_GET['search'] : '';
-
-    $form = Form::create('search', $session->get('absoluteURL').'/index.php', 'get');
-    $form->setTitle(__('Search'));
-    $form->setClass('noIntBorder w-full');
-
-    $form->addHiddenValue('q', '/modules/'.$session->get('module').'/message_reading.php');
-
-    $row = $form->addRow();
-        $row->addLabel('search', __('查询'))->description(__('标题'));
-        $row->addTextField('search')->setValue($search);
-
-    // Get Message Category
-    $cGateway = $container->get(CategoryGateway::class);
-    $categoryOptions = array_column($cGateway->queryExistCategory()->fetchAll(), 'categoryName', 'categoryID');
-    /*
-    try {
-        echo '<pre>r3r3r3';
-        print_r($cGateway->queryExistCategorySQL()->fetchAll());
-        echo '</pre>3535';
-    } catch (Exception $ex) {
-        echo '<pre>r3r3r3';
-        print_r($ex);
-        echo '</pre>3535';
-        $errorMessage = "Database error: " . $ex->getMessage() . "\n";
-        $errorMessage .= "In file: " . $ex->getFile() . " on line " . $ex->getLine() . "\n";
-        $errorMessage .= "Stack trace:\n" . $ex->getTraceAsString() . "\n";
-    
-        // 将错误信息记录到日志文件中
-        error_log($errorMessage, 3, "./logfile.log");
-    }
-    */
-    
-    $row = $form->addRow();
-        $row->addLabel('searchCategory', __('查询'))->description(__('消息分类'));
-        $row->addSelect('searchCategory')
-            ->fromArray($categoryOptions)
-            ->placeholder();
-    $row = $form->addRow();
-        $row->addLabel('searchToOrFrom', __('查询'))->description(__('消息类型'));
-        $row->addSelect('searchToOrFrom')
-            ->fromArray([
-                'r' => '发送给我',
-                's' => '我发送的',
-            ])
-            ->placeholder();
-
-    $row = $form->addRow();
-        $row->addSearchSubmit($gibbon->session, __('清空搜索'));
-
-    echo $form->getOutput();
-
-    $cGateway = $container->get(CategoryGateway::class);
-    $criteria = $cGateway->newQueryCriteria()
-        ->searchBy('i.categoryName', $_GET['search'] ?? '')
-        ->fromPost();
-
-    $igrid = $cGateway->queryCategory($criteria);
-
-    $table = DataTable::createPaginated('schoolcommunity', $criteria);
-    $table->setTitle(__('查看分类'));
-
-    $table
-        ->addHeaderAction('add', __('发送消息'))
-        ->setURL('/modules/' . 'School Community' . '/message_sending.php')
-        ->addParam('search', $_GET['search'] ?? '')
-        ->displayLabel();
-
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
+    $page->addError(schoolCommunityT('You do not have access to this page.'));
+    return;
 }
+
+$gibbonPersonID = (string) $session->get('gibbonPersonID');
+$roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
+$categoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
+$mailbox = is_scalar($_GET['mailbox'] ?? null) ? (string) $_GET['mailbox'] : 'all';
+$mailbox = in_array($mailbox, ['all', 'received', 'sent', 'unread'], true) ? $mailbox : 'all';
+
+$form = Form::create('schoolCommunitySearch', $session->get('absoluteURL').'/index.php', 'get');
+$form->setTitle(schoolCommunityT('Search Messages'));
+$form->setClass('noIntBorder w-full');
+$form->addHiddenValue('q', '/modules/School Community/message_reading.php');
+
+$row = $form->addRow();
+    $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Title or message text'));
+    $row->addTextField('search')->setValue($search)->maxLength(100);
+
+$row = $form->addRow();
+    $row->addLabel('categoryID', schoolCommunityT('Category'));
+    $row->addSelect('categoryID')
+        ->fromArray(schoolCommunityCategoryOptions($pdo, $roleCategory))
+        ->selected($categoryID)
+        ->placeholder();
+
+$row = $form->addRow();
+    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
+    $row->addSelect('mailbox')->fromArray([
+        'all'      => schoolCommunityT('All'),
+        'received' => schoolCommunityT('Received'),
+        'sent'     => schoolCommunityT('Sent'),
+        'unread'   => schoolCommunityT('Unread'),
+    ])->selected($mailbox);
+
+$row = $form->addRow();
+    $row->addSearchSubmit($session, schoolCommunityT('Clear search'));
+
+$page->write($form->getOutput());
+
+$where = ["(message_totals.senderID=:currentPersonID OR message_totals.receiverID=:currentPersonID)"];
+$params = ['currentPersonID' => $gibbonPersonID];
+
+if ($search !== '') {
+    $where[] = '(message_totals.title LIKE :search OR message_totals.body LIKE :search)';
+    $params['search'] = '%'.$search.'%';
+}
+if ($categoryID !== '') {
+    $where[] = 'message_totals.categoryID=:categoryID';
+    $params['categoryID'] = $categoryID;
+}
+if ($mailbox === 'received') {
+    $where[] = 'message_totals.receiverID=:currentPersonID';
+} elseif ($mailbox === 'sent') {
+    $where[] = 'message_totals.senderID=:currentPersonID';
+} elseif ($mailbox === 'unread') {
+    $where[] = 'message_totals.receiverID=:currentPersonID AND receipt.receiptID IS NULL';
+}
+
+$messages = $pdo->select(
+    "SELECT message_totals.*, message_category.categoryName,
+            sender.title AS senderTitle, sender.preferredName AS senderPreferredName, sender.surname AS senderSurname,
+            receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname,
+            receipt.readTimestamp
+     FROM message_totals
+     JOIN message_category ON message_category.categoryID=message_totals.categoryID
+     JOIN gibbonPerson AS sender ON sender.gibbonPersonID=message_totals.senderID
+     JOIN gibbonPerson AS receiver ON receiver.gibbonPersonID=message_totals.receiverID
+     LEFT JOIN message_read_receipt AS receipt
+        ON receipt.messageID=message_totals.messageID
+       AND receipt.gibbonPersonID=:currentPersonID
+     WHERE ".implode(' AND ', $where)."
+     ORDER BY CASE WHEN message_totals.priority=1 THEN 0 WHEN message_totals.priority IS NULL THEN 1 ELSE 2 END,
+              message_totals.sendTimestamp DESC
+     LIMIT 200",
+    $params
+)->fetchAll(PDO::FETCH_ASSOC);
+
+$table = DataTable::create('schoolCommunityMessages');
+$table->setTitle(schoolCommunityT('Messages'));
+$table->setDescription(schoolCommunityT('Messages you sent or received. Unread messages are marked in the title.'));
+$table->addMetaData('allowHTML', ['title']);
+
+$table->addColumn('title', schoolCommunityT('Subject'))->format(function ($message) {
+    $prefix = !empty($message['isUnread']) ? '<strong>' : '';
+    $suffix = !empty($message['isUnread']) ? '</strong>' : '';
+
+    return $prefix.Format::link($message['url'], $message['title']).$suffix;
+});
+$table->addColumn('categoryName', schoolCommunityT('Category'));
+$table->addColumn('otherPerson', schoolCommunityT('From / To'));
+$table->addColumn('direction', schoolCommunityT('Direction'));
+$table->addColumn('priorityLabel', schoolCommunityT('Priority'));
+$table->addColumn('sendTimestamp', schoolCommunityT('Sent'))->format(function ($message) {
+    return Format::dateTime($message['sendTimestamp']);
+});
+
+if (isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {
+    $table->addHeaderAction('send', schoolCommunityT('Send Message'))
+        ->setURL('/modules/School Community/message_sending.php')
+        ->setIcon('messenger')
+        ->displayLabel();
+}
+if (isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+    $table->addHeaderAction('categories', schoolCommunityT('Manage Categories'))
+        ->setURL('/modules/School Community/message_categorySetting.php')
+        ->displayLabel();
+}
+
+$page->write($table->render(schoolCommunityMessageTable($messages, $gibbonPersonID)));

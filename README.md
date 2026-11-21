@@ -1,48 +1,50 @@
-# School Community Module
+# School Community for Gibbon
 
-The School Community Module enhances communication between home and school, providing efficient channels for parents, students, and teachers to interact.
+School Community adds categorised, auditable messages for staff, students and
+families to Gibbon. It complements Gibbon Messenger with role-based categories
+and a home-school communication workflow.
 
-## Table of Contents
+## Requirements
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Introduction
-
-The School Community Module is a foundational template for developing custom modules within the Gibbon platform. It offers a starting point for developers to build and customize functionalities tailored to specific needs.
-
-## Features (PLAN!!!)
-
-- **Parent Notifications**: Teachers can send timely notifications to parents, ensuring important information is communicated effectively.
-- **Student Progress Tracking**: Parents can monitor their child's learning progress and academic performance.
-- **Teacher Feedback**: Both parents and students can provide feedback to teachers, fostering a collaborative educational environment.
+- Gibbon 31.0.00 or later
+- PHP 8.2 or later
+- MySQL 8 compatible server
 
 ## Installation
 
-1. Download or clone this repository.
-2. Place the module files into the `modules` directory of your Gibbon installation.
-3. Log in to the Gibbon admin panel, navigate to "Module Management," and enable the "School Community" Module.
+1. Copy the `School Community` directory into `modules/`.
+2. Sign in as an administrator and open **System Admin → Manage Modules**.
+3. Install or update the module.
+4. Grant **Manage Message Categories** only to trusted administrators.
+5. Grant **View Messages** and **Send Message** to the required role groups.
 
-## Configuration (Unavailable)
+## Features
 
-1. Go to "System Settings" > "School Community" Module Settings.
-2. Configure the module's basic information, such as module name and description.
-3. Set up permissions to define which roles can access the module's features.
+- Create categories and select which role groups may use them.
+- Send HTML-formatted messages to active Gibbon users.
+- List sent, received and unread messages with category and priority filters.
+- Record a read receipt when the recipient opens a message.
+- Reply to a message with participant-only access.
+- Restrict direct message visibility to the sender and recipient.
 
-## Contributing
+## Security
 
-We welcome contributions in the form of bug reports, feature requests, and pull requests. To contribute:
+- All write forms use Gibbon CSRF tokens and accept POST only.
+- Message bodies are sanitized against Gibbon's configured HTML allow-list
+  before storage and again before display.
+- Category permissions use a four-bit audience mask for Staff, Student, Parent
+  and Other roles.
+- Categories cannot be deleted while messages still use them.
 
-1. Fork this repository.
-2. Create a feature branch (`git checkout -b feature/YourFeature`).
-3. Commit your changes (`git commit -am 'Add new feature'`).
-4. Push to the branch (`git push origin feature/YourFeature`).
-5. Open a pull request.
+## Development
+
+Run the pure helper tests from the Gibbon repository root:
+
+```sh
+vendor/bin/phpunit --bootstrap vendor/autoload.php \
+  "modules/School Community/tests/ModuleFunctionsTest.php"
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+GPL-3.0

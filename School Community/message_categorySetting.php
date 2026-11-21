@@ -1,93 +1,87 @@
 <?php
 /*
 Gibbon: the flexible, open school platform
-Founded by Ross Parker at ICHK Secondary. Built by Ross Parker, Sandra Kuipers and the Gibbon community (https://gibbonedu.org/about/)
 Copyright © 2010, Gibbon Foundation
-Gibbon™, Gibbon Education Ltd. (Hong Kong)
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 use Gibbon\Forms\Form;
-use Gibbon\Tables\DataTable;
 use Gibbon\Services\Format;
-use Gibbon\Module\SchoolCommunity\Domain\CategoryGateway;
+use Gibbon\Tables\DataTable;
 
-//Module includes
-require_once __DIR__ . '/moduleFunctions.php';
+require_once __DIR__.'/moduleFunctions.php';
 
+$page->breadcrumbs->add(schoolCommunityT('Message Categories'));
 
-if (isActionAccessible($guid, $connection2, '/modules/' . 'School Community' . '/message_categorySetting.php') == false) {
-    //Acess denied
-    $page->addError(__('You do not have access to this action.'));
-} else {
-    $search = isset($_GET['search'])? $_GET['search'] : '';
-
-    $form = Form::create('search', $session->get('absoluteURL').'/index.php', 'get');
-    $form->setTitle(__('Search'));
-    $form->setClass('noIntBorder w-full');
-
-    $form->addHiddenValue('q', '/modules/'.$session->get('module').'/message_categorySetting.php');
-
-    $row = $form->addRow();
-        $row->addLabel('search', __('查询'))->description(__('标题'));
-        $row->addTextField('search')->setValue($search);
-
-    $row = $form->addRow();
-        $row->addSearchSubmit($gibbon->session, __('清空搜索'));
-
-    echo $form->getOutput();
-
-    $cGateway = $container->get(CategoryGateway::class);
-    $criteria = $cGateway->newQueryCriteria()
-        ->searchBy('i.categoryName', $_GET['search'] ?? '')
-        ->fromPost();
-
-    $igrid = $cGateway->queryCategory($criteria);
-
-    $table = DataTable::createPaginated('schoolcommunity', $criteria);
-    $table->setTitle(__('查看分类'));
-
-    $table
-        ->addHeaderAction('add', __('添加分类'))
-        ->setURL('/modules/' . 'School Community' . '/message_categoryAdding.php')
-        ->addParam('search', $_GET['search'] ?? '')
-        ->displayLabel();
-
-    $table->addColumn('CategoryName', __('名称'));
-    $table->addColumn('gibbonPersonName', __('用户姓名'))->format(function ($row) {
-        return '<a href="/index.php?q=/modules/Staff/staff_view_details.php&gibbonPersonID=' . $row['gibbonPersonIDCreator'] . '">' . $row['gibbonPersonName'] . "</a>";
-    });
-    //$table->addColumn('gibbonPersonName', __('用户姓名'))->format(Format::using('link', ['gibbonPersonIDURL', 'gibbonPersonName']));
-    $table->addColumn('AccessControl', __('访问控制'))->format(function ($row) {
-        return convertIntToYN($row['AccessControl']);
-    });
-    // $table->addColumn('TimeCreated', __('添加时间'));
-    $table->addColumn('TimeUpdated', __('更新时间'));
-
-    $actions = $table->addActionColumn()
-        ->addParam('CategoryID')
-        ->addParam('search', $_GET['search'] ?? '')
-        ->format(function ($categoryItem, $actions) {
-            $actions
-                ->addAction('edit', '编辑')
-                ->setURL('/modules/' . 'School Community' . '/message_categoryEditting.php');
-
-            $actions
-                ->addAction('delete', '删除')
-                ->setURL('/modules/' . 'School Community' . '/message_categoryDelete.php');
-        });
-
-    echo $table->render($igrid);
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+    $page->addError(schoolCommunityT('You do not have access to this page.'));
+    return;
 }
+
+$page->return->addReturns([
+    'success0' => schoolCommunityT('Category created.'),
+    'success1' => schoolCommunityT('Category updated.'),
+    'success2' => schoolCommunityT('Category deleted.'),
+    'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
+    'error1'   => schoolCommunityT('The submitted data is invalid.'),
+    'error2'   => schoolCommunityT('Unable to save the category.'),
+    'error3'   => schoolCommunityT('The category is in use and cannot be deleted.'),
+    'error9'   => schoolCommunityT('Your session expired. Refresh the page and try again.'),
+]);
+
+$search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
+
+$form = Form::create('schoolCommunityCategorySearch', $session->get('absoluteURL').'/index.php', 'get');
+$form->setTitle(schoolCommunityT('Search Categories'));
+$form->setClass('noIntBorder w-full');
+$form->addHiddenValue('q', '/modules/School Community/message_categorySetting.php');
+$row = $form->addRow();
+    $row->addLabel('search', schoolCommunityT('Search'));
+    $row->addTextField('search')->setValue($search)->maxLength(100);
+$row = $form->addRow();
+    $row->addSearchSubmit($session, schoolCommunityT('Clear search'));
+$page->write($form->getOutput());
+
+$params = [];
+$where = '';
+if ($search !== '') {
+    $where = 'WHERE categoryName LIKE :search';
+    $params['search'] = '%'.$search.'%';
+}
+$categories = $pdo->select(
+    "SELECT categoryID, categoryName, accessControl, createTime, updateTime
+     FROM message_category
+     {$where}
+     ORDER BY categoryName",
+    $params
+)->fetchAll(PDO::FETCH_ASSOC);
+
+foreach ($categories as &$category) {
+    $category['permissions'] = schoolCommunityPermissionLabel($category['accessControl']);
+}
+unset($category);
+
+$table = DataTable::create('schoolCommunityCategories');
+$table->setTitle(schoolCommunityT('Message Categories'));
+$table->setDescription(schoolCommunityT('Categories control which role groups can send messages in each category.'));
+$table->addColumn('categoryName', schoolCommunityT('Name'));
+$table->addColumn('permissions', schoolCommunityT('Visible To'));
+$table->addColumn('updateTime', schoolCommunityT('Updated'))->format(function ($category) {
+    return Format::dateTime($category['updateTime']);
+});
+$table->addHeaderAction('add', schoolCommunityT('Add Category'))
+    ->setURL('/modules/School Community/message_categoryAdding.php')
+    ->setIcon('add')
+    ->displayLabel();
+
+$table->addActionColumn()
+    ->addParam('CategoryID')
+    ->format(function ($category, $actions) {
+        $actions->addAction('edit', schoolCommunityT('Edit'))
+            ->setIcon('edit')
+            ->setURL('/modules/School Community/message_categoryEditing.php');
+        $actions->addAction('delete', schoolCommunityT('Delete'))
+            ->setIcon('delete')
+            ->setURL('/modules/School Community/message_categoryDelete.php');
+    });
+
+$page->write($table->render(new Gibbon\Domain\DataSet($categories)));

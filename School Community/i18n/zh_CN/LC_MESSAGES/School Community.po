@@ -1,0 +1,197 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: School Community 1.0.0\n"
+"Language: zh_CN\n"
+"PO-Revision-Date: 2026-11-21 11:00+0800\n"
+"Last-Translator: AndroidOL\n"
+"Language-Team: Gibbon zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Add Category"
+msgstr "添加分类"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Categories control which role groups can send messages in each category."
+msgstr "分类用于控制哪些角色组可以在该分类中发送消息。"
+
+msgid "Category"
+msgstr "分类"
+
+msgid "Category created."
+msgstr "分类已创建。"
+
+msgid "Category deleted."
+msgstr "分类已删除。"
+
+msgid "Category updated."
+msgstr "分类已更新。"
+
+msgid "Clear search"
+msgstr "清空搜索"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Delete Category"
+msgstr "删除分类"
+
+msgid "Delete category \"%s\"? This cannot be undone."
+msgstr "删除分类“%s”？此操作不可撤销。"
+
+msgid "Direction"
+msgstr "方向"
+
+msgid "Edit"
+msgstr "编辑"
+
+msgid "Edit Category"
+msgstr "编辑分类"
+
+msgid "From"
+msgstr "发件人"
+
+msgid "From / To"
+msgstr "发件人 / 收件人"
+
+msgid "High"
+msgstr "紧急"
+
+msgid "Mailbox"
+msgstr "信箱"
+
+msgid "Manage Categories"
+msgstr "管理分类"
+
+msgid "Message"
+msgstr "消息"
+
+msgid "Message Categories"
+msgstr "消息分类"
+
+msgid "Messages"
+msgstr "消息"
+
+msgid "Message sent."
+msgstr "消息已发送。"
+
+msgid "Messages you sent or received. Unread messages are marked in the title."
+msgstr "你发送或收到的消息。未读消息会在标题中标记。"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "No message categories are available for your role. Contact an administrator."
+msgstr "你的角色没有可用的消息分类，请联系管理员。"
+
+msgid "No message recipients are available."
+msgstr "没有可用的消息收件人。"
+
+msgid "Normal"
+msgstr "正常"
+
+msgid "Notice"
+msgstr "通知"
+
+msgid "Other"
+msgstr "其他"
+
+msgid "Parent"
+msgstr "家长"
+
+msgid "Post Reply"
+msgstr "发布回复"
+
+msgid "Priority"
+msgstr "优先程度"
+
+msgid "Received"
+msgstr "收到的"
+
+msgid "Recipient"
+msgstr "收件人"
+
+msgid "Replies"
+msgstr "回复"
+
+msgid "Reply"
+msgstr "回复"
+
+msgid "Reply posted."
+msgstr "回复已发布。"
+
+msgid "Save Changes"
+msgstr "保存修改"
+
+msgid "Search"
+msgstr "搜索"
+
+msgid "Search Categories"
+msgstr "搜索分类"
+
+msgid "Search Messages"
+msgstr "搜索消息"
+
+msgid "Send Message"
+msgstr "发送消息"
+
+msgid "Sent"
+msgstr "发送的"
+
+msgid "Staff"
+msgstr "员工"
+
+msgid "Student"
+msgstr "学生"
+
+msgid "Subject"
+msgstr "标题"
+
+msgid "The category is in use and cannot be deleted."
+msgstr "分类正在使用中，不能删除。"
+
+msgid "The specified record does not exist."
+msgstr "指定的记录不存在。"
+
+msgid "The submitted data is invalid."
+msgstr "提交的数据无效。"
+
+msgid "Title or message text"
+msgstr "标题或消息内容"
+
+msgid "To"
+msgstr "收件人"
+
+msgid "Unable to save the category."
+msgstr "保存分类失败。"
+
+msgid "Unable to save the message."
+msgstr "保存消息失败。"
+
+msgid "Unread"
+msgstr "未读"
+
+msgid "Updated"
+msgstr "更新时间"
+
+msgid "View Message"
+msgstr "查看消息"
+
+msgid "Visible"
+msgstr "可见"
+
+msgid "Visible To"
+msgstr "可见角色"
+
+msgid "You do not have access to this page."
+msgstr "您没有权限访问该页面。"
+
+msgid "You do not have permission to perform this action."
+msgstr "您没有权限执行该操作。"
+
+msgid "Your session expired. Refresh the page and try again."
+msgstr "会话已过期，请刷新页面后重试。"
+

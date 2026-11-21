@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+v1.0.0
+------
+- Rebuilt message and category workflows for Gibbon 31.
+- Added CSRF, POST, role, recipient, category and message-length validation.
+- Added inbox, sent, unread and category filtering.
+- Added read receipts, replies and strict participant access.
+- Added English source strings and Simplified Chinese translations.
+- Removed Help Desk data dependencies and debug/file logging.
+
 v0.0.00
 -------
 Version details here...
