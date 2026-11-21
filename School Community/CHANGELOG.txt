@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+v1.4.1
+------
+- Add a repeat-safe 1.4.1 upgrade for installations that already consumed the
+  original 1.4.0 schema version.
+- Ensure the category group-message column exists and refresh the Send Message
+  and View Messages action route maps with the recipient chooser, confirmation
+  and group-recipient pages.
+
 v1.4.0
 ------
 - Add a per-category Group Messages switch, defaulting to enabled for existing

@@ -259,6 +259,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $moduleTables = [];
             $actionRows = [];
             require dirname(__DIR__).'/manifest.php';
+            $this->assertSame('1.4.1', $version);
 
             $categoryTable = implode("\n", array_filter($moduleTables, function ($sql) {
                 return str_contains($sql, 'CREATE TABLE `message_category`');
@@ -273,23 +274,45 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
 
             $sql = [];
             require dirname(__DIR__).'/CHANGEDB.php';
-            $migration = '';
+            $migrations = [];
             foreach ($sql as $statement) {
-                if (($statement[0] ?? '') === '1.4.0') {
-                    $migration = (string) ($statement[1] ?? '');
-                }
+                $migrations[(string) ($statement[0] ?? '')] = (string) ($statement[1] ?? '');
             }
             $this->assertStringContainsString(
-                "ADD COLUMN groupMessages ENUM('Y', 'N') NOT NULL DEFAULT 'Y'",
-                $migration
+                'ADD COLUMN groupMessages',
+                $migrations['1.4.0']
             );
             $this->assertStringContainsString(
                 "SET `URLList`='".$manifestUrlLists['Send Message']."'",
-                $migration
+                $migrations['1.4.0']
             );
             $this->assertStringContainsString(
                 "SET `URLList`='".$manifestUrlLists['View Messages']."'",
-                $migration
+                $migrations['1.4.0']
+            );
+            $this->assertStringContainsString(
+                'information_schema.COLUMNS',
+                $migrations['1.4.1']
+            );
+            $this->assertStringContainsString(
+                'PREPARE schoolCommunityAddGroupMessagesStmt',
+                $migrations['1.4.1']
+            );
+            $this->assertStringContainsString(
+                "SET `URLList`='".$manifestUrlLists['Send Message']."'",
+                $migrations['1.4.1']
+            );
+            $this->assertStringContainsString(
+                "SET `URLList`='".$manifestUrlLists['View Messages']."'",
+                $migrations['1.4.1']
+            );
+            $this->assertStringContainsString(
+                "WHERE `entryURL`='message_sending.php'",
+                $migrations['1.4.1']
+            );
+            $this->assertStringContainsString(
+                "WHERE `entryURL`='message_reading.php'",
+                $migrations['1.4.1']
             );
         }
 
