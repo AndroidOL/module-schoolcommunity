@@ -12,10 +12,11 @@
   recipient review, snapshots, replies, unread counts and read receipts.
 - Administrative-class and course-class groups with teacher-scoped sources and
   current-roster synchronization.
+- Unified direct/group search, per-user thread archiving and mark-unread actions.
 
 ## Next candidates
 
 - Add attachments through Gibbon's file uploader with virus-scan integration.
-- Add group and reply search plus per-user message archiving.
+- Add attachments for direct and group messages.
 - Add moderation, reporting and retention policies.
 - Add full-text search and archive exports for large installations.

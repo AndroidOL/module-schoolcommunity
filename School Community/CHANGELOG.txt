@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+v1.3.0
+------
+- Search group names, group messages and replies with participant filtering.
+- Search direct replies alongside direct message subjects and bodies.
+- Add per-user archive/restore for direct and group threads.
+- Add direct-message mark unread and group-thread mark unread actions.
+- Automatically restore archived threads when new activity arrives.
+
 v1.2.0
 ------
 - Add administrative-class and course-class message groups.

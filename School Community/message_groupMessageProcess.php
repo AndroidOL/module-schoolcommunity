@@ -100,6 +100,12 @@ try {
     $redirect('error2');
 }
 
+try {
+    schoolCommunityRestoreThreadStates($pdo, 'group', $groupID);
+} catch (\Throwable $e) {
+    // The message is stored; archive cleanup must not lose it.
+}
+
 $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));
 $notification = $container->get(NotificationGateway::class);
 foreach ($recipientIDs as $memberID) {

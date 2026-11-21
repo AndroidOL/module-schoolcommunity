@@ -79,6 +79,12 @@ if (empty($inserted)) {
     $redirect('error2');
 }
 
+try {
+    schoolCommunityRestoreThreadStates($pdo, 'direct', $inserted);
+} catch (\Throwable $e) {
+    // The message is stored; archive cleanup must not lose it.
+}
+
 if (!schoolCommunitySamePersonID($recipientID, $currentPersonID)) {
     try {
         $senderName = trim((string) $session->get('preferredName').' '.(string) $session->get('surname'));

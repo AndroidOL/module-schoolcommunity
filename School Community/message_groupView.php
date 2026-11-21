@@ -22,6 +22,9 @@ $page->return->addReturns([
     'success0' => schoolCommunityT('Group message sent.'),
     'success1' => schoolCommunityT('Group reply posted.'),
     'success3' => schoolCommunityT('Message group created.'),
+    'success4' => schoolCommunityT('Message group archived.'),
+    'success5' => schoolCommunityT('Message group restored.'),
+    'success6' => schoolCommunityT('Message group marked unread.'),
     'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the group message.'),
@@ -39,6 +42,36 @@ if (empty($group)) {
     $page->addError(schoolCommunityT('The specified record does not exist.'));
     return;
 }
+
+$threadState = schoolCommunityThreadState($pdo, 'group', $groupID, $currentPersonID);
+$isArchived = !empty($threadState['archivedAt']);
+$archiveForm = Form::create(
+    'schoolCommunityArchiveGroup',
+    $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
+    'post'
+);
+$archiveForm->setClass('noIntBorder w-full');
+$archiveForm->addHiddenValue('threadType', 'group');
+$archiveForm->addHiddenValue('threadID', $groupID);
+$archiveForm->addHiddenValue('action', $isArchived ? 'restore' : 'archive');
+$row = $archiveForm->addRow();
+    $row->addFooter();
+    $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))->setColor('gray');
+$page->write($archiveForm->getOutput());
+
+$unreadForm = Form::create(
+    'schoolCommunityUnreadGroup',
+    $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
+    'post'
+);
+$unreadForm->setClass('noIntBorder w-full');
+$unreadForm->addHiddenValue('threadType', 'group');
+$unreadForm->addHiddenValue('threadID', $groupID);
+$unreadForm->addHiddenValue('action', 'unread');
+$row = $unreadForm->addRow();
+    $row->addFooter();
+    $row->addSubmit(schoolCommunityT('Mark Unread'))->setColor('gray');
+$page->write($unreadForm->getOutput());
 
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
 if ($isOwner) {

@@ -25,7 +25,7 @@ $description = 'Categorised direct and group messages between staff, students an
 $entryURL    = "message_reading.php";   // The landing page for the unit, used in the main menu
 $type        = "Additional";  // Do not change.
 $category    = 'Other';            // The main menu area to place the module in
-$version     = '1.2.0';            // Version number
+$version     = '1.3.0';            // Version number
 $author      = 'Tianhao Wu';            // Your name
 $url         = 'https://gibbonedu.org';            // Your URL
 
@@ -142,6 +142,19 @@ $moduleTables[] = 'CREATE TABLE `message_group_read_receipt` (
     PRIMARY KEY (`groupReadReceiptID`),
     UNIQUE KEY `messagePerson` (`groupMessageID`, `gibbonPersonID`),
     FOREIGN KEY (`groupMessageID`) REFERENCES `message_group_message`(`groupMessageID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
+
+$moduleTables[] = 'CREATE TABLE `message_thread_state` (
+    `threadStateID` INT(12) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `gibbonPersonID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `threadType` VARCHAR(10) NOT NULL,
+    `threadID` INT(12) UNSIGNED ZEROFILL NOT NULL,
+    `archivedAt` TIMESTAMP NULL DEFAULT NULL,
+    `createTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updateTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`threadStateID`),
+    UNIQUE KEY `personThread` (`gibbonPersonID`, `threadType`, `threadID`),
+    KEY `thread` (`threadType`, `threadID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;';
 
 // Add gibbonSettings entries

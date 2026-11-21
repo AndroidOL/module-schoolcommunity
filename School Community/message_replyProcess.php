@@ -45,6 +45,11 @@ $inserted = $pdo->insert(
 
 if (!empty($inserted)) {
     try {
+        schoolCommunityRestoreThreadStates($pdo, 'direct', $messageID);
+    } catch (\Throwable $e) {
+        // The reply is stored; archive cleanup must not lose it.
+    }
+    try {
         $recipientID = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
             ? (string) $message['receiverID']
             : (string) $message['senderID'];

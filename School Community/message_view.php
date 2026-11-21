@@ -21,6 +21,9 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 $page->return->addReturns([
     'success0' => schoolCommunityT('Message sent.'),
     'success1' => schoolCommunityT('Reply posted.'),
+    'success4' => schoolCommunityT('Message archived.'),
+    'success5' => schoolCommunityT('Message restored.'),
+    'success6' => schoolCommunityT('Message marked unread.'),
     'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the message.'),
@@ -62,6 +65,39 @@ $page->write('<div class="schoolCommunityMessage">'
     .'</div>'
     .'<div class="schoolCommunityMessageBody innerContent">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>'
     .'</div>');
+
+$threadState = schoolCommunityThreadState($pdo, 'direct', $messageID, $currentPersonID);
+$isArchived = !empty($threadState['archivedAt']);
+$archiveForm = Form::create(
+    'schoolCommunityArchiveMessage',
+    $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
+    'post'
+);
+$archiveForm->setClass('noIntBorder w-full');
+$archiveForm->addHiddenValue('threadType', 'direct');
+$archiveForm->addHiddenValue('threadID', $messageID);
+$archiveForm->addHiddenValue('action', $isArchived ? 'restore' : 'archive');
+$row = $archiveForm->addRow();
+    $row->addFooter();
+    $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
+        ->setColor('gray');
+$page->write($archiveForm->getOutput());
+
+if (schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
+    $unreadForm = Form::create(
+        'schoolCommunityUnreadMessage',
+        $session->get('absoluteURL').'/modules/School Community/message_threadProcess.php',
+        'post'
+    );
+    $unreadForm->setClass('noIntBorder w-full');
+    $unreadForm->addHiddenValue('threadType', 'direct');
+    $unreadForm->addHiddenValue('threadID', $messageID);
+    $unreadForm->addHiddenValue('action', 'unread');
+    $row = $unreadForm->addRow();
+        $row->addFooter();
+        $row->addSubmit(schoolCommunityT('Mark Unread'))->setColor('gray');
+    $page->write($unreadForm->getOutput());
+}
 
 $replies = $pdo->select(
     "SELECT message_reply.*, gibbonPerson.title, gibbonPerson.preferredName, gibbonPerson.surname

@@ -23,6 +23,7 @@ $page->return->addReturns([
     'success0' => schoolCommunityT('Message group created.'),
     'success1' => schoolCommunityT('Group member added.'),
     'success2' => schoolCommunityT('Group member removed.'),
+    'success6' => schoolCommunityT('Message group marked unread.'),
     'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the message group.'),
@@ -31,6 +32,23 @@ $page->return->addReturns([
 
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
+$archived = ($_GET['archived'] ?? 'N') === 'Y';
+
+$form = Form::create('schoolCommunityGroupSearch', $session->get('absoluteURL').'/index.php', 'get');
+$form->setTitle(schoolCommunityT('Search Message Groups'));
+$form->setClass('noIntBorder w-full');
+$form->addHiddenValue('q', '/modules/School Community/message_groups.php');
+$row = $form->addRow();
+    $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Group, message or reply text'));
+    $row->addTextField('search')->setValue($search)->maxLength(100);
+$row = $form->addRow();
+    $row->addLabel('archived', schoolCommunityT('Archive View'));
+    $row->addCheckbox('archived')->setValue('Y')->checked($archived);
+$row = $form->addRow();
+    $row->addSearchSubmit($session, schoolCommunityT('Clear search'));
+$page->write($form->getOutput());
+
 $groups = $pdo->select(
     "SELECT message_group.*, message_category.categoryName, message_category.accessControl,
             member.gibbonPersonID AS groupMemberPersonID,
@@ -62,10 +80,36 @@ $groups = $pdo->select(
        AND member.gibbonPersonID=:currentPersonID
      JOIN gibbonPerson AS owner ON owner.gibbonPersonID=message_group.ownerID
      JOIN gibbonRole AS ownerRole ON ownerRole.gibbonRoleID=owner.gibbonRoleIDPrimary
-     WHERE (message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
-        OR message_group.sourceType IN ('formGroup', 'courseClass')
+     LEFT JOIN message_thread_state AS threadState
+        ON threadState.threadType='group'
+       AND threadState.threadID=message_group.groupID
+       AND threadState.gibbonPersonID=:currentPersonID
+     WHERE ((message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
+        OR message_group.sourceType IN ('formGroup', 'courseClass'))
+       AND (".($archived ? 'threadState.archivedAt IS NOT NULL' : 'threadState.archivedAt IS NULL').")
+       AND (:search='' OR message_group.groupName LIKE :search
+            OR EXISTS (
+                SELECT 1
+                FROM message_group_message AS searchedMessage
+                JOIN message_group_message_recipient AS searchedRecipient
+                  ON searchedRecipient.groupMessageID=searchedMessage.groupMessageID
+                 AND searchedRecipient.gibbonPersonID=:currentPersonID
+                WHERE searchedMessage.groupID=message_group.groupID
+                  AND (searchedMessage.title LIKE :search OR searchedMessage.body LIKE :search)
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM message_group_reply AS searchedReply
+                JOIN message_group_message AS replyMessage
+                  ON replyMessage.groupMessageID=searchedReply.groupMessageID
+                JOIN message_group_message_recipient AS replyRecipient
+                  ON replyRecipient.groupMessageID=replyMessage.groupMessageID
+                 AND replyRecipient.gibbonPersonID=:currentPersonID
+                WHERE replyMessage.groupID=message_group.groupID
+                  AND searchedReply.body LIKE :search
+            ))
      ORDER BY COALESCE(latestTimestamp, message_group.createdAt) DESC, message_group.groupName",
-    ['currentPersonID' => $currentPersonID]
+    ['currentPersonID' => $currentPersonID, 'search' => '%'.$search.'%']
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $groups = array_values(array_filter($groups, function ($group) use ($pdo, $currentPersonID, $roleCategory) {

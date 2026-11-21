@@ -416,6 +416,59 @@ function schoolCommunityGroupTable(array $groups, $gibbonPersonID): DataSet
     return new DataSet($rows);
 }
 
+function schoolCommunityThreadState($pdo, $threadType, $threadID, $gibbonPersonID): ?array
+{
+    if (!in_array($threadType, ['direct', 'group'], true)) {
+        return null;
+    }
+
+    $state = $pdo->selectOne(
+        "SELECT * FROM message_thread_state
+         WHERE threadType=:threadType
+           AND threadID=:threadID
+           AND gibbonPersonID=:gibbonPersonID",
+        [
+            'threadType'     => $threadType,
+            'threadID'       => $threadID,
+            'gibbonPersonID' => $gibbonPersonID,
+        ]
+    );
+
+    return empty($state) ? null : $state;
+}
+
+function schoolCommunitySetThreadArchived($pdo, $threadType, $threadID, $gibbonPersonID, bool $archived): bool
+{
+    if (!in_array($threadType, ['direct', 'group'], true)) {
+        return false;
+    }
+
+    return $pdo->statement(
+        "INSERT INTO message_thread_state
+            (threadType, threadID, gibbonPersonID, archivedAt)
+         VALUES (:threadType, :threadID, :gibbonPersonID, ".($archived ? 'CURRENT_TIMESTAMP' : 'NULL').")
+         ON DUPLICATE KEY UPDATE archivedAt=VALUES(archivedAt)",
+        [
+            'threadType'     => $threadType,
+            'threadID'       => $threadID,
+            'gibbonPersonID' => $gibbonPersonID,
+        ]
+    );
+}
+
+function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID): void
+{
+    if (!in_array($threadType, ['direct', 'group'], true)) {
+        return;
+    }
+
+    $pdo->delete(
+        "DELETE FROM message_thread_state
+         WHERE threadType=:threadType AND threadID=:threadID",
+        ['threadType' => $threadType, 'threadID' => $threadID]
+    );
+}
+
 function schoolCommunityPriorityOptions(): array
 {
     return [

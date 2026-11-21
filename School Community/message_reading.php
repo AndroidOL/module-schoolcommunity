@@ -17,12 +17,16 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
     return;
 }
 
+$page->return->addReturns([
+    'success6' => schoolCommunityT('Message marked unread.'),
+]);
+
 $gibbonPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
 $categoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
 $mailbox = is_scalar($_GET['mailbox'] ?? null) ? (string) $_GET['mailbox'] : 'all';
-$mailbox = in_array($mailbox, ['all', 'received', 'sent', 'unread'], true) ? $mailbox : 'all';
+$mailbox = in_array($mailbox, ['all', 'received', 'sent', 'unread', 'archived'], true) ? $mailbox : 'all';
 
 $form = Form::create('schoolCommunitySearch', $session->get('absoluteURL').'/index.php', 'get');
 $form->setTitle(schoolCommunityT('Search Messages'));
@@ -30,7 +34,7 @@ $form->setClass('noIntBorder w-full');
 $form->addHiddenValue('q', '/modules/School Community/message_reading.php');
 
 $row = $form->addRow();
-    $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Title or message text'));
+    $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Subject, message or reply text'));
     $row->addTextField('search')->setValue($search)->maxLength(100);
 
 $row = $form->addRow();
@@ -47,6 +51,7 @@ $row = $form->addRow();
         'received' => schoolCommunityT('Received'),
         'sent'     => schoolCommunityT('Sent'),
         'unread'   => schoolCommunityT('Unread'),
+        'archived' => schoolCommunityT('Archived'),
     ])->selected($mailbox);
 
 $row = $form->addRow();
@@ -58,7 +63,12 @@ $where = ["(message_totals.senderID=:currentPersonID OR message_totals.receiverI
 $params = ['currentPersonID' => $gibbonPersonID];
 
 if ($search !== '') {
-    $where[] = '(message_totals.title LIKE :search OR message_totals.body LIKE :search)';
+    $where[] = "(message_totals.title LIKE :search OR message_totals.body LIKE :search
+                 OR EXISTS (
+                     SELECT 1 FROM message_reply AS searchedReply
+                     WHERE searchedReply.messageID=message_totals.messageID
+                       AND searchedReply.body LIKE :search
+                 ))";
     $params['search'] = '%'.$search.'%';
 }
 if ($categoryID !== '') {
@@ -72,12 +82,17 @@ if ($mailbox === 'received') {
 } elseif ($mailbox === 'unread') {
     $where[] = 'message_totals.receiverID=:currentPersonID AND receipt.receiptID IS NULL';
 }
+if ($mailbox === 'archived') {
+    $where[] = 'threadState.archivedAt IS NOT NULL';
+} else {
+    $where[] = 'threadState.archivedAt IS NULL';
+}
 
 $messages = $pdo->select(
     "SELECT message_totals.*, message_category.categoryName,
             sender.title AS senderTitle, sender.preferredName AS senderPreferredName, sender.surname AS senderSurname,
             receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname,
-            receipt.readTimestamp
+            receipt.readTimestamp, threadState.archivedAt
      FROM message_totals
      JOIN message_category ON message_category.categoryID=message_totals.categoryID
      JOIN gibbonPerson AS sender ON sender.gibbonPersonID=message_totals.senderID
@@ -85,6 +100,10 @@ $messages = $pdo->select(
      LEFT JOIN message_read_receipt AS receipt
         ON receipt.messageID=message_totals.messageID
        AND receipt.gibbonPersonID=:currentPersonID
+     LEFT JOIN message_thread_state AS threadState
+        ON threadState.threadType='direct'
+       AND threadState.threadID=message_totals.messageID
+       AND threadState.gibbonPersonID=:currentPersonID
      WHERE ".implode(' AND ', $where)."
      ORDER BY CASE WHEN message_totals.priority=1 THEN 0 WHEN message_totals.priority IS NULL THEN 1 ELSE 2 END,
               message_totals.sendTimestamp DESC

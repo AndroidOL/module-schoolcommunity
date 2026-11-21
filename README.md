@@ -25,6 +25,9 @@ and a home-school communication workflow.
 - Filter recipient choices by the selected category's allowed role groups.
 - Send a message to yourself without creating duplicate records.
 - List sent, received and unread messages with category and priority filters.
+- Search direct message replies and group names, messages and replies.
+- Archive and restore threads per user, mark messages unread and auto-restore
+  archived threads when new activity arrives.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
 - Create category-controlled groups with owner-managed members.

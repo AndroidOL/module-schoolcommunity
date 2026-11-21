@@ -4,6 +4,22 @@
 $sql = [];
 $count = 0;
 
+// v1.3.0
+$sql[$count][0] = "1.3.0";
+$sql[$count][1] = "CREATE TABLE `message_thread_state` (
+    `threadStateID` INT(12) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT,
+    `gibbonPersonID` INT(10) UNSIGNED ZEROFILL NOT NULL,
+    `threadType` VARCHAR(10) NOT NULL,
+    `threadID` INT(12) UNSIGNED ZEROFILL NOT NULL,
+    `archivedAt` TIMESTAMP NULL DEFAULT NULL,
+    `createTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updateTimestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`threadStateID`),
+    UNIQUE KEY `personThread` (`gibbonPersonID`, `threadType`, `threadID`),
+    KEY `thread` (`threadType`, `threadID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;end";
+$count++;
+
 // v1.2.0
 $sql[$count][0] = "1.2.0";
 $sql[$count][1] = "ALTER TABLE message_group ADD COLUMN sourceType VARCHAR(20) NOT NULL DEFAULT 'custom' AFTER ownerID;end

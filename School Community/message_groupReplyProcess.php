@@ -52,6 +52,12 @@ if (empty($inserted)) {
     $redirect('error2');
 }
 
+try {
+    schoolCommunityRestoreThreadStates($pdo, 'group', $message['groupID']);
+} catch (\Throwable $e) {
+    // The reply is stored; archive cleanup must not lose it.
+}
+
 $members = $pdo->select(
     "SELECT recipient.gibbonPersonID
      FROM message_group_message_recipient AS recipient
