@@ -22,7 +22,7 @@ $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 
 if (!in_array($threadType, ['direct', 'group'], true)
-    || !in_array($action, ['archive', 'restore', 'delete', 'restoreDelete'], true)
+    || !in_array($action, ['archive', 'restore', 'unread', 'delete', 'restoreDelete'], true)
     || $threadID === '') {
     $page->addError(schoolCommunityT('The submitted data is invalid.'));
     return;
@@ -55,6 +55,12 @@ $actionConfig = [
         'title' => schoolCommunityT('Restore Conversation'),
         'description' => schoolCommunityT('Restore this conversation to the Active mailbox?'),
         'button' => schoolCommunityT('Restore'),
+        'color' => 'gray',
+    ],
+    'unread' => [
+        'title' => schoolCommunityT('Mark Conversation Unread'),
+        'description' => schoolCommunityT('Mark this conversation as unread? It will return to your Unread mailbox.'),
+        'button' => schoolCommunityT('Mark Unread'),
         'color' => 'gray',
     ],
     'delete' => [

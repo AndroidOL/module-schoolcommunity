@@ -471,6 +471,24 @@ function schoolCommunityAccessibleGroup($pdo, $groupID, $gibbonPersonID, $roleCa
     return $group;
 }
 
+function schoolCommunityManageableGroup($pdo, $groupID): ?array
+{
+    $group = $pdo->selectOne(
+        "SELECT message_group.*, message_category.categoryName, message_category.accessControl,
+                message_category.groupMessages,
+                owner.title AS ownerTitle, owner.preferredName AS ownerPreferredName,
+                owner.surname AS ownerSurname, ownerRole.category AS ownerRoleCategory
+         FROM message_group
+         JOIN message_category ON message_category.categoryID=message_group.categoryID
+         JOIN gibbonPerson AS owner ON owner.gibbonPersonID=message_group.ownerID
+         JOIN gibbonRole AS ownerRole ON ownerRole.gibbonRoleID=owner.gibbonRoleIDPrimary
+         WHERE message_group.groupID=:groupID",
+        ['groupID' => $groupID]
+    );
+
+    return empty($group) ? null : $group;
+}
+
 function schoolCommunityAccessibleGroupMessage($pdo, $groupMessageID, $gibbonPersonID, $roleCategory): ?array
 {
     $message = $pdo->selectOne(

@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+v1.4.5
+------
+- Rebuild message sending as a category, mode and target selection step followed
+  by a review-and-send step.
+- Add Free Selection group sending for at most 5 chosen recipients and direct
+  users to create a group for larger audiences.
+- Show a collapsed official recipient preview modal for class, course and
+  existing group targets before sending.
+- Replace browser delete confirmations with Gibbon modal confirmation pages for
+  direct and group conversations.
+- Redesign the direct message view using standard Gibbon DataTable, alert and
+  form components.
+- Add a Settings > Manage Message Groups page and remove the user Message
+  Groups shortcut from category settings.
+
 v1.4.4
 ------
 - Restore only the current user's archived/deleted thread state when they send

@@ -14,7 +14,9 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Message Groups'), 'message_groups.php')
     ->add(schoolCommunityT('Manage Group Members'));
 
-if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
+if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
+    && !isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')
+) {
     $page->addError(schoolCommunityT('You do not have access to this page.'));
     return;
 }
@@ -31,7 +33,12 @@ $page->return->addReturns([
 $groupID = is_scalar($_GET['groupID'] ?? null) ? trim((string) $_GET['groupID']) : '';
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
-$group = $groupID !== '' ? schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true) : null;
+$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php');
+$group = $groupID !== ''
+    ? ($canManageGroups
+        ? schoolCommunityManageableGroup($pdo, $groupID)
+        : schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true))
+    : null;
 
 if (empty($group)) {
     $page->addError(schoolCommunityT('The specified record does not exist.'));

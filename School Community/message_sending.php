@@ -44,32 +44,44 @@ if (empty($categories)) {
     }
     return;
 }
-$category = $categoryID !== '' ? $pdo->selectOne(
+
+if ($categoryID === '') {
+    $chooseForm = Form::create('schoolCommunityMessageChoose', $session->get('absoluteURL').'/index.php', 'get');
+    $chooseForm->addHiddenValue('q', '/modules/School Community/message_sending.php');
+    $chooseForm->setTitle(schoolCommunityT('Send Message'));
+    $chooseForm->setDescription(schoolCommunityT('Choose a category. Recipients are always limited by the category audience.'));
+
+    $row = $chooseForm->addRow();
+        $row->addLabel('categoryID', schoolCommunityT('Category'));
+        $row->addSelect('categoryID')->fromArray($categories)->required()->placeholder();
+
+    $row = $chooseForm->addRow();
+        $row->addFooter();
+        $row->addSubmit(schoolCommunityT('Continue'));
+
+    $page->write($chooseForm->getOutput());
+    return;
+}
+
+$category = $pdo->selectOne(
     "SELECT categoryID, categoryName, accessControl, groupMessages
      FROM message_category
      WHERE categoryID=:categoryID",
     ['categoryID' => $categoryID]
-) : null;
+);
 
 if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'], $roleCategory)) {
-    $form = Form::create('schoolCommunityCategoryChoose', $session->get('absoluteURL').'/index.php', 'get');
-    $form->addHiddenValue('q', '/modules/School Community/message_sending.php');
-    $form->setTitle(schoolCommunityT('Choose Category'));
-    $form->setDescription(schoolCommunityT('Select a category first so only eligible recipients are shown.'));
-
-    $row = $form->addRow();
-        $row->addLabel('categoryID', schoolCommunityT('Category'));
-        $row->addSelect('categoryID')->fromArray($categories)->required()->placeholder();
-    $row = $form->addRow();
-        $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Continue'));
-
-    $page->write($form->getOutput());
+    $page->addError(schoolCommunityT('The specified record does not exist.'));
     return;
 }
 
-$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($category);$requestedGroupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
+$groupMessagesEnabled = schoolCommunityGroupMessagesAllowed($category);
+$requestedGroupMode = ($_GET['groupMessage'] ?? 'N') === 'Y';
 $groupMode = $groupMessagesEnabled && $requestedGroupMode;
+if ($requestedGroupMode && !$groupMessagesEnabled) {
+    $page->addError(schoolCommunityT('Group messaging is disabled for this category.'));
+}
+
 $targetTypes = [
     'free'        => schoolCommunityT('Free Selection'),
     'formGroup'   => schoolCommunityT('Administrative Class'),
@@ -78,20 +90,6 @@ $targetTypes = [
 ];
 $targetType = is_scalar($_GET['targetType'] ?? null) ? (string) $_GET['targetType'] : 'free';
 $targetType = array_key_exists($targetType, $targetTypes) ? $targetType : 'free';
-if ($requestedGroupMode && !$groupMessagesEnabled) {
-    $page->addError(schoolCommunityT('Group messaging is disabled for this category.'));
-}
-
-if ($groupMessagesEnabled) {
-    $modeForm = Form::create('schoolCommunityMessageMode', '', 'get', 'standardForm disable-warnings');
-    $modeForm->addHiddenValue('categoryID', $categoryID);
-    $modeForm->setTitle(schoolCommunityT('Message Mode'));
-    $modeForm->setDescription(schoolCommunityT('Choose whether to send one direct message or open a group conversation.'));
-    $row = $modeForm->addRow();
-        $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
-        $row->addToggle('groupMessage')->setYesNo()->selected($groupMode ? 'Y' : 'N');
-    $page->write($modeForm->getOutput());
-}
 
 $targets = ['formGroup' => [], 'courseClass' => [], 'existing' => []];
 if ($groupMessagesEnabled) {
@@ -103,97 +101,116 @@ if ($groupMessagesEnabled) {
         (string) $session->get('gibbonSchoolYearID')
     );
 
-    $freeForm = Form::create(
-        'schoolCommunityFreeGroup',
-        $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',
-        'post',
-        'standardForm'.(!$groupMode || $targetType !== 'free' ? ' hidden' : '')
-    );
-    $freeForm->addHiddenValue('action', 'create');
-    $freeForm->addHiddenValue('linkedSource', 'custom');
-    $freeForm->addHiddenValue('categoryID', $categoryID);
-    $freeForm->setTitle(schoolCommunityT('Free Selection'));
-    $freeForm->setDescription(schoolCommunityT('Create a named group, then choose its members from the group page.'));
-    $row = $freeForm->addRow();
-        $row->addLabel('groupName', schoolCommunityT('Group Name'));
-        $row->addTextField('groupName')->required()->maxLength(100);
-    $row = $freeForm->addRow();
-        $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Create Group'));
-    $page->write($freeForm->getOutput());
+    $page->navigator->addHeaderAction('createGroup', schoolCommunityT('Create Group'))
+        ->setURL('/modules/School Community/message_groupAdding.php')
+        ->addParam('categoryID', $categoryID)
+        ->setIcon('plus')
+        ->displayLabel();
+}
 
-    $groupForm = Form::create(
-        'schoolCommunityGroupTarget',
-        $session->get('absoluteURL').'/modules/School Community/message_groupTargetProcess.php',
-        'post',
-        'standardForm'.(!$groupMode ? ' hidden' : '')
-    );
-    $groupForm->addHiddenValue('categoryID', $categoryID);
-    $groupForm->setTitle(schoolCommunityT('Choose Group Recipient'));
-    $row = $groupForm->addRow();
+$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl'], true);
+if (!$groupMode && empty($people)) {
+    $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
+}
+
+$directAction = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sendingProcess.php';
+$groupAction = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupTargetProcess.php';
+
+$form = Form::create('schoolCommunitySendMessage', $directAction, 'post');
+$form->addHiddenValue('categoryID', $categoryID);
+$form->addHiddenValue('address', $session->get('address'));
+$form->setTitle(schoolCommunityT('Send Message'));
+$form->setDescription(schoolCommunityT('Choose the message mode and recipients on this page. Group targets continue to a recipient preview before sending.'));
+
+$row = $form->addRow();
+    $row->addLabel('categoryName', schoolCommunityT('Category'));
+    $row->addTextField('categoryName')->readonly()->setValue($category['categoryName']);
+
+if ($groupMessagesEnabled) {
+    $row = $form->addRow();
+        $row->addLabel('groupMessage', schoolCommunityT('Group Message'))
+            ->description(schoolCommunityT('Use Direct Message for one recipient. Use Group Message for a one-time selection, class or existing group.'));
+        $row->addToggle('groupMessage')->setYesNo()->selected($groupMode ? 'Y' : 'N');
+} else {
+    $form->addHiddenValue('groupMessage', 'N');
+}
+
+$directDisabled = $groupMode;
+$row = $form->addRow()->addClass('schoolCommunityDirectField');
+    $row->addLabel('title', schoolCommunityT('Subject'));
+    $titleField = $row->addTextField('title')->required()->maxLength(100);
+    if ($directDisabled) {
+        $titleField->setDisabled(true);
+    }
+
+$row = $form->addRow()->addClass('schoolCommunityDirectField');
+    $row->addLabel('priority', schoolCommunityT('Priority'));
+    $priorityField = $row->addSelect('priority')->fromArray(schoolCommunityPriorityOptions())->required()->selected('m');
+    if ($directDisabled) {
+        $priorityField->setDisabled(true);
+    }
+
+$row = $form->addRow()->addClass('schoolCommunityDirectField');
+    $row->addLabel('recipientID', schoolCommunityT('Recipient'));
+    $recipientField = $row->addSelectPerson('recipientID')->fromArray($people)->required()->placeholder()
+        ->setAttribute('autocomplete', 'off');
+    if ($directDisabled || empty($people)) {
+        $recipientField->setDisabled(true);
+    }
+
+$row = $form->addRow()->addClass('schoolCommunityDirectField');
+    $column = $row->addColumn();
+    $column->addLabel('body', schoolCommunityT('Message'));
+    $bodyField = $column->addEditor('body', $guid)->setRows(12)->showMedia()->required();
+    if ($directDisabled) {
+        $bodyField->setDisabled(true);
+    }
+
+if ($groupMessagesEnabled) {
+    $groupDisabled = !$groupMode;
+    $row = $form->addRow()->addClass('schoolCommunityGroupTargetField');
         $row->addLabel('targetType', schoolCommunityT('Target Type'));
-        $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType);
+        $targetTypeField = $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType);
+        if ($groupDisabled) {
+            $targetTypeField->setDisabled(true);
+        }
+
+    $row = $form->addRow()->addClass('schoolCommunityGroupTargetField');
+        $row->addAlert(
+            schoolCommunityT('Free Selection sends one message to at most 5 chosen people. Create a group for larger audiences.'),
+            'message'
+        );
+
     foreach (['formGroup', 'courseClass', 'existing'] as $type) {
         $isActiveType = $groupMode && $targetType === $type;
-        $row = $groupForm->addRow()
-            ->addClass('schoolCommunityGroupTargetPicker schoolCommunityGroupTargetPicker-'.$type.($isActiveType ? '' : ' hidden'));
+        $row = $form->addRow()
+            ->addClass('schoolCommunityGroupTargetField schoolCommunityGroupTargetPicker schoolCommunityGroupTargetPicker-'.$type.($isActiveType ? '' : ' hidden'));
         $row->addLabel('groupTarget'.ucfirst($type), $targetTypes[$type]);
         $targetField = $row->addSearchSelect('groupTarget'.ucfirst($type))
             ->fromArray($targets[$type])
             ->required()
             ->placeholder()
             ->setAttribute('autocomplete', 'off');
-        if (!$isActiveType) {
+        if (!$isActiveType || $groupDisabled || empty($targets[$type])) {
             $targetField->setDisabled(true);
         }
     }
-    $row = $groupForm->addRow()->addClass('schoolCommunityGroupSubmit'.($targetType === 'free' ? ' hidden' : ''));
-        $row->addFooter();
-        $row->addSubmit(schoolCommunityT('Open Group Message'));
-    $page->write($groupForm->getOutput());
 }
 
-$people = schoolCommunityPersonOptions($pdo, $gibbonPersonID, (int) $category['accessControl'], true);
-if (empty($people)) {
-    $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
+$row = $form->addRow();
+$row->addFooter();
+$directSubmit = $row->addSubmit(schoolCommunityT('Send Message'))
+    ->addClass('schoolCommunityDirectSubmit'.($groupMode ? ' hidden' : ''));
+if ($groupMode) {
+    $directSubmit->setDisabled(true);
 }
-
-$formClass = 'standardForm'.($groupMode ? ' hidden' : '');
-$form = Form::create(
-    'schoolCommunityDirectMessage',
-    $session->get('absoluteURL').'/modules/School Community/message_sendingProcess.php',
-    'post',
-    $formClass
-);
-$form->addHiddenValue('address', $session->get('address'));
-$form->addHiddenValue('categoryID', $categoryID);
-$form->setTitle(schoolCommunityT('Send Message'));
-$form->setDescription(schoolCommunityT('Recipients are limited by the selected category. You may also send a private note to yourself.'));
-
-$row = $form->addRow();
-    $row->addLabel('title', schoolCommunityT('Subject'));
-    $row->addTextField('title')->required()->maxLength(100);
-
-$row = $form->addRow();
-    $row->addLabel('categoryID', schoolCommunityT('Category'));
-    $row->addTextField('categoryName')->readonly()->setValue($category['categoryName']);
-
-$row = $form->addRow();
-    $row->addLabel('priority', schoolCommunityT('Priority'));
-    $row->addSelect('priority')->fromArray(schoolCommunityPriorityOptions())->required()->selected('m');
-
-$row = $form->addRow();
-    $row->addLabel('recipientID', schoolCommunityT('Recipient'));
-    $row->addSelectPerson('recipientID')->fromArray($people)->required()->placeholder()
-        ->setAttribute('autocomplete', 'off');
-
-$row = $form->addRow();
-    $column = $row->addColumn();
-    $column->addLabel('body', schoolCommunityT('Message'));
-    $column->addEditor('body', $guid)->setRows(12)->showMedia()->required();
-
-$row = $form->addRow();
-    $row->addFooter();
-    $row->addSubmit(schoolCommunityT('Send Message'));
+if ($groupMessagesEnabled) {
+    $groupSubmit = $row->addSubmit(schoolCommunityT('Next'))
+        ->addClass('schoolCommunityGroupSubmit'.(!$groupMode ? ' hidden' : ''))
+        ->setAttribute('formaction', $groupAction);
+    if (!$groupMode) {
+        $groupSubmit->setDisabled(true);
+    }
+}
 
 $page->write($form->getOutput());

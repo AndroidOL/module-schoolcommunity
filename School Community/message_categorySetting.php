@@ -70,9 +70,9 @@ $table->addColumn('groupMessagesLabel', schoolCommunityT('Group Messages'));
 $table->addColumn('updateTime', schoolCommunityT('Updated'))->format(function ($category) {
     return Format::dateTime($category['updateTime']);
 });
-if (isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
-    $table->addHeaderAction('groups', schoolCommunityT('Message Groups'))
-        ->setURL('/modules/School Community/message_groups.php')
+if (isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+    $table->addHeaderAction('groups', schoolCommunityT('Manage Message Groups'))
+        ->setURL('/modules/School Community/message_groupManage.php')
         ->setIcon('group')
         ->displayLabel();
 }

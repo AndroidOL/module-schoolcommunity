@@ -21,6 +21,7 @@ $page->return->addReturns([
     'success6' => schoolCommunityT('Message marked unread.'),
     'success7' => schoolCommunityT('Message moved to Trash.'),
     'success8' => schoolCommunityT('Message restored from Trash.'),
+    'success10' => schoolCommunityT('Messages sent.'),
 ]);
 
 $gibbonPersonID = (string) $session->get('gibbonPersonID');

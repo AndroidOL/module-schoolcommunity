@@ -28,8 +28,9 @@ if (!in_array($action, ['create', 'addMember', 'removeMember'], true)) {
 
 $canRead = isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php');
 $canSend = isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php');
-if (($action === 'create' && !schoolCommunityMessagingAccessAllowed($canSend, $canRead))
-    || ($action !== 'create' && !$canRead)) {
+$canManageGroups = isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php');
+if (($action === 'create' && !$canManageGroups && !schoolCommunityMessagingAccessAllowed($canSend, $canRead))
+    || ($action !== 'create' && !$canRead && !$canManageGroups)) {
     $redirect('error0');
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -133,7 +134,11 @@ if ($action === 'create') {
     exit;
 }
 
-$group = $groupID !== '' ? schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true) : null;
+$group = $groupID !== ''
+    ? ($canManageGroups
+        ? schoolCommunityManageableGroup($pdo, $groupID)
+        : schoolCommunityAccessibleGroup($pdo, $groupID, $currentPersonID, $roleCategory, true))
+    : null;
 if (empty($group)) {
     $redirect('error0');
 }

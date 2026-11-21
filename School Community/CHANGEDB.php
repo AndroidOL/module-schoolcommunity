@@ -4,6 +4,22 @@
 $sql = [];
 $count = 0;
 
+// v1.4.5
+$sql[$count][0] = "1.4.5";
+$sql[$count][1] = "UPDATE gibbonAction
+SET URLList='message_categorySetting.php, message_categoryAdding.php, message_categoryEditing.php, message_categoryDelete.php, message_categoryProcess.php, message_groupManage.php, message_groupAdding.php, message_groupProcess.php, message_groupMembers.php'
+WHERE gibbonModuleID=(
+      SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community'
+  )
+  AND entryURL='message_categorySetting.php';end
+UPDATE gibbonAction
+SET URLList='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupCompose.php, message_groupAdding.php, message_groupProcess.php'
+WHERE gibbonModuleID=(
+      SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community'
+  )
+  AND entryURL='message_sending.php';end";
+$count++;
+
 // v1.4.3
 $sql[$count][0] = "1.4.3";
 $sql[$count][1] = "UPDATE gibbonAction

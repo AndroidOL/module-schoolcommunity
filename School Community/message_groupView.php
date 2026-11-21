@@ -90,44 +90,41 @@ $row = $threadActions->addRow();
         .'</div>'
     );
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
-if ($isOwner) {
-    $threadActions->addHeaderAction('members', schoolCommunityT('Manage Members'))
+if ($isOwner || isActionAccessible($guid, $connection2, '/modules/School Community/message_categorySetting.php')) {
+    $page->navigator->addHeaderAction('members', schoolCommunityT('Manage Members'))
         ->setURL('/modules/School Community/message_groupMembers.php')
         ->addParam('groupID', $groupID)
         ->setIcon('users')
         ->displayLabel();
 }
 
-$row = $threadActions->addRow();
-    $row->addFooter();
-    if (!$isDeleted) {
-        $row->addSubmit($isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
-            ->setName('action')
-            ->setAttribute('value', $isArchived ? 'restore' : 'archive')
-            ->setColor('gray')
-            ->setType('quickSubmit')
-            ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive')
-            ->setSize('sm');
-    }
+$threadAction = function (string $name, string $label, string $action, string $icon) use ($page, $groupID) {
+    return $page->navigator->addHeaderAction($name, $label)
+        ->setURL('/modules/School Community/message_threadConfirm.php')
+        ->addParam('threadType', 'group')
+        ->addParam('threadID', $groupID)
+        ->addParam('action', $action)
+        ->setIcon($icon)
+        ->modalWindow()
+        ->displayLabel();
+};
+
 if (!$isDeleted) {
-    $row->addSubmit(schoolCommunityT('Mark Unread'))
-        ->setName('action')
-        ->setAttribute('value', 'unread')
-        ->setColor('gray')
-        ->setType('quickSubmit')
-        ->setIcon('solid', 'refresh')
-        ->setSize('sm');
+    $threadAction(
+        'archive',
+        $isArchived ? schoolCommunityT('Restore') : schoolCommunityT('Archive'),
+        $isArchived ? 'restore' : 'archive',
+        $isArchived ? 'arrow-left-circle' : 'archive'
+    );
+    $threadAction('unread', schoolCommunityT('Mark Unread'), 'unread', 'refresh');
 }
-$deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
-    ->setName('action')
-    ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
-    ->setColor($isDeleted ? 'gray' : 'red')
-    ->setType('quickSubmit')
-    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete')
-    ->setSize('sm');
-if (!$isDeleted) {
-    $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this group to Trash?')).')');
-}
+$threadAction(
+    'delete',
+    $isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'),
+    $isDeleted ? 'restoreDelete' : 'delete',
+    $isDeleted ? 'arrow-left-circle' : 'delete'
+);
+
 $page->write($threadActions->getOutput());
 
 $pdo->statement(

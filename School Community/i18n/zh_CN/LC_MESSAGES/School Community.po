@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: School Community 1.4.2\n"
+"Project-Id-Version: School Community 1.4.5\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-21 18:39+0800\n"
-"PO-Revision-Date: 2026-11-21 18:39+0800\n"
+"POT-Creation-Date: 2026-11-21 21:22+0800\n"
+"PO-Revision-Date: 2026-11-21 21:22+0800\n"
 "Last-Translator: AndroidOL\n"
 "Language-Team: Gibbon zh_CN\n"
 "Language: zh_CN\n"
@@ -1000,3 +1000,69 @@ msgstr "%s 回复了：%s"
 
 #~ msgid "Student"
 #~ msgstr "学生"
+
+msgid "Choose a category. Recipients are always limited by the category audience."
+msgstr "请选择分类。收件人始终受该分类受众限制。"
+
+msgid "Choose the message mode and recipients on this page. Group targets continue to a recipient preview before sending."
+msgstr "请在此页选择消息模式和收件对象。群组目标会先进入收件人预览，再发送。"
+
+msgid "Use Direct Message for one recipient. Use Group Message for a one-time selection, class or existing group."
+msgstr "直接消息用于一位收件人；群组消息可用于一次性多选、行政班、课程班或已有群组。"
+
+msgid "Free Selection sends one message to at most 5 chosen people. Create a group for larger audiences."
+msgstr "自由选择会向最多 5 位所选人员发送消息；更多收件人请创建群组。"
+
+msgid "Next"
+msgstr "下一步"
+
+msgid "Review and Send"
+msgstr "预览并发送"
+
+msgid "Select at most 5 recipients, or create a group for a larger audience."
+msgstr "最多选择 5 位收件人；更多收件人请创建群组。"
+
+msgid "Change Recipients"
+msgstr "更改收件人"
+
+msgid "Preview Recipients"
+msgstr "预览收件人"
+
+msgid "Selected Recipients"
+msgstr "已选收件人"
+
+msgid "The recipient list is collapsed by default. Preview it before sending. The message is sent only to the displayed snapshot."
+msgstr "收件人列表默认折叠。发送前请先预览；消息只发送给当前显示的名单快照。"
+
+msgid "I have previewed the recipient list."
+msgstr "我已预览收件人列表。"
+
+msgid "Free Selection sends one direct message to each chosen person. Choose at most 5 recipients; create a group for a larger audience."
+msgstr "自由选择会向每位所选人员发送一条直接消息。最多选择 5 位收件人；更多收件人请创建群组。"
+
+msgid "Use Control, Command and/or Shift to select multiple. Maximum 5 recipients."
+msgstr "使用 Control、Command 和/或 Shift 多选。最多 5 位收件人。"
+
+msgid "This message is in Trash. Restore it before replying."
+msgstr "此消息在回收站中。恢复后才能回复。"
+
+msgid "Mark Conversation Unread"
+msgstr "标记会话为未读"
+
+msgid "Mark this conversation as unread? It will return to your Unread mailbox."
+msgstr "要将此会话标记为未读吗？它将回到未读邮箱。"
+
+msgid "Manage Message Groups"
+msgstr "管理消息群组"
+
+msgid "Group, category or owner"
+msgstr "群组、分类或所有者"
+
+msgid "Review all message groups, their audience category and membership. Class and course groups synchronize membership from their source."
+msgstr "查看全部消息群组、受众分类和成员。行政班和课程班群组的成员会随来源自动同步。"
+
+msgid "There are no message groups yet."
+msgstr "暂无消息群组。"
+
+msgid "Messages sent."
+msgstr "消息已发送。"

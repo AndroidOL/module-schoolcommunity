@@ -30,8 +30,12 @@ $redirect = function (string $return) use ($URL) {
     header('Location: '.$URL.'&return='.$return);
     exit;
 };
-$openGroup = function (string $groupID) use ($session) {
-    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($groupID));
+$openCompose = function (string $groupID) use ($session) {
+    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupCompose.php&groupID='.urlencode($groupID));
+    exit;
+};
+$openFreeCompose = function () use ($session, $categoryID) {
+    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupCompose.php&categoryID='.urlencode($categoryID).'&targetType=free');
     exit;
 };
 
@@ -49,7 +53,7 @@ if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
 }
 
 $_POST = $container->get(Validator::class)->sanitize($_POST);
-if ($categoryID === '' || $targetField === '' || $groupTarget === '') {
+if ($categoryID === '' || ($_POST['groupMessage'] ?? 'N') !== 'Y') {
     $redirect('error1');
 }
 $category = $pdo->selectOne(
@@ -62,6 +66,12 @@ if (empty($category) || !schoolCommunityCategoryAllows($category['accessControl'
     $redirect('error0');
 }
 if (!schoolCommunityGroupMessagesAllowed($category)) {
+    $redirect('error1');
+}
+if ($targetType === 'free') {
+    $openFreeCompose();
+}
+if ($targetField === '' || $groupTarget === '') {
     $redirect('error1');
 }
 
@@ -77,7 +87,7 @@ if (str_starts_with($groupTarget, 'group:')) {
         || ($targetType === 'existing' && !in_array($groupSourceType, ['custom', 'formGroup', 'courseClass', 'gibbonGroup'], true))) {
         $redirect('error0');
     }
-    $openGroup($groupID);
+    $openCompose($groupID);
 }
 
 [$sourceType, $sourceID] = array_pad(explode(':', $groupTarget, 2), 2, '');
@@ -104,7 +114,7 @@ if (!empty($existingGroupID)) {
     if (empty($group) || (string) $group['categoryID'] !== $categoryID) {
         $redirect('error0');
     }
-    $openGroup($existingGroupID);
+    $openCompose($existingGroupID);
 }
 
 try {
@@ -142,4 +152,4 @@ try {
     $redirect('error2');
 }
 
-$openGroup((string) $inserted);
+$openCompose((string) $inserted);

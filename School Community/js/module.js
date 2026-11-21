@@ -9,56 +9,17 @@ the Free Software Foundation, either version 3 of the License, or
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-window.schoolCommunitySetMessageMode = function (mode) {
-    const directForm = document.getElementById('schoolCommunityDirectMessage');
-    const groupMode = mode === 'Y';
-    const targetForm = document.getElementById('schoolCommunityGroupTarget');
-
-    if (directForm) {
-        directForm.classList.toggle('hidden', groupMode);
-        directForm.setAttribute('aria-hidden', groupMode ? 'true' : 'false');
-    }
-    if (targetForm) {
-        targetForm.classList.toggle('hidden', !groupMode);
-        targetForm.setAttribute('aria-hidden', groupMode ? 'false' : 'true');
-    }
-
-    if (!groupMode) {
-        window.schoolCommunitySetGroupTargetType('');
-        return;
-    }
-
-    const targetType = targetForm?.querySelector('select[name="targetType"]')?.value || 'free';
-    window.schoolCommunitySetGroupTargetType(targetType);
-};
-
 window.schoolCommunitySetGroupTargetType = function (type) {
-    const freeForm = document.getElementById('schoolCommunityFreeGroup');
-    const targetForm = document.getElementById('schoolCommunityGroupTarget');
-    const targetTypeInput = targetForm
-        ? targetForm.querySelector('select[name="targetType"]')
-        : null;
-    const groupMode = targetForm !== null && !targetForm.classList.contains('hidden');
+    const groupFields = document.querySelectorAll('.schoolCommunityGroupTargetField');
+    const groupMode = Array.from(groupFields).some((field) => !field.classList.contains('hidden'));
 
-    if (freeForm) {
-        const showFree = groupMode && type === 'free';
-        freeForm.classList.toggle('hidden', !showFree);
-        freeForm.setAttribute('aria-hidden', showFree ? 'false' : 'true');
-    }
-    if (targetTypeInput && type !== '') {
-        targetTypeInput.value = type;
-    }
-
-    document.querySelectorAll('.schoolCommunityGroupSubmit').forEach((row) => {
-        row.classList.toggle('hidden', !groupMode || type === '' || type === 'free');
-    });
     document.querySelectorAll('.schoolCommunityGroupTargetPicker').forEach((row) => {
         const active = groupMode && type !== '' && row.classList.contains('schoolCommunityGroupTargetPicker-'+type);
         row.classList.toggle('hidden', !active);
@@ -66,6 +27,35 @@ window.schoolCommunitySetGroupTargetType = function (type) {
             field.disabled = !active;
         });
     });
+};
+
+window.schoolCommunitySetMessageMode = function (mode) {
+    const groupMode = mode === 'Y';
+
+    document.querySelectorAll('.schoolCommunityDirectField').forEach((row) => {
+        row.classList.toggle('hidden', groupMode);
+        row.querySelectorAll('input, select, textarea').forEach((field) => {
+            field.disabled = groupMode;
+        });
+    });
+    document.querySelectorAll('.schoolCommunityDirectSubmit').forEach((button) => {
+        button.classList.toggle('hidden', groupMode);
+        button.disabled = groupMode;
+    });
+
+    document.querySelectorAll('.schoolCommunityGroupTargetField').forEach((row) => {
+        row.classList.toggle('hidden', !groupMode);
+        row.querySelectorAll('input, select, textarea').forEach((field) => {
+            field.disabled = !groupMode;
+        });
+    });
+    document.querySelectorAll('.schoolCommunityGroupSubmit').forEach((button) => {
+        button.classList.toggle('hidden', !groupMode);
+        button.disabled = !groupMode;
+    });
+
+    const targetType = document.querySelector('select[name="targetType"]');
+    window.schoolCommunitySetGroupTargetType(groupMode && targetType ? targetType.value : '');
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -85,6 +75,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (event.target.id === 'targetType') {
             window.schoolCommunitySetGroupTargetType(event.target.value);
+        }
+        if (event.target.id === 'categoryID') {
+            event.target.form?.requestSubmit();
         }
     });
 });
