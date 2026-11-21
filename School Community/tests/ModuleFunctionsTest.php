@@ -279,7 +279,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $moduleTables = [];
             $actionRows = [];
             require dirname(__DIR__).'/manifest.php';
-            $this->assertSame('1.4.5', $version);
+            $this->assertSame('1.4.6', $version);
 
             $categoryTable = implode("\n", array_filter($moduleTables, function ($sql) {
                 return str_contains($sql, 'CREATE TABLE `message_category`');
@@ -304,16 +304,19 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             );
             foreach (['1.4.0', '1.4.1', '1.4.2'] as $version) {
                 $this->assertStringContainsString(
-                    "entryURL='message_sending.php'",
+                    "='message_sending.php'",
                     $migrations[$version]
                 );
                 $this->assertStringContainsString(
-                    "entryURL='message_reading.php'",
+                    "='message_reading.php'",
                     $migrations[$version]
                 );
             }
             $this->assertStringContainsString('message_groupCompose.php', $migrations['1.4.5']);
             $this->assertStringContainsString('message_groupManage.php', $migrations['1.4.5']);
+            $this->assertStringContainsString('message_freeRecipients.php', $migrations['1.4.6']);
+            $this->assertStringContainsString('message_freeRecipientsProcess.php', $migrations['1.4.6']);
+            $this->assertStringNotContainsString('message_groupTargetProcess.php', $migrations['1.4.6']);
             $this->assertStringContainsString(
                 'information_schema.COLUMNS',
                 $migrations['1.4.1']
@@ -342,6 +345,15 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             }
         }
 
+        public function testDeleteConfirmationsUseOfficialDeleteForm()
+        {
+            foreach (['message_categoryDelete.php', 'message_threadConfirm.php'] as $page) {
+                $source = file_get_contents(dirname(__DIR__).'/'.$page);
+                $this->assertStringContainsString('DeleteForm::createForm', $source);
+                $this->assertStringNotContainsString('confirm(', $source);
+            }
+        }
+
         public function testSendFailuresHaveVisibleReturnsAndRetryCategory()
         {
             $sendPage = file_get_contents(dirname(__DIR__).'/message_sending.php');
@@ -361,7 +373,11 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertStringContainsString("'formGroup', 'courseClass', 'existing'", $sendPage);
             $this->assertStringContainsString("addSearchSelect('groupTarget'.ucfirst(\$type))", $sendPage);
             $this->assertStringContainsString('message_groupCompose.php', file_get_contents(dirname(__DIR__).'/message_sending.php'));
-            $this->assertStringContainsString('selectMultiple()', file_get_contents(dirname(__DIR__).'/message_groupCompose.php'));
+            $compose = file_get_contents(dirname(__DIR__).'/message_groupCompose.php');
+            $this->assertStringContainsString('message_freeRecipients.php', $compose);
+            $this->assertStringContainsString('modalWindow(700, 520)', $compose);
+            $this->assertStringNotContainsString('selectMultiple()', $compose);
+            $this->assertStringContainsString('schoolCommunityUpdateFreeRecipientCount', $script);
             $this->assertStringContainsString('schoolCommunitySetMessageMode', $script);
             $this->assertStringContainsString('schoolCommunitySetGroupTargetType', $script);
             $this->assertStringContainsString("event.target.id === 'groupMessage'", $script);
@@ -383,7 +399,7 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
         {
             $po = file_get_contents(dirname(__DIR__).'/i18n/zh_CN/LC_MESSAGES/School Community.po');
 
-            $this->assertStringContainsString('Project-Id-Version: School Community 1.4.5', $po);
+            $this->assertStringContainsString('Project-Id-Version: School Community 1.4.6', $po);
             $this->assertStringNotContainsString('Project-Id-Version: School Community 1.4.0', $po);
         }
 

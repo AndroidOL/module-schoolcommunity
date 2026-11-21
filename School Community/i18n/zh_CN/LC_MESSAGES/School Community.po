@@ -1043,9 +1043,6 @@ msgstr "我已预览收件人列表。"
 msgid "Free Selection sends one direct message to each chosen person. Choose at most 5 recipients; create a group for a larger audience."
 msgstr "自由选择会向每位所选人员发送一条直接消息。最多选择 5 位收件人；更多收件人请创建群组。"
 
-msgid "Use Control, Command and/or Shift to select multiple. Maximum 5 recipients."
-msgstr "使用 Control、Command 和/或 Shift 多选。最多 5 位收件人。"
-
 msgid "This message is in Trash. Restore it before replying."
 msgstr "此消息在回收站中。恢复后才能回复。"
 
@@ -1078,3 +1075,27 @@ msgstr "暂无消息群组。"
 
 msgid "Messages sent."
 msgstr "消息已发送。"
+
+msgid "Select Recipients"
+msgstr "选择收件人"
+
+msgid "Choose at most 5 recipients. Create a group for a larger audience."
+msgstr "最多选择 5 位收件人；更多收件人请创建群组。"
+
+msgid "Search by name"
+msgstr "按姓名搜索"
+
+msgid "Maximum 5 recipients."
+msgstr "最多 5 位收件人。"
+
+msgid "Selected"
+msgstr "已选"
+
+msgid "Use Selected Recipients"
+msgstr "使用所选收件人"
+
+msgid "No recipients selected yet. Use the button above to choose up to 5 people."
+msgstr "尚未选择收件人。请使用上方按钮选择最多 5 位人员。"
+
+msgid "Choose at most 5 recipients; create a group for a larger audience."
+msgstr "最多选择 5 位收件人；更多收件人请创建群组。"

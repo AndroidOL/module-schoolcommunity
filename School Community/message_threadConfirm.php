@@ -5,6 +5,7 @@ Copyright © 2010, Gibbon Foundation
 */
 
 use Gibbon\Forms\Form;
+use Gibbon\Forms\Prefab\DeleteForm;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -40,6 +41,12 @@ if ($threadType === 'direct') {
 
 if (empty($target)) {
     $page->addError(schoolCommunityT('The specified record does not exist.'));
+    return;
+}
+
+if ($action === 'delete') {
+    $form = DeleteForm::createForm($session->get('absoluteURL').'/modules/School Community/message_threadProcess.php');
+    $page->write($form->getOutput());
     return;
 }
 

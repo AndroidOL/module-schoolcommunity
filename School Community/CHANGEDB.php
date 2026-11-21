@@ -7,7 +7,7 @@ $count = 0;
 // v1.4.6
 $sql[$count][0] = "1.4.6";
 $sql[$count][1] = "UPDATE gibbonAction
-SET URLList='message_sending.php, message_sendingProcess.php, message_groupCompose.php, message_groupAdding.php, message_groupProcess.php'
+SET URLList='message_sending.php, message_sendingProcess.php, message_groupCompose.php, message_freeRecipients.php, message_freeRecipientsProcess.php, message_groupAdding.php, message_groupProcess.php'
 WHERE gibbonModuleID=(
       SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community'
   )

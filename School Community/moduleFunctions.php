@@ -164,6 +164,9 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
         if (!$includeCurrent && schoolCommunitySamePersonID($person['gibbonPersonID'], $currentPersonID)) {
             continue;
         }
+        if ($accessControl !== null && !schoolCommunityCategoryAllows((int) $accessControl, $person['roleCategory'])) {
+            continue;
+        }
         $name = Format::name($person['title'], $person['preferredName'], $person['surname'], $person['roleCategory'], true);
         $label = $name.' ('.schoolCommunityT($person['roleCategory']).')';
         if ($includeCurrent && schoolCommunitySamePersonID($person['gibbonPersonID'], $currentPersonID)) {

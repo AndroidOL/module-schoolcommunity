@@ -6,6 +6,7 @@ Copyright © 2010, Gibbon Foundation
 
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
+use Gibbon\Tables\Action;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -18,6 +19,7 @@ $page->return->addReturns([
     'error1' => schoolCommunityT('The submitted data is invalid.'),
     'error2' => schoolCommunityT('Unable to save the message.'),
     'error3' => schoolCommunityT('The recipient list changed. Review the updated list and send again.'),
+    'error4' => schoolCommunityT('Choose at most 5 recipients; create a group for a larger audience.'),
     'error9' => schoolCommunityT('Your session expired. Refresh the page and try again.'),
 ]);
 
@@ -59,13 +61,31 @@ if (empty($category)
     return;
 }
 
-// Free selection: choose up to 5 recipients, then send as individual direct messages.
+// Free selection: pick up to 5 recipients in a modal, then send individual direct messages.
 if ($targetType === 'free') {
     $people = schoolCommunityPersonOptions($pdo, $currentPersonID, (int) $category['accessControl'], true);
     if (empty($people)) {
         $page->addError(schoolCommunityT('No eligible recipients are available for this category.'));
         return;
     }
+
+    $selectedRaw = is_scalar($_GET['recipientIDs'] ?? null) ? (string) $_GET['recipientIDs'] : '';
+    $selectedIDs = [];
+    foreach (explode(',', $selectedRaw) as $recipientID) {
+        $recipientID = trim($recipientID);
+        if ($recipientID !== '' && isset($people[$recipientID]) && !in_array($recipientID, $selectedIDs, true)) {
+            $selectedIDs[] = $recipientID;
+        }
+    }
+    $selectedIDs = array_slice($selectedIDs, 0, 5);
+
+    $pickerAction = (new Action('selectRecipients', schoolCommunityT('Select Recipients')))
+        ->setURL('/modules/School Community/message_freeRecipients.php')
+        ->addParam('categoryID', $categoryID)
+        ->addParam('recipientIDs', implode(',', $selectedIDs))
+        ->setIcon('users')
+        ->modalWindow(700, 520)
+        ->displayLabel();
 
     $form = Form::create(
         'schoolCommunityFreeCompose',
@@ -75,24 +95,31 @@ if ($targetType === 'free') {
     );
     $form->addHiddenValue('categoryID', $categoryID);
     $form->addHiddenValue('recipientMode', 'multi');
+    foreach ($selectedIDs as $recipientID) {
+        $form->addHiddenValue('recipientIDs[]', $recipientID);
+    }
     $form->setTitle(schoolCommunityT('Send Message'));
     $form->setDescription(schoolCommunityT('Free Selection sends one direct message to each chosen person. Choose at most 5 recipients; create a group for a larger audience.'));
 
     $row = $form->addRow();
         $row->addLabel('categoryName', schoolCommunityT('Category'));
         $row->addTextField('categoryName')->readonly()->setValue($category['categoryName']);
-    $row = $form->addRow();
-        $row->addLabel('selectedTarget', schoolCommunityT('Selected Recipients'));
-        $row->addContent(schoolCommunityT('Free Selection'));
+
     $row = $form->addRow();
         $row->addLabel('recipientIDs', schoolCommunityT('Recipients'))
-            ->description(schoolCommunityT('Use Control, Command and/or Shift to select multiple. Maximum 5 recipients.'));
-        $row->addSelectPerson('recipientIDs[]')
-            ->fromArray($people)
-            ->required()
-            ->placeholder()
-            ->selectMultiple()
-            ->setAttribute('size', '10');
+            ->description(schoolCommunityT('Maximum 5 recipients.'));
+        $column = $row->addColumn();
+        $column->addContent($pickerAction->getOutput());
+        if (empty($selectedIDs)) {
+            $column->addAlert(schoolCommunityT('No recipients selected yet. Use the button above to choose up to 5 people.'), 'warning');
+        } else {
+            $selectedNames = [];
+            foreach ($selectedIDs as $recipientID) {
+                $selectedNames[] = htmlPrep((string) $people[$recipientID]);
+            }
+            $column->addContent('<div class="text-sm leading-6 text-gray-800">'.implode('<br>', $selectedNames).'</div>');
+        }
+
     $row = $form->addRow();
         $row->addLabel('title', schoolCommunityT('Subject'));
         $row->addTextField('title')->required()->maxLength(100);

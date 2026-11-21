@@ -4,7 +4,7 @@ Gibbon: the flexible, open school platform
 Copyright © 2010, Gibbon Foundation
 */
 
-use Gibbon\Forms\Form;
+use Gibbon\Forms\Prefab\DeleteForm;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -28,13 +28,8 @@ if (empty($category)) {
     return;
 }
 
-$form = Form::create('schoolCommunityCategoryDelete', $session->get('absoluteURL').'/modules/School Community/message_categoryProcess.php', 'post');
+$form = DeleteForm::createForm($session->get('absoluteURL').'/modules/School Community/message_categoryProcess.php');
 $form->addHiddenValue('action', 'delete');
 $form->addHiddenValue('categoryID', $categoryID);
-$form->setTitle(schoolCommunityT('Delete Category'));
-$form->addRow()->addAlert(sprintf(schoolCommunityT('Delete category "%s"? This cannot be undone.'), htmlPrep($category['categoryName'])), 'warning');
-$row = $form->addRow();
-    $row->addFooter();
-    $row->addSubmit(schoolCommunityT('Delete Category'));
 
-echo $form->getOutput();
+$page->write($form->getOutput());

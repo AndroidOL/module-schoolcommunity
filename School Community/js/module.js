@@ -63,12 +63,51 @@ window.schoolCommunitySetMessageMode = function (mode) {
     window.schoolCommunitySetGroupTargetType(groupMode && targetType ? targetType.value : '');
 };
 
+window.schoolCommunityUpdateFreeRecipientCount = function () {
+    const form = document.getElementById('schoolCommunityFreeRecipients');
+    if (!form) {
+        return;
+    }
+    const boxes = form.querySelectorAll('input[name="recipientIDs[]"]');
+    const checked = form.querySelectorAll('input[name="recipientIDs[]"]:checked');
+    const counter = document.getElementById('schoolCommunityFreeRecipientCount');
+    if (counter) {
+        counter.textContent = String(checked.length);
+    }
+    boxes.forEach(function (box) {
+        box.disabled = checked.length >= 5 && !box.checked;
+    });
+};
+
+window.schoolCommunityFilterFreeRecipients = function (term) {
+    const form = document.getElementById('schoolCommunityFreeRecipients');
+    if (!form) {
+        return;
+    }
+    const needle = (term || '').trim().toLowerCase();
+    form.querySelectorAll('input[name="recipientIDs[]"]').forEach(function (box) {
+        const row = box.closest('div');
+        const label = row ? row.querySelector('label') : null;
+        const text = label ? label.textContent.toLowerCase() : '';
+        if (row) {
+            row.classList.toggle('hidden', needle !== '' && text.indexOf(needle) === -1);
+        }
+    });
+};
+
 document.addEventListener('DOMContentLoaded', function () {
     const mode = document.getElementById('groupMessage');
     if (mode) {
         window.schoolCommunitySetMessageMode(mode.value);
     }
+    window.schoolCommunityUpdateFreeRecipientCount();
 });
+
+if (typeof htmx !== 'undefined') {
+    htmx.onLoad(function () {
+        window.schoolCommunityUpdateFreeRecipientCount();
+    });
+}
 
 ['change', 'input'].forEach(function (eventName) {
     document.addEventListener(eventName, function (event) {
@@ -80,6 +119,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (event.target.id === 'targetType') {
             window.schoolCommunitySetGroupTargetType(event.target.value);
+        }
+        if (event.target.name === 'recipientIDs[]') {
+            window.schoolCommunityUpdateFreeRecipientCount();
+        }
+        if (event.target.id === 'recipientSearch') {
+            window.schoolCommunityFilterFreeRecipients(event.target.value);
         }
     });
 });
