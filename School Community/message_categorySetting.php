@@ -71,7 +71,7 @@ $table->addColumn('updateTime', schoolCommunityT('Updated'))->format(function ($
     return Format::dateTime($category['updateTime']);
 });
 if (isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')) {
-    $table->addHeaderAction('groups', schoolCommunityT('Manage Message Groups'))
+    $table->addHeaderAction('groups', schoolCommunityT('Message Groups'))
         ->setURL('/modules/School Community/message_groups.php')
         ->setIcon('group')
         ->displayLabel();
