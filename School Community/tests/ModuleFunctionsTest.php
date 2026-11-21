@@ -293,5 +293,28 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
                 $this->assertStringNotContainsString("->setValue('restoreDelete'", $source);
             }
         }
+
+        public function testSendFailuresHaveVisibleReturnsAndRetryCategory()
+        {
+            $sendPage = file_get_contents(dirname(__DIR__).'/message_sending.php');
+            $process = file_get_contents(dirname(__DIR__).'/message_sendingProcess.php');
+
+            foreach (['error0', 'error1', 'error2', 'error9'] as $returnCode) {
+                $this->assertStringContainsString("'{$returnCode}'", $sendPage);
+            }
+            $this->assertStringContainsString('$postedCategoryID', $process);
+            $this->assertStringContainsString('&categoryID=', $process);
+        }
+
+        public function testLinkedSourceLookupSuppressesEverySupportedSourceType()
+        {
+            $source = file_get_contents(dirname(__DIR__).'/moduleFunctions.php');
+
+            $this->assertStringContainsString(
+                "sourceType IN ('formGroup', 'courseClass', 'gibbonGroup')",
+                $source
+            );
+            $this->assertStringNotContainsString("sourceType IN ('formGroup', 'courseClass')\"", $source);
+        }
     }
 }

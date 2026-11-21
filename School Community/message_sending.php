@@ -13,6 +13,13 @@ $page->breadcrumbs
     ->add(schoolCommunityT('Messages'), 'message_reading.php')
     ->add(schoolCommunityT('Send Message'));
 
+$page->return->addReturns([
+    'error0' => schoolCommunityT('You do not have permission to perform this action.'),
+    'error1' => schoolCommunityT('The submitted data is invalid.'),
+    'error2' => schoolCommunityT('Unable to save the message.'),
+    'error9' => schoolCommunityT('Your session expired. Refresh the page and try again.'),
+]);
+
 if (!schoolCommunityMessagingAccessAllowed(
     isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php'),
     isActionAccessible($guid, $connection2, '/modules/School Community/message_reading.php')
@@ -143,7 +150,8 @@ $row = $form->addRow();
     $row->addLabel('recipientID', schoolCommunityT('Recipient'));
     $row->addTextField('recipientName')
         ->readonly()
-        ->placeholder(schoolCommunityT('No recipient selected'));
+        ->placeholder(schoolCommunityT('No recipient selected'))
+        ->description(schoolCommunityT('Required. Choose a recipient before sending.'));
 
 $recipientChooser = (new Action('chooseRecipient', schoolCommunityT('Choose Recipient')))
     ->setURL('/modules/School Community/message_recipientChooser.php')

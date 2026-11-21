@@ -511,7 +511,7 @@ function schoolCommunityGroupSendTargetOptions($pdo, $currentPersonID, $roleCate
 
     $allLinkedSources = $pdo->select(
         "SELECT sourceType, sourceID FROM message_group
-         WHERE sourceType IN ('formGroup', 'courseClass')"
+         WHERE sourceType IN ('formGroup', 'courseClass', 'gibbonGroup')"
     )->fetchAll(PDO::FETCH_ASSOC);
     foreach ($allLinkedSources as $source) {
         $linkedSources[$source['sourceType'].':'.$source['sourceID']] = true;

@@ -88,12 +88,6 @@ if (schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
         $row->addContent(schoolCommunityT('Visible only to you'));
 }
 $row = $threadActions->addRow();
-    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
-    $row->addContent($isDeleted
-        ? schoolCommunityT('Trash')
-        : ($isArchived ? schoolCommunityT('Archived') : schoolCommunityT('Active')));
-
-$row = $threadActions->addRow();
     $column = $row->addColumn();
     $column->addLabel('body', schoolCommunityT('Message'));
     $column->addContent('<div class="innerContent">'

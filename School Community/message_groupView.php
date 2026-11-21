@@ -81,12 +81,6 @@ $row = $threadActions->addRow();
 $row = $threadActions->addRow();
     $row->addLabel('owner', schoolCommunityT('Owner'));
     $row->addContent(htmlPrep($ownerName));
-$row = $threadActions->addRow();
-    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
-    $row->addContent($isDeleted
-        ? schoolCommunityT('Trash')
-        : ($isArchived ? schoolCommunityT('Archived') : schoolCommunityT('Active')));
-
 $isOwner = schoolCommunitySamePersonID($group['ownerID'], $currentPersonID);
 if ($isOwner) {
     $threadActions->addHeaderAction('members', schoolCommunityT('Manage Members'))

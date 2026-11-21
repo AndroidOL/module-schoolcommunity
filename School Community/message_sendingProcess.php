@@ -11,7 +11,11 @@ use Gibbon\Session\TokenHandler;
 require_once '../../gibbon.php';
 require_once __DIR__.'/moduleFunctions.php';
 
+$postedCategoryID = is_scalar($_POST['categoryID'] ?? null) ? trim((string) $_POST['categoryID']) : '';
 $URL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_sending.php';
+if ($postedCategoryID !== '' && ctype_digit($postedCategoryID)) {
+    $URL .= '&categoryID='.urlencode($postedCategoryID);
+}
 $redirect = function (string $return) use ($URL) {
     header('Location: '.$URL.'&return='.$return);
     exit;
