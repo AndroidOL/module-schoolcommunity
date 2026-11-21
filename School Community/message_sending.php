@@ -90,12 +90,7 @@ if ($groupMessagesEnabled) {
     $modeForm->setDescription(schoolCommunityT('Choose whether to send one direct message or open a group conversation.'));
     $row = $modeForm->addRow();
         $row->addLabel('groupMessage', schoolCommunityT('Group Message'));
-        $row->addToggle('groupMessage')->setYesNo()->selected($groupMode ? 'Y' : 'N')->setSize('sm');
-    $row = $modeForm->addRow()
-        ->addClass('schoolCommunityTargetTypeRow'.($groupMode ? '' : ' hidden'));
-        $row->addLabel('targetType', schoolCommunityT('Target Type'));
-        $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType)
-            ->setAttribute('onchange', 'schoolCommunitySetGroupTargetType(this.value)');
+        $row->addToggle('groupMessage')->setYesNo()->selected($groupMode ? 'Y' : 'N');
     $page->write($modeForm->getOutput());
 }
 
@@ -132,11 +127,14 @@ if ($groupMessagesEnabled) {
         'schoolCommunityGroupTarget',
         $session->get('absoluteURL').'/modules/School Community/message_groupTargetProcess.php',
         'post',
-        'standardForm'.(!$groupMode || $targetType === 'free' ? ' hidden' : '')
+        'standardForm'.(!$groupMode ? ' hidden' : '')
     );
     $groupForm->addHiddenValue('categoryID', $categoryID);
-    $groupForm->addHiddenValue('targetType', $targetType);
     $groupForm->setTitle(schoolCommunityT('Choose Group Recipient'));
+    $row = $groupForm->addRow();
+        $row->addLabel('targetType', schoolCommunityT('Target Type'));
+        $row->addSelect('targetType')->fromArray($targetTypes)->required()->selected($targetType)
+            ->setAttribute('onchange', 'schoolCommunitySetGroupTargetType(this.value)');
     foreach (['formGroup', 'courseClass', 'existing'] as $type) {
         $isActiveType = $groupMode && $targetType === $type;
         $row = $groupForm->addRow()
@@ -151,7 +149,7 @@ if ($groupMessagesEnabled) {
             $targetField->setDisabled(true);
         }
     }
-    $row = $groupForm->addRow();
+    $row = $groupForm->addRow()->addClass('schoolCommunityGroupSubmit'.($targetType === 'free' ? ' hidden' : ''));
         $row->addFooter();
         $row->addSubmit(schoolCommunityT('Open Group Message'));
     $page->write($groupForm->getOutput());

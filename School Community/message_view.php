@@ -4,8 +4,10 @@ Gibbon: the flexible, open school platform
 Copyright © 2010, Gibbon Foundation
 */
 
+use Gibbon\Domain\DataSet;
 use Gibbon\Forms\Form;
 use Gibbon\Services\Format;
+use Gibbon\Tables\DataTable;
 
 require_once __DIR__.'/moduleFunctions.php';
 
@@ -50,8 +52,19 @@ if (schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
     );
 }
 
+$page->navigator->addHeaderAction('back', schoolCommunityT('Back to Messages'))
+    ->setURL('/modules/School Community/message_reading.php')
+    ->setIcon('back')
+    ->displayLabel();
+
 $senderName = Format::name($message['senderTitle'], $message['senderPreferredName'], $message['senderSurname'], 'Staff');
 $receiverName = Format::name($message['receiverTitle'], $message['receiverPreferredName'], $message['receiverSurname'], 'Staff');
+$i18nCode = (string) $session->get(['i18n', 'code']);
+$visibilityTag = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
+    && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)
+    ? ' '.schoolCommunityMetadataTag(schoolCommunityT('Visible only to you'), $i18nCode)
+    : '';
+$priorityTag = schoolCommunityMetadataTag(schoolCommunityPriorityLabel($message['priority']), $i18nCode);
 $threadState = schoolCommunityThreadState($pdo, 'direct', $messageID, $currentPersonID);
 $isArchived = !empty($threadState['archivedAt']);
 $isDeleted = !empty($threadState['deletedAt']);
@@ -66,32 +79,33 @@ $threadActions->setDescription(schoolCommunityT('Direct message'));
 $threadActions->addHiddenValue('threadType', 'direct');
 $threadActions->addHiddenValue('threadID', $messageID);
 
-$i18nCode = (string) $session->get(['i18n', 'code']);
-$labelSeparator = schoolCommunityUsesWideMetadataTags($i18nCode) ? '：' : ': ';
-$visibilityTag = schoolCommunitySamePersonID($message['senderID'], $currentPersonID)
-    && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)
-    ? ' '.schoolCommunityMetadataTag(schoolCommunityT('Visible only to you'), $i18nCode)
-    : '';
-
 $row = $threadActions->addRow();
-    $column = $row->addColumn();
-    $column->addContent(
-        '<div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-800">'
-        .'<span class="mr-6"><span class="font-semibold">'.schoolCommunityT('From').$labelSeparator.'</span>'.htmlPrep($senderName).'</span>'
-        .'<span><span class="font-semibold">'.schoolCommunityT('To').$labelSeparator.'</span>'.htmlPrep($receiverName).$visibilityTag.'</span>'
-        .'</div>'
-        .'<div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-800">'
-        .'<span class="mr-6"><span class="font-semibold">'.schoolCommunityT('Category').$labelSeparator.'</span>'.htmlPrep($message['categoryName']).'</span>'
-        .schoolCommunityMetadataTag(schoolCommunityPriorityLabel($message['priority']), $i18nCode)
-        .'<span><span class="font-semibold">'.schoolCommunityT('Sent').$labelSeparator.'</span>'.Format::dateTime($message['sendTimestamp']).'</span>'
+    $row->addColumn()->addContent(
+        '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">'
+        .'<div><div class="text-xs font-semibold uppercase tracking-wide text-gray-500">'.schoolCommunityT('From').'</div>'
+        .'<div class="mt-1 text-sm font-semibold text-gray-900">'.htmlPrep($senderName).'</div></div>'
+        .'<div><div class="text-xs font-semibold uppercase tracking-wide text-gray-500">'.schoolCommunityT('To').'</div>'
+        .'<div class="mt-1 text-sm font-semibold text-gray-900">'.htmlPrep($receiverName).$visibilityTag.'</div></div>'
+        .'<div><div class="text-xs font-semibold uppercase tracking-wide text-gray-500">'.schoolCommunityT('Category').'</div>'
+        .'<div class="mt-1 text-sm text-gray-900">'.htmlPrep($message['categoryName']).' '.$priorityTag.'</div></div>'
+        .'<div><div class="text-xs font-semibold uppercase tracking-wide text-gray-500">'.schoolCommunityT('Sent').'</div>'
+        .'<div class="mt-1 text-sm text-gray-900">'.Format::dateTime($message['sendTimestamp']).'</div></div>'
         .'</div>'
     );
+
+if ($isDeleted) {
+    $threadActions->addRow()->addAlert(
+        schoolCommunityT('This message is in Trash. Restore it before replying.'),
+        'warning'
+    );
+}
+
 $row = $threadActions->addRow();
-    $column = $row->addColumn();
-    $column->addLabel('body', schoolCommunityT('Message'));
-    $column->addContent('<div class="innerContent">'
-        .schoolCommunityBodyForDisplay($container, $message['body'])
-        .'</div>');
+    $row->addColumn()->addContent(
+        '<div class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-900">'
+        .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $message['body']).'</div>'
+        .'</div>'
+    );
 
 $row = $threadActions->addRow();
     $row->addFooter();
@@ -104,25 +118,25 @@ $row = $threadActions->addRow();
             ->setIcon('solid', $isArchived ? 'arrow-left-circle' : 'archive')
             ->setSize('sm');
     }
-if (!$isDeleted && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
-    $row->addSubmit(schoolCommunityT('Mark Unread'))
+    if (!$isDeleted && schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
+        $row->addSubmit(schoolCommunityT('Mark Unread'))
+            ->setName('action')
+            ->setAttribute('value', 'unread')
+            ->setColor('gray')
+            ->setType('quickSubmit')
+            ->setIcon('solid', 'refresh')
+            ->setSize('sm');
+    }
+    $deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
         ->setName('action')
-        ->setAttribute('value', 'unread')
-        ->setColor('gray')
+        ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
+        ->setColor($isDeleted ? 'gray' : 'red')
         ->setType('quickSubmit')
-        ->setIcon('solid', 'refresh')
+        ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete')
         ->setSize('sm');
-}
-$deleteAction = $row->addSubmit($isDeleted ? schoolCommunityT('Restore from Trash') : schoolCommunityT('Delete'))
-    ->setName('action')
-    ->setAttribute('value', $isDeleted ? 'restoreDelete' : 'delete')
-    ->setColor($isDeleted ? 'gray' : 'red')
-    ->setType('quickSubmit')
-    ->setIcon('solid', $isDeleted ? 'arrow-left-circle' : 'delete')
-    ->setSize('sm');
-if (!$isDeleted) {
-    $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this message to Trash?')).')');
-}
+    if (!$isDeleted) {
+        $deleteAction->setAttribute('onclick', 'return confirm('.json_encode(schoolCommunityT('Move this message to Trash?')).')');
+    }
 $page->write($threadActions->getOutput());
 
 $replies = $pdo->select(
@@ -135,16 +149,23 @@ $replies = $pdo->select(
 )->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($replies)) {
-    $replyList = Form::create('schoolCommunityReplies', '', 'get');
-    $replyList->setTitle(schoolCommunityT('Replies'));
-    foreach ($replies as $reply) {
-        $replyName = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], 'Staff');
-        $row = $replyList->addRow();
-            $row->addLabel('reply'.$reply['replyID'], $replyName);
-            $row->addContent('<div class="text-xs text-gray-600">'.Format::dateTime($reply['sendTimestamp']).'</div>'
-                .'<div class="innerContent">'.schoolCommunityBodyForDisplay($container, $reply['body']).'</div>');
+    foreach ($replies as &$reply) {
+        $reply['senderName'] = Format::name($reply['title'], $reply['preferredName'], $reply['surname'], 'Staff');
+        $reply['bodyHtml'] = schoolCommunityBodyForDisplay($container, $reply['body']);
     }
-    $page->write($replyList->getOutput());
+    unset($reply);
+
+    $replyTable = DataTable::create('schoolCommunityReplies');
+    $replyTable->setTitle(schoolCommunityT('Replies'));
+    $replyTable->addMetaData('allowHTML', ['senderName', 'bodyHtml']);
+    $replyTable->addColumn('senderName', schoolCommunityT('From'))->format(function ($reply) {
+        return '<div class="font-semibold">'.htmlPrep((string) $reply['senderName']).'</div>'
+            .'<div class="text-xs text-gray-600">'.Format::dateTime($reply['sendTimestamp']).'</div>';
+    });
+    $replyTable->addColumn('bodyHtml', schoolCommunityT('Reply'))->format(function ($reply) {
+        return '<div class="innerContent text-sm leading-6 text-gray-900">'.$reply['bodyHtml'].'</div>';
+    });
+    $page->write($replyTable->render(new DataSet($replies)));
 }
 
 if ($isDeleted) {

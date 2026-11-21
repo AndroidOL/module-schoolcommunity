@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+v1.4.3
+------
+- Keep the group target selector on the Send Message page while Free Selection
+  opens the group page for choosing recipients.
+- Show the standard-size Group Message toggle and switch direct, free and
+  targeted group forms without reloading.
+- Redesign direct message view with compact metadata, a readable message panel,
+  standard action buttons and a structured reply list.
+- Add Manage Message Groups to the Message Categories settings page.
+
 v1.4.2
 ------
 - Replace the separate recipient chooser with the original searchable direct

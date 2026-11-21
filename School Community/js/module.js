@@ -19,42 +19,48 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 window.schoolCommunitySetMessageMode = function (mode) {
     const directForm = document.getElementById('schoolCommunityDirectMessage');
     const groupMode = mode === 'Y';
-    const targetTypeRow = document.querySelector('.schoolCommunityTargetTypeRow');
+    const targetForm = document.getElementById('schoolCommunityGroupTarget');
 
     if (directForm) {
         directForm.classList.toggle('hidden', groupMode);
         directForm.setAttribute('aria-hidden', groupMode ? 'true' : 'false');
     }
-    if (targetTypeRow) {
-        targetTypeRow.classList.toggle('hidden', !groupMode);
+    if (targetForm) {
+        targetForm.classList.toggle('hidden', !groupMode);
+        targetForm.setAttribute('aria-hidden', groupMode ? 'false' : 'true');
     }
 
-    window.schoolCommunitySetGroupTargetType(
-        groupMode ? (document.getElementById('targetType')?.value || 'free') : ''
-    );
+    if (!groupMode) {
+        window.schoolCommunitySetGroupTargetType('');
+        return;
+    }
+
+    const targetType = targetForm?.querySelector('select[name="targetType"]')?.value || 'free';
+    window.schoolCommunitySetGroupTargetType(targetType);
 };
 
 window.schoolCommunitySetGroupTargetType = function (type) {
     const freeForm = document.getElementById('schoolCommunityFreeGroup');
     const targetForm = document.getElementById('schoolCommunityGroupTarget');
     const targetTypeInput = targetForm
-        ? targetForm.querySelector('input[name="targetType"]')
+        ? targetForm.querySelector('select[name="targetType"]')
         : null;
+    const groupMode = targetForm !== null && !targetForm.classList.contains('hidden');
 
     if (freeForm) {
-        freeForm.classList.toggle('hidden', type !== 'free');
-        freeForm.setAttribute('aria-hidden', type === 'free' ? 'false' : 'true');
-    }
-    if (targetForm) {
-        targetForm.classList.toggle('hidden', type === '' || type === 'free');
-        targetForm.setAttribute('aria-hidden', type === '' || type === 'free' ? 'true' : 'false');
+        const showFree = groupMode && type === 'free';
+        freeForm.classList.toggle('hidden', !showFree);
+        freeForm.setAttribute('aria-hidden', showFree ? 'false' : 'true');
     }
     if (targetTypeInput && type !== '') {
         targetTypeInput.value = type;
     }
 
+    document.querySelectorAll('.schoolCommunityGroupSubmit').forEach((row) => {
+        row.classList.toggle('hidden', !groupMode || type === '' || type === 'free');
+    });
     document.querySelectorAll('.schoolCommunityGroupTargetPicker').forEach((row) => {
-        const active = type !== '' && row.classList.contains('schoolCommunityGroupTargetPicker-'+type);
+        const active = groupMode && type !== '' && row.classList.contains('schoolCommunityGroupTargetPicker-'+type);
         row.classList.toggle('hidden', !active);
         row.querySelectorAll('select').forEach((field) => {
             field.disabled = !active;

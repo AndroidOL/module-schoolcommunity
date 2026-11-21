@@ -4,6 +4,16 @@
 $sql = [];
 $count = 0;
 
+// v1.4.3
+$sql[$count][0] = "1.4.3";
+$sql[$count][1] = "UPDATE gibbonAction
+SET URLList='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php'
+WHERE gibbonModuleID=(
+      SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community'
+  )
+  AND entryURL='message_sending.php';end";
+$count++;
+
 // v1.4.2
 $sql[$count][0] = "1.4.2";
 $sql[$count][1] = "UPDATE `gibbonAction` SET `URLList`='message_sending.php, message_sendingProcess.php, message_groupTargetProcess.php, message_groupAdding.php, message_groupProcess.php' WHERE `entryURL`='message_sending.php' AND gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community');end
