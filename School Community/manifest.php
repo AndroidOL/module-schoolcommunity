@@ -81,7 +81,7 @@ $moduleTables[] = 'CREATE TABLE `message_reply` (
 // Add gibbonSettings entries
 // $gibbonSetting[] = "";
 
-// Action rows 
+// Action rows
 $actionRows[] = [
     'name'                      => 'Manage Message Categories', // The name of the action (appears to user in the right hand side module menu)
     'precedence'                => '0',// If it is a grouped action, the precedence controls which is highest action in group
