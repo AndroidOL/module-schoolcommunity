@@ -348,5 +348,15 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             );
             $this->assertStringNotContainsString("sourceType IN ('formGroup', 'courseClass')\"", $source);
         }
+
+        public function testTranslationMetadataMatchesInstalledModuleVersion()
+        {
+            $po = file_get_contents(dirname(__DIR__).'/i18n/zh_CN/LC_MESSAGES/School Community.po');
+
+            $this->assertStringContainsString('Project-Id-Version: School Community 1.4.1', $po);
+            $this->assertStringNotContainsString('Project-Id-Version: School Community 1.4.0', $po);
+            $this->assertMatchesRegularExpression('/POT-Creation-Date: 2026-11-21 17:56\+0800/', $po);
+            $this->assertMatchesRegularExpression('/PO-Revision-Date: 2026-11-21 17:56\+0800/', $po);
+        }
     }
 }
