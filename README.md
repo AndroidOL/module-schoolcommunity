@@ -26,17 +26,19 @@ and a home-school communication workflow.
 - Send a message to yourself without creating duplicate records.
 - Switch the normal send form to group mode and choose an existing group, an
   administrative class or a course class.
-- List sent, received and unread messages with category and priority filters.
+- List sent, received and unread messages with previews, category and priority
+  filters, and standard Open/Archive/Delete actions.
 - Search direct message replies and group names, messages and replies.
-- Archive and restore threads per user, mark messages unread and auto-restore
-  archived threads when new activity arrives.
+- Archive, trash and restore direct or group threads per user, mark messages
+  unread and auto-restore archived/trashed threads when new activity arrives.
 - Record a read receipt when the recipient opens a message.
 - Reply to a message with participant-only access.
 - Create category-controlled groups with owner-managed members.
 - Create one linked group per administrative class or course class; teachers
   can select only classes they are assigned to.
 - Synchronize linked class membership from the current Gibbon roster.
-- Review resolved recipients before sending and freeze a send-time snapshot.
+- Review every resolved recipient before sending, with an explicit block when
+  no eligible recipient remains, and freeze a send-time snapshot.
 - Send group messages and replies with unread counts, read receipts and
   notifications; later members cannot see earlier messages.
 - Notify recipients about new messages and replies.

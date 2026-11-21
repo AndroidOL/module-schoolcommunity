@@ -34,7 +34,7 @@ if (!$container->get(TokenHandler::class)->validateCsrfToken()) {
     $redirect('error9');
 }
 if (!in_array($threadType, ['direct', 'group'], true)
-    || !in_array($action, ['archive', 'restore', 'unread'], true)
+    || !in_array($action, ['archive', 'restore', 'unread', 'delete', 'restoreDelete'], true)
     || $threadID === '') {
     $redirect('error1');
 }
@@ -43,6 +43,20 @@ if ($threadType === 'direct') {
     $message = schoolCommunityAccessibleMessage($pdo, $threadID, $currentPersonID);
     if (empty($message)) {
         $redirect('error0');
+    }
+    if (in_array($action, ['delete', 'restoreDelete'], true)) {
+        $saved = schoolCommunitySetThreadDeleted(
+            $pdo,
+            'direct',
+            $threadID,
+            $currentPersonID,
+            $action === 'delete'
+        );
+        if (!$saved) {
+            $redirect('error2');
+        }
+        header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_reading.php&return='.($action === 'delete' ? 'success7' : 'success8'));
+        exit;
     }
     if ($action === 'unread') {
         if (!schoolCommunitySamePersonID($message['receiverID'], $currentPersonID)) {
@@ -69,6 +83,20 @@ if ($threadType === 'direct') {
 $group = schoolCommunityAccessibleGroup($pdo, $threadID, $currentPersonID, $roleCategory);
 if (empty($group)) {
     $redirect('error0');
+}
+if (in_array($action, ['delete', 'restoreDelete'], true)) {
+    $saved = schoolCommunitySetThreadDeleted(
+        $pdo,
+        'group',
+        $threadID,
+        $currentPersonID,
+        $action === 'delete'
+    );
+    if (!$saved) {
+        $redirect('error2');
+    }
+    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groups.php&return='.($action === 'delete' ? 'success7' : 'success8'));
+    exit;
 }
 if ($action === 'unread') {
     $pdo->delete(

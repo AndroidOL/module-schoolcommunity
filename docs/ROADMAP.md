@@ -4,7 +4,8 @@
 
 - Category management with Staff/Student/Parent/Other audience masks.
 - Direct messages with priority and sanitized rich text.
-- Inbox, sent, unread and category filtering.
+- Inbox, sent, unread and category filtering with message previews and standard
+  conversation action menus.
 - Read receipts and participant-only replies.
 - In-product notifications for new messages and replies.
 - Self-addressed messages.
@@ -12,9 +13,10 @@
   recipient review, snapshots, replies, unread counts and read receipts.
 - Administrative-class and course-class groups with teacher-scoped sources and
   current-roster synchronization.
-- Unified direct/group search, per-user thread archiving and mark-unread actions.
+- Unified direct/group search, per-user Active/Archived/Trash states and
+  mark-unread actions.
 - Group-message mode in the normal send workflow with class/group target
-  selection.
+  selection, full recipient preview and empty-audience blocking.
 
 ## Next candidates
 

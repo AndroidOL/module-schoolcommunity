@@ -453,6 +453,11 @@ function schoolCommunityGroupTable(array $groups, $gibbonPersonID): DataSet
             'isOwner'    => schoolCommunitySamePersonID($group['ownerID'], $gibbonPersonID),
             'sourceLabel'=> schoolCommunityGroupSourceLabel($group['sourceType'] ?? 'custom'),
             'unreadLabel'=> (int) $group['unreadCount'] > 0 ? (string) (int) $group['unreadCount'] : '',
+            'latestPreview' => schoolCommunityMessagePreview($group['latestBody'] ?? ''),
+            'isArchived' => !empty($group['archivedAt']),
+            'isDeleted'  => !empty($group['deletedAt']),
+            'threadType' => 'group',
+            'threadID'   => $group['groupID'],
             'url'        => '/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode($group['groupID']),
         ];
     }
@@ -500,6 +505,25 @@ function schoolCommunitySetThreadArchived($pdo, $threadType, $threadID, $gibbonP
     );
 }
 
+function schoolCommunitySetThreadDeleted($pdo, $threadType, $threadID, $gibbonPersonID, bool $deleted): bool
+{
+    if (!in_array($threadType, ['direct', 'group'], true)) {
+        return false;
+    }
+
+    return $pdo->statement(
+        "INSERT INTO message_thread_state
+            (threadType, threadID, gibbonPersonID, deletedAt)
+         VALUES (:threadType, :threadID, :gibbonPersonID, ".($deleted ? 'CURRENT_TIMESTAMP' : 'NULL').")
+         ON DUPLICATE KEY UPDATE deletedAt=VALUES(deletedAt)",
+        [
+            'threadType'     => $threadType,
+            'threadID'       => $threadID,
+            'gibbonPersonID' => $gibbonPersonID,
+        ]
+    );
+}
+
 function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID): void
 {
     if (!in_array($threadType, ['direct', 'group'], true)) {
@@ -511,6 +535,19 @@ function schoolCommunityRestoreThreadStates($pdo, $threadType, $threadID): void
          WHERE threadType=:threadType AND threadID=:threadID",
         ['threadType' => $threadType, 'threadID' => $threadID]
     );
+}
+
+function schoolCommunityMessagePreview($body, int $length = 160): string
+{
+    $body = schoolCommunityDecodeLegacyBody((string) $body);
+    if (!mb_check_encoding($body, 'UTF-8')) {
+        $body = mb_convert_encoding($body, 'UTF-8', 'UTF-8');
+    }
+    $body = preg_replace('/<[^>]+>/', ' ', $body) ?? $body;
+    $body = html_entity_decode(strip_tags($body), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $body = trim(preg_replace('/\s+/u', ' ', $body) ?? '');
+
+    return mb_strlen($body) > $length ? mb_substr($body, 0, $length).'…' : $body;
 }
 
 function schoolCommunityPriorityOptions(): array
@@ -577,6 +614,11 @@ function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
             'otherPerson'   => trim($otherTitle.' '.$otherName),
             'priorityLabel' => schoolCommunityPriorityLabel($message['priority']),
             'isUnread'      => (!$isSent || $isSelf) && empty($message['readTimestamp']),
+            'preview'       => schoolCommunityMessagePreview($message['body'] ?? ''),
+            'isArchived'    => !empty($message['archivedAt']),
+            'isDeleted'     => !empty($message['deletedAt']),
+            'threadType'    => 'direct',
+            'threadID'      => $message['messageID'],
             'url'           => '/index.php?q=/modules/School Community/message_view.php&messageID='.urlencode($message['messageID']),
         ];
     }
@@ -586,13 +628,25 @@ function schoolCommunityMessageTable(array $messages, $gibbonPersonID): DataSet
 
 function schoolCommunityBodyForDisplay($container, $body): string
 {
-    $body = (string) $body;
-    $decoded = base64_decode($body, true);
-    if ($decoded !== false && (strpos($decoded, '<') !== false || strpos($decoded, '>') !== false)) {
-        $body = $decoded;
-    }
+    $body = schoolCommunityDecodeLegacyBody((string) $body);
 
     $validated = $container->get(Validator::class)->sanitize(['body' => $body], ['body' => 'HTML']);
 
     return $validated['body'];
+}
+
+function schoolCommunityDecodeLegacyBody(string $body): string
+{
+    if (!preg_match('/^[A-Za-z0-9+\/]+={0,2}$/', $body)) {
+        return $body;
+    }
+
+    $decoded = base64_decode($body, true);
+    if ($decoded === false
+        || !mb_check_encoding($decoded, 'UTF-8')
+        || !preg_match('/<[a-z][^>]*>/i', $decoded)) {
+        return $body;
+    }
+
+    return $decoded;
 }

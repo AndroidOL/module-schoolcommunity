@@ -19,6 +19,8 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 
 $page->return->addReturns([
     'success6' => schoolCommunityT('Message marked unread.'),
+    'success7' => schoolCommunityT('Message moved to Trash.'),
+    'success8' => schoolCommunityT('Message restored from Trash.'),
 ]);
 
 $gibbonPersonID = (string) $session->get('gibbonPersonID');
@@ -26,7 +28,7 @@ $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
 $categoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
 $mailbox = is_scalar($_GET['mailbox'] ?? null) ? (string) $_GET['mailbox'] : 'all';
-$mailbox = in_array($mailbox, ['all', 'received', 'sent', 'unread', 'archived'], true) ? $mailbox : 'all';
+$mailbox = in_array($mailbox, ['all', 'received', 'sent', 'unread', 'archived', 'trash'], true) ? $mailbox : 'all';
 
 $form = Form::create('schoolCommunitySearch', $session->get('absoluteURL').'/index.php', 'get');
 $form->setTitle(schoolCommunityT('Search Messages'));
@@ -52,6 +54,7 @@ $row = $form->addRow();
         'sent'     => schoolCommunityT('Sent'),
         'unread'   => schoolCommunityT('Unread'),
         'archived' => schoolCommunityT('Archived'),
+        'trash'    => schoolCommunityT('Trash'),
     ])->selected($mailbox);
 
 $row = $form->addRow();
@@ -82,9 +85,14 @@ if ($mailbox === 'received') {
 } elseif ($mailbox === 'unread') {
     $where[] = 'message_totals.receiverID=:currentPersonID AND receipt.receiptID IS NULL';
 }
+if ($mailbox === 'trash') {
+    $where[] = 'threadState.deletedAt IS NOT NULL';
+} else {
+    $where[] = 'threadState.deletedAt IS NULL';
+}
 if ($mailbox === 'archived') {
     $where[] = 'threadState.archivedAt IS NOT NULL';
-} else {
+} elseif ($mailbox !== 'trash') {
     $where[] = 'threadState.archivedAt IS NULL';
 }
 
@@ -92,7 +100,7 @@ $messages = $pdo->select(
     "SELECT message_totals.*, message_category.categoryName,
             sender.title AS senderTitle, sender.preferredName AS senderPreferredName, sender.surname AS senderSurname,
             receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname,
-            receipt.readTimestamp, threadState.archivedAt
+            receipt.readTimestamp, threadState.archivedAt, threadState.deletedAt
      FROM message_totals
      JOIN message_category ON message_category.categoryID=message_totals.categoryID
      JOIN gibbonPerson AS sender ON sender.gibbonPersonID=message_totals.senderID
@@ -113,21 +121,51 @@ $messages = $pdo->select(
 
 $table = DataTable::create('schoolCommunityMessages');
 $table->setTitle(schoolCommunityT('Messages'));
-$table->setDescription(schoolCommunityT('Messages you sent or received. Unread messages are marked in the title.'));
+$table->setDescription(schoolCommunityT('Messages you sent or received. Preview message content and use the action menu to open, archive or delete a message.'));
 $table->addMetaData('allowHTML', ['title']);
 
-$table->addColumn('title', schoolCommunityT('Subject'))->format(function ($message) {
+$table->addColumn('title', schoolCommunityT('Subject'))->context('primary')->format(function ($message) {
     $prefix = !empty($message['isUnread']) ? '<strong>' : '';
     $suffix = !empty($message['isUnread']) ? '</strong>' : '';
+    $preview = !empty($message['preview'])
+        ? '<div class="mt-1 text-sm font-normal text-gray-600">'.htmlPrep($message['preview']).'</div>'
+        : '';
 
-    return $prefix.'<a href="'.htmlPrep($message['url']).'">'.htmlPrep($message['title']).'</a>'.$suffix;
+    return $prefix.'<a href="'.htmlPrep($message['url']).'">'.htmlPrep($message['title']).'</a>'.$suffix.$preview;
 });
 $table->addColumn('categoryName', schoolCommunityT('Category'));
 $table->addColumn('otherPerson', schoolCommunityT('From / To'));
-$table->addColumn('direction', schoolCommunityT('Direction'));
+$table->addColumn('direction', schoolCommunityT('Direction'))->context('secondary');
 $table->addColumn('priorityLabel', schoolCommunityT('Priority'));
-$table->addColumn('sendTimestamp', schoolCommunityT('Sent'))->format(function ($message) {
+$table->addColumn('sendTimestamp', schoolCommunityT('Sent'))->context('secondary')->format(function ($message) {
     return Format::dateTime($message['sendTimestamp']);
+});
+$table->addActionColumn()->format(function ($message, $actions) {
+    $actions->addAction('view', schoolCommunityT('Open'))
+        ->setURL('/modules/School Community/message_view.php')
+        ->addParam('messageID', $message['messageID']);
+
+    if (!empty($message['isDeleted'])) {
+        $actions->addAction('restoreDelete', schoolCommunityT('Restore from Trash'))
+            ->setIcon('arrow-uturn-left')
+            ->setURL('/modules/School Community/message_threadConfirm.php')
+            ->addParam('threadType', 'direct')
+            ->addParam('threadID', $message['messageID'])
+            ->addParam('action', 'restoreDelete');
+        return;
+    }
+
+    $actions->addAction('archive', !empty($message['isArchived']) ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
+        ->setIcon(!empty($message['isArchived']) ? 'arrow-uturn-left' : 'archive-box')
+        ->setURL('/modules/School Community/message_threadConfirm.php')
+        ->addParam('threadType', 'direct')
+        ->addParam('threadID', $message['messageID'])
+        ->addParam('action', !empty($message['isArchived']) ? 'restore' : 'archive');
+    $actions->addAction('delete', schoolCommunityT('Delete'))
+        ->setURL('/modules/School Community/message_threadConfirm.php')
+        ->addParam('threadType', 'direct')
+        ->addParam('threadID', $message['messageID'])
+        ->addParam('action', 'delete');
 });
 
 $table->addHeaderAction('groups', schoolCommunityT('Message Groups'))

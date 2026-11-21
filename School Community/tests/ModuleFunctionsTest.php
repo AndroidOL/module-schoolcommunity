@@ -43,6 +43,19 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('Notice', \schoolCommunityPriorityLabel(0));
         }
 
+        public function testMessagePreviewHandlesHtmlAndTruncatesPlainText()
+        {
+            $this->assertSame(
+                'First line Second line',
+                \schoolCommunityMessagePreview('<p>First line</p><p>Second line</p>')
+            );
+            $this->assertSame(
+                'Legacy content',
+                \schoolCommunityMessagePreview(base64_encode('<p>Legacy content</p>'))
+            );
+            $this->assertSame('12345…', \schoolCommunityMessagePreview('123456', 5));
+        }
+
         public function testLegacyAndCurrentMessageBodiesAreSanitizedForDisplay()
         {
             $container = new class {
@@ -158,6 +171,39 @@ namespace Gibbon\Module\SchoolCommunity\Tests {
             $this->assertSame('Sent / Received', $rows[0]['direction']);
             $this->assertTrue($rows[0]['isUnread']);
             $this->assertSame('Ada Current', $rows[0]['otherPerson']);
+            $this->assertSame('Private note', $rows[0]['preview']);
+            $this->assertSame('direct', $rows[0]['threadType']);
+            $this->assertSame('1', $rows[0]['threadID']);
+            $this->assertFalse($rows[0]['isArchived']);
+            $this->assertFalse($rows[0]['isDeleted']);
+        }
+
+        public function testGroupTableCarriesMailboxStateAndPreview()
+        {
+            $table = \schoolCommunityGroupTable([[
+                'groupID' => '22',
+                'groupName' => 'Staff notices',
+                'ownerID' => '0000000010',
+                'ownerTitle' => '',
+                'ownerPreferredName' => 'Ada',
+                'ownerSurname' => 'Current',
+                'ownerRoleCategory' => 'Staff',
+                'sourceType' => 'custom',
+                'unreadCount' => '2',
+                'latestTimestamp' => '2026-11-21 10:00:00',
+                'latestBody' => '<p>Latest update</p>',
+                'archivedAt' => '2026-11-21 11:00:00',
+                'deletedAt' => null,
+            ]], '10');
+
+            $rows = $table->toArray();
+            $this->assertCount(1, $rows);
+            $this->assertSame('Latest update', $rows[0]['latestPreview']);
+            $this->assertSame('group', $rows[0]['threadType']);
+            $this->assertSame('22', $rows[0]['threadID']);
+            $this->assertTrue($rows[0]['isArchived']);
+            $this->assertFalse($rows[0]['isDeleted']);
+            $this->assertTrue($rows[0]['isOwner']);
         }
     }
 }

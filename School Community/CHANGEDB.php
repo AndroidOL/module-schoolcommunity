@@ -4,6 +4,11 @@
 $sql = [];
 $count = 0;
 
+// v1.4.0
+$sql[$count][0] = "1.4.0";
+$sql[$count][1] = "ALTER TABLE message_thread_state ADD COLUMN deletedAt TIMESTAMP NULL DEFAULT NULL AFTER archivedAt;end";
+$count++;
+
 // v1.3.0
 $sql[$count][0] = "1.3.0";
 $sql[$count][1] = "CREATE TABLE `message_thread_state` (

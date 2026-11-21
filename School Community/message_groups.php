@@ -24,6 +24,8 @@ $page->return->addReturns([
     'success1' => schoolCommunityT('Group member added.'),
     'success2' => schoolCommunityT('Group member removed.'),
     'success6' => schoolCommunityT('Message group marked unread.'),
+    'success7' => schoolCommunityT('Message group moved to Trash.'),
+    'success8' => schoolCommunityT('Message group restored from Trash.'),
     'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the message group.'),
@@ -33,7 +35,10 @@ $page->return->addReturns([
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $search = is_scalar($_GET['search'] ?? null) ? trim((string) $_GET['search']) : '';
-$archived = ($_GET['archived'] ?? 'N') === 'Y';
+$mailbox = is_scalar($_GET['mailbox'] ?? null) ? (string) $_GET['mailbox'] : '';
+$mailbox = in_array($mailbox, ['active', 'archived', 'trash'], true)
+    ? $mailbox
+    : (($_GET['archived'] ?? 'N') === 'Y' ? 'archived' : 'active');
 
 $form = Form::create('schoolCommunityGroupSearch', $session->get('absoluteURL').'/index.php', 'get');
 $form->setTitle(schoolCommunityT('Search Message Groups'));
@@ -43,8 +48,12 @@ $row = $form->addRow();
     $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Group, message or reply text'));
     $row->addTextField('search')->setValue($search)->maxLength(100);
 $row = $form->addRow();
-    $row->addLabel('archived', schoolCommunityT('Archive View'));
-    $row->addCheckbox('archived')->setValue('Y')->checked($archived);
+    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
+    $row->addSelect('mailbox')->fromArray([
+        'active'   => schoolCommunityT('Active'),
+        'archived' => schoolCommunityT('Archived'),
+        'trash'    => schoolCommunityT('Trash'),
+    ])->selected($mailbox);
 $row = $form->addRow();
     $row->addSearchSubmit($session, schoolCommunityT('Clear search'));
 $page->write($form->getOutput());
@@ -62,6 +71,14 @@ $groups = $pdo->select(
                 ON latestRecipient.groupMessageID=latest.groupMessageID
                AND latestRecipient.gibbonPersonID=:currentPersonID
              WHERE latest.groupID=message_group.groupID) AS latestTimestamp,
+            (SELECT latest.body
+             FROM message_group_message AS latest
+             JOIN message_group_message_recipient AS latestRecipient
+                ON latestRecipient.groupMessageID=latest.groupMessageID
+               AND latestRecipient.gibbonPersonID=:currentPersonID
+             WHERE latest.groupID=message_group.groupID
+             ORDER BY latest.sendTimestamp DESC, latest.groupMessageID DESC
+             LIMIT 1) AS latestBody,
             (SELECT COUNT(*)
              FROM message_group_message AS unread
              JOIN message_group_message_recipient AS recipient
@@ -72,7 +89,8 @@ $groups = $pdo->select(
                AND receipt.gibbonPersonID=:currentPersonID
              WHERE unread.groupID=message_group.groupID
                AND unread.senderID<>:currentPersonID
-               AND receipt.groupReadReceiptID IS NULL) AS unreadCount
+               AND receipt.groupReadReceiptID IS NULL) AS unreadCount,
+            threadState.archivedAt, threadState.deletedAt
      FROM message_group
      JOIN message_category ON message_category.categoryID=message_group.categoryID
      LEFT JOIN message_group_member AS member
@@ -86,7 +104,11 @@ $groups = $pdo->select(
        AND threadState.gibbonPersonID=:currentPersonID
      WHERE ((message_group.sourceType='custom' AND member.gibbonPersonID IS NOT NULL)
         OR message_group.sourceType IN ('formGroup', 'courseClass'))
-       AND (".($archived ? 'threadState.archivedAt IS NOT NULL' : 'threadState.archivedAt IS NULL').")
+       AND (".($mailbox === 'trash'
+            ? 'threadState.deletedAt IS NOT NULL'
+            : ($mailbox === 'archived'
+                ? 'threadState.deletedAt IS NULL AND threadState.archivedAt IS NOT NULL'
+                : 'threadState.deletedAt IS NULL AND threadState.archivedAt IS NULL')).")
        AND (:search='' OR message_group.groupName LIKE :search
             OR EXISTS (
                 SELECT 1
@@ -134,14 +156,17 @@ $groups = array_values(array_filter($groups, function ($group) use ($pdo, $curre
 
 $table = DataTable::create('schoolCommunityMessageGroups');
 $table->setTitle(schoolCommunityT('Message Groups'));
-$table->setDescription(schoolCommunityT('Groups you belong to. A group only accepts members whose role is allowed by its category.'));
+$table->setDescription(schoolCommunityT('Groups you belong to. Preview the latest message and use the action menu to open, archive or delete a group.'));
 $table->addMetaData('allowHTML', ['groupName', 'unreadLabel']);
 
-$table->addColumn('groupName', schoolCommunityT('Group'))->format(function ($group) {
+$table->addColumn('groupName', schoolCommunityT('Group'))->context('primary')->format(function ($group) {
     $unread = (int) $group['unreadCount'];
     $label = '<a href="'.htmlPrep($group['url']).'">'.htmlPrep($group['groupName']).'</a>';
     if ($unread > 0) {
         $label .= ' <span class="schoolCommunityUnreadBadge">'.$unread.'</span>';
+    }
+    if (!empty($group['latestPreview'])) {
+        $label .= '<div class="mt-1 text-sm font-normal text-gray-600">'.htmlPrep($group['latestPreview']).'</div>';
     }
 
     return $label;
@@ -149,9 +174,36 @@ $table->addColumn('groupName', schoolCommunityT('Group'))->format(function ($gro
 $table->addColumn('categoryName', schoolCommunityT('Category'));
 $table->addColumn('sourceLabel', schoolCommunityT('Source'));
 $table->addColumn('ownerName', schoolCommunityT('Owner'));
-$table->addColumn('memberCount', schoolCommunityT('Members'));
-$table->addColumn('latestTimestamp', schoolCommunityT('Latest Message'))->format(function ($group) {
+$table->addColumn('memberCount', schoolCommunityT('Members'))->context('secondary');
+$table->addColumn('latestTimestamp', schoolCommunityT('Latest Message'))->context('secondary')->format(function ($group) {
     return empty($group['latestTimestamp']) ? schoolCommunityT('No messages yet') : Format::dateTime($group['latestTimestamp']);
+});
+$table->addActionColumn()->format(function ($group, $actions) {
+    $actions->addAction('view', schoolCommunityT('Open'))
+        ->setURL('/modules/School Community/message_groupView.php')
+        ->addParam('groupID', $group['groupID']);
+
+    if (!empty($group['isDeleted'])) {
+        $actions->addAction('restoreDelete', schoolCommunityT('Restore from Trash'))
+            ->setIcon('arrow-uturn-left')
+            ->setURL('/modules/School Community/message_threadConfirm.php')
+            ->addParam('threadType', 'group')
+            ->addParam('threadID', $group['groupID'])
+            ->addParam('action', 'restoreDelete');
+        return;
+    }
+
+    $actions->addAction('archive', !empty($group['isArchived']) ? schoolCommunityT('Restore') : schoolCommunityT('Archive'))
+        ->setIcon(!empty($group['isArchived']) ? 'arrow-uturn-left' : 'archive-box')
+        ->setURL('/modules/School Community/message_threadConfirm.php')
+        ->addParam('threadType', 'group')
+        ->addParam('threadID', $group['groupID'])
+        ->addParam('action', !empty($group['isArchived']) ? 'restore' : 'archive');
+    $actions->addAction('delete', schoolCommunityT('Delete'))
+        ->setURL('/modules/School Community/message_threadConfirm.php')
+        ->addParam('threadType', 'group')
+        ->addParam('threadID', $group['groupID'])
+        ->addParam('action', 'delete');
 });
 
 if (isActionAccessible($guid, $connection2, '/modules/School Community/message_sending.php')) {

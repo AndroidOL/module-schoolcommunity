@@ -7,6 +7,12 @@ v1.4.0
 - Send through an existing group or choose an eligible administrative/course
   class and create its controlled group when needed.
 - Disable browser autocomplete on the direct recipient picker.
+- Show message previews and standard Open/Archive/Delete actions in message lists.
+- Add per-user Trash and restore for direct and group conversations without
+  deleting shared messages or audit data.
+- Give group conversations the same Active, Archived and Trash mailbox filters.
+- Preview every resolved group recipient and block sends when the list is empty.
+- Compact message metadata and combine detail actions into one standard form.
 
 v1.3.1
 ------
