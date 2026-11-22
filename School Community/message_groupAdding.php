@@ -24,6 +24,11 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
 
 $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
+$gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
+$filterFormGroupID = is_scalar($_GET['filterFormGroupID'] ?? null) ? trim((string) $_GET['filterFormGroupID']) : '';
+$filterCourseClassID = is_scalar($_GET['filterCourseClassID'] ?? null) ? trim((string) $_GET['filterCourseClassID']) : '';
+$filterRole = is_scalar($_GET['filterRole'] ?? null) ? trim((string) $_GET['filterRole']) : '';
+
 $categories = schoolCommunityCategoryOptions($pdo, $roleCategory, false, true);
 if (empty($categories)) {
     $page->addError(schoolCommunityT('No group-enabled message categories are available for your role. Contact an administrator.'));
@@ -31,8 +36,106 @@ if (empty($categories)) {
 }
 
 $people = schoolCommunityPersonOptions($pdo, $currentPersonID, null, false);
+$filterSets = [];
+if ($filterFormGroupID !== '') {
+    $set = [];
+    $students = $pdo->select(
+        "SELECT gibbonPersonID FROM gibbonStudentEnrolment WHERE gibbonFormGroupID=:gibbonFormGroupID",
+        ['gibbonFormGroupID' => $filterFormGroupID]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($students as $studentID) {
+        $set[(string) $studentID] = true;
+    }
+    $tutors = $pdo->selectOne(
+        "SELECT gibbonPersonIDTutor, gibbonPersonIDTutor2, gibbonPersonIDTutor3
+         FROM gibbonFormGroup WHERE gibbonFormGroupID=:gibbonFormGroupID",
+        ['gibbonFormGroupID' => $filterFormGroupID]
+    );
+    if (!empty($tutors)) {
+        foreach (['gibbonPersonIDTutor', 'gibbonPersonIDTutor2', 'gibbonPersonIDTutor3'] as $key) {
+            if (!empty($tutors[$key])) {
+                $set[(string) $tutors[$key]] = true;
+            }
+        }
+    }
+    $filterSets[] = $set;
+}
+if ($filterCourseClassID !== '') {
+    $set = [];
+    $members = $pdo->select(
+        "SELECT gibbonPersonID FROM gibbonCourseClassPerson WHERE gibbonCourseClassID=:gibbonCourseClassID",
+        ['gibbonCourseClassID' => $filterCourseClassID]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($members as $memberID) {
+        $set[(string) $memberID] = true;
+    }
+    $filterSets[] = $set;
+}
+if ($filterRole !== '' && in_array($filterRole, ['Staff', 'Student', 'Parent', 'Other'], true)) {
+    $set = [];
+    $rolePeople = $pdo->select(
+        "SELECT person.gibbonPersonID
+         FROM gibbonPerson AS person
+         JOIN gibbonRole AS role ON role.gibbonRoleID=person.gibbonRoleIDPrimary
+         WHERE person.status='Full' AND role.category=:category",
+        ['category' => $filterRole]
+    )->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($rolePeople as $rolePersonID) {
+        $set[(string) $rolePersonID] = true;
+    }
+    $filterSets[] = $set;
+}
+if (!empty($filterSets)) {
+    $people = array_filter($people, function ($personID) use ($filterSets) {
+        foreach ($filterSets as $set) {
+            if (!isset($set[(string) $personID])) {
+                return false;
+            }
+        }
+
+        return true;
+    }, ARRAY_FILTER_USE_KEY);
+}
+
+$formGroups = $pdo->select(
+    "SELECT gibbonFormGroupID AS value, name FROM gibbonFormGroup
+     WHERE gibbonSchoolYearID=:gibbonSchoolYearID ORDER BY name",
+    ['gibbonSchoolYearID' => $gibbonSchoolYearID]
+)->fetchKeyPair();
+$courseClasses = $pdo->select(
+    "SELECT gibbonCourseClass.gibbonCourseClassID AS value,
+            CONCAT(gibbonCourse.nameShort, '.', gibbonCourseClass.nameShort) AS name
+     FROM gibbonCourseClass
+     JOIN gibbonCourse ON gibbonCourse.gibbonCourseID=gibbonCourseClass.gibbonCourseID
+     WHERE gibbonCourse.gibbonSchoolYearID=:gibbonSchoolYearID
+     ORDER BY name",
+    ['gibbonSchoolYearID' => $gibbonSchoolYearID]
+)->fetchKeyPair();
+
+$filterForm = Form::create('schoolCommunityGroupFilter', $session->get('absoluteURL').'/index.php', 'get');
+$filterForm->setTitle(schoolCommunityT('Filter Members'));
+$filterForm->setClass('noIntBorder w-full');
+$filterForm->addHiddenValue('q', '/modules/School Community/message_groupAdding.php');
+$row = $filterForm->addRow();
+    $row->addLabel('filterFormGroupID', schoolCommunityT('Administrative Class'));
+    $row->addSelect('filterFormGroupID')->fromArray($formGroups)->selected($filterFormGroupID)->placeholder();
+$row = $filterForm->addRow();
+    $row->addLabel('filterCourseClassID', schoolCommunityT('Course Class'));
+    $row->addSelect('filterCourseClassID')->fromArray($courseClasses)->selected($filterCourseClassID)->placeholder();
+$row = $filterForm->addRow();
+    $row->addLabel('filterRole', schoolCommunityT('Role'));
+    $row->addSelect('filterRole')->fromArray([
+        'Staff'   => schoolCommunityT('Staff'),
+        'Student' => schoolCommunityT('Student'),
+        'Parent'  => schoolCommunityT('Parent'),
+    ])->selected($filterRole)->placeholder();
+$row = $filterForm->addRow();
+    $row->addFooter();
+    $row->addSearchSubmit($session, schoolCommunityT('Clear filters'));
+$page->write($filterForm->getOutput());
+
 if (empty($people)) {
-    $page->addError(schoolCommunityT('No eligible people are available to add.'));
+    $page->addError(schoolCommunityT('No eligible people match this filter.'));
     return;
 }
 
@@ -63,8 +166,8 @@ $row = $form->addRow();
         ->fromArray($people)
         ->alignLeft()
         ->required()
-        ->setLabelClass('text-gray-800 py-2 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+        ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
+        ->setOuterClass('w-full mt-1 pt-2 max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
 
 $row = $form->addRow();
     $row->addContent(

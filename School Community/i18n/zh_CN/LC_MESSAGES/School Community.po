@@ -1091,3 +1091,9 @@ msgstr "发出的"
 
 msgid "Archive / Trash"
 msgstr "归档/回收站"
+
+msgid "Filter Members"
+msgstr "筛选成员"
+
+msgid "Clear filters"
+msgstr "清除筛选"
