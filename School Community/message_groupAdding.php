@@ -122,14 +122,14 @@ $row = $form->addRow();
         .'<option value="Parent">'.htmlPrep(schoolCommunityT('Parent')).'</option>';
 
     $memberColumn->addContent(
-        '<div class="mb-2 flex flex-col gap-2">'
-        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Administrative Class')
-        .'<select id="scFilterFormGroup" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select></label>'
-        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Course Class')
-        .'<select id="scFilterCourseClass" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select></label>'
-        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Role')
-        .'<select id="scFilterRole" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select></label>'
-        .'<button type="button" id="scGroupFilterClear" class="self-start text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button>'
+        '<div class="mb-2">'
+        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Administrative Class').'</div>'
+        .'<select id="scFilterFormGroup" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select>'
+        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Course Class').'</div>'
+        .'<select id="scFilterCourseClass" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select>'
+        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Role').'</div>'
+        .'<select id="scFilterRole" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select>'
+        .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button>'
         .'</div>'
     );
     $memberColumn->addContent(
