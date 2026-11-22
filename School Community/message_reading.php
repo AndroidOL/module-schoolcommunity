@@ -79,8 +79,6 @@ foreach ($mailboxTabs as $tabKey => $tabLabel) {
         .'<span class="block sm:inline text-xxs sm:text-sm whitespace-nowrap">'.htmlPrep($tabLabel).'</span></a>';
 }
 $tabsHTML .= '</div></div></div>';
-$page->write($tabsHTML);
-$page->write('<div class="pt-4 -mt-px px-4 border rounded-b bg-white border-gray-400">');
 
 $where = ["(message_totals.senderID=:currentPersonID OR message_totals.receiverID=:currentPersonID)"];
 $params = ['currentPersonID' => $gibbonPersonID];
@@ -210,5 +208,11 @@ if (isActionAccessible($guid, $connection2, '/modules/School Community/message_c
         ->displayLabel();
 }
 
-$page->write($table->render(schoolCommunityMessageTable($messages, $gibbonPersonID)));
-$page->write('</div>');
+$messagesHTML = $table->render(schoolCommunityMessageTable($messages, $gibbonPersonID));
+// Place the mailbox tabs directly above the message table, below the DataTable header.
+$messagesHTML = str_replace(
+    '<div id="schoolCommunityMessages"',
+    $tabsHTML.'<div id="schoolCommunityMessages"',
+    $messagesHTML
+);
+$page->write($messagesHTML);
