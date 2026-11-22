@@ -108,15 +108,6 @@ $row = $form->addRow();
 $row = $form->addRow();
     $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
     $memberColumn = $row->addColumn();
-    $memberColumn->addContent(
-        '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full mb-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
-    );
-    $memberColumn->addCheckbox('memberIDs')
-        ->fromArray($people)
-        ->alignLeft()
-        ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
-
     $fgOptions = '<option value="">'.htmlPrep(schoolCommunityT('All')).'</option>';
     foreach ($formGroups as $formGroupID => $formGroupName) {
         $fgOptions .= '<option value="'.htmlPrep((string) $formGroupID).'">'.htmlPrep((string) $formGroupName).'</option>';
@@ -129,17 +120,26 @@ $row = $form->addRow();
         .'<option value="Staff">'.htmlPrep(schoolCommunityT('Staff')).'</option>'
         .'<option value="Student">'.htmlPrep(schoolCommunityT('Student')).'</option>'
         .'<option value="Parent">'.htmlPrep(schoolCommunityT('Parent')).'</option>';
+
     $memberColumn->addContent(
-        '<div class="mt-3 flex flex-wrap gap-2">'
+        '<div class="mb-2 flex flex-wrap items-end gap-2">'
         .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Administrative Class')
         .'<select id="scFilterFormGroup" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select></label>'
         .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Course Class')
         .'<select id="scFilterCourseClass" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select></label>'
         .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Role')
         .'<select id="scFilterRole" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select></label>'
+        .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800 pb-2">'.schoolCommunityT('Clear filters').'</button>'
         .'</div>'
-        .'<div class="mt-2"><button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button></div>'
     );
+    $memberColumn->addContent(
+        '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full mb-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
+    );
+    $memberColumn->addCheckbox('memberIDs')
+        ->fromArray($people)
+        ->alignLeft()
+        ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
+        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
 
 $row = $form->addRow();
     $row->addContent(
