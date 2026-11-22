@@ -57,8 +57,7 @@ $mailboxTabs = [
     'received' => schoolCommunityT('Received Messages'),
     'sent'     => schoolCommunityT('Sent Messages'),
     'unread'   => schoolCommunityT('Unread'),
-    'archived' => schoolCommunityT('Archived'),
-    'trash'    => schoolCommunityT('Trash'),
+    'trash'    => schoolCommunityT('Archive / Trash'),
     'all'      => schoolCommunityT('All'),
 ];
 $tabParams = array_filter(['search' => $search, 'categoryID' => $categoryID], function ($value) {
@@ -104,14 +103,9 @@ if ($mailbox === 'received') {
     $where[] = 'message_totals.receiverID=:currentPersonID AND receipt.receiptID IS NULL';
 }
 if ($mailbox === 'trash') {
-    $where[] = 'threadState.deletedAt IS NOT NULL';
+    $where[] = '(threadState.deletedAt IS NOT NULL OR threadState.archivedAt IS NOT NULL)';
 } else {
-    $where[] = 'threadState.deletedAt IS NULL';
-}
-if ($mailbox === 'archived') {
-    $where[] = 'threadState.archivedAt IS NOT NULL';
-} elseif ($mailbox !== 'trash') {
-    $where[] = 'threadState.archivedAt IS NULL';
+    $where[] = 'threadState.deletedAt IS NULL AND threadState.archivedAt IS NULL';
 }
 
 $messages = $pdo->select(

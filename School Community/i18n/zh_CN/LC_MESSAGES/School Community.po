@@ -1088,3 +1088,6 @@ msgstr "收到的"
 
 msgid "Sent Messages"
 msgstr "发出的"
+
+msgid "Archive / Trash"
+msgstr "归档/回收站"
