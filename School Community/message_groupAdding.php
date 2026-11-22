@@ -123,11 +123,11 @@ $row = $form->addRow();
 
     $memberColumn->addContent(
         '<div class="mb-2 flex flex-wrap items-end gap-2">'
-        .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Administrative Class')
+        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Administrative Class')
         .'<select id="scFilterFormGroup" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select></label>'
-        .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Course Class')
+        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Course Class')
         .'<select id="scFilterCourseClass" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select></label>'
-        .'<label class="flex flex-col text-xs text-gray-600 w-48">'.schoolCommunityT('Role')
+        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Role')
         .'<select id="scFilterRole" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select></label>'
         .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800 pb-2">'.schoolCommunityT('Clear filters').'</button>'
         .'</div>'
@@ -139,7 +139,12 @@ $row = $form->addRow();
         ->fromArray($people)
         ->alignLeft()
         ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+        ->setOuterClass('scGroupMemberList w-full h-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+    $memberColumn->addContent(
+        '<div id="scGroupNoRecords" class="hidden scGroupNoRecords w-full h-64 items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-500">'
+        .schoolCommunityT('No records')
+        .'</div>'
+    );
 
 $row = $form->addRow();
     $row->addContent(
@@ -183,6 +188,18 @@ echo <<<'JS'
             if (term) ok = ok && name.indexOf(term) !== -1;
             row.classList.toggle('hidden', !ok);
         });
+        var list = form.querySelector('.scGroupMemberList');
+        var noRecords = document.getElementById('scGroupNoRecords');
+        var visible = 0;
+        form.querySelectorAll('input[name="memberIDs[]"]').forEach(function (box) {
+            var row = box.closest('div');
+            if (row && !row.classList.contains('hidden')) visible++;
+        });
+        if (list) list.classList.toggle('hidden', visible === 0);
+        if (noRecords) {
+            noRecords.classList.toggle('hidden', visible !== 0);
+            noRecords.classList.toggle('flex', visible === 0);
+        }
     }
 
     ['scFilterFormGroup', 'scFilterCourseClass', 'scFilterRole'].forEach(function (id) {
@@ -200,6 +217,7 @@ echo <<<'JS'
         });
         applyGroupFilters();
     });
+    applyGroupFilters();
 })();
 </script>
 JS;
