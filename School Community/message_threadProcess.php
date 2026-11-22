@@ -95,7 +95,7 @@ if (in_array($action, ['delete', 'restoreDelete'], true)) {
     if (!$saved) {
         $redirect('error2');
     }
-    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groups.php&return='.($action === 'delete' ? 'success7' : 'success8'));
+    header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupManage.php&return='.($action === 'delete' ? 'success7' : 'success8'));
     exit;
 }
 if ($action === 'unread') {

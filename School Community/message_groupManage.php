@@ -5,6 +5,7 @@ Copyright © 2010, Gibbon Foundation
 */
 
 use Gibbon\Forms\Form;
+use Gibbon\Forms\Prefab\DeleteForm;
 use Gibbon\Services\Format;
 use Gibbon\Tables\DataTable;
 
@@ -17,10 +18,26 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
     return;
 }
 
+$deleteGroupID = is_scalar($_GET['deleteGroupID'] ?? null) ? trim((string) $_GET['deleteGroupID']) : '';
+if ($deleteGroupID !== '') {
+    if (empty(schoolCommunityManageableGroup($pdo, $deleteGroupID))) {
+        $page->addError(schoolCommunityT('The specified record does not exist.'));
+        return;
+    }
+    $deleteForm = DeleteForm::createForm($session->get('absoluteURL').'/modules/School Community/message_groupProcess.php');
+    $deleteForm->addHiddenValue('action', 'deleteGroup');
+    $deleteForm->addHiddenValue('groupID', $deleteGroupID);
+    $page->write($deleteForm->getOutput());
+    return;
+}
+
 $page->return->addReturns([
     'success0' => schoolCommunityT('Message group created.'),
     'success1' => schoolCommunityT('Group member added.'),
     'success2' => schoolCommunityT('Group member removed.'),
+    'success4' => schoolCommunityT('Message group deleted.'),
+    'success7' => schoolCommunityT('Message group moved to Trash.'),
+    'success8' => schoolCommunityT('Message group restored from Trash.'),
     'error0'   => schoolCommunityT('You do not have permission to perform this action.'),
     'error1'   => schoolCommunityT('The submitted data is invalid.'),
     'error2'   => schoolCommunityT('Unable to save the message group.'),
@@ -116,6 +133,10 @@ $table->addActionColumn()
         $actions->addAction('members', schoolCommunityT('Members'))
             ->setIcon('users')
             ->setURL('/modules/School Community/message_groupMembers.php');
+        $actions->addAction('delete', schoolCommunityT('Delete'))
+            ->setIcon('delete')
+            ->setURL('/modules/School Community/message_groupManage.php')
+            ->addParam('deleteGroupID', $group['groupID']);
     });
 
 $page->write($table->render(new \Gibbon\Domain\DataSet($groups)));

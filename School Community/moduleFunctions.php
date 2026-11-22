@@ -702,12 +702,14 @@ function schoolCommunityResolveSourceTarget($pdo, string $categoryID, string $ta
     return (string) $inserted;
 }
 
-function schoolCommunityGroupAudience(array $members, $accessControl): array
+function schoolCommunityGroupAudience(array $members, $accessControl = null): array
 {
     $audience = ['eligible' => [], 'excluded' => []];
     foreach ($members as $member) {
-        $isEligible = ($member['status'] ?? '') === 'Full'
-            && schoolCommunityCategoryAllows($accessControl, $member['roleCategory'] ?? '');
+        $isActive = ($member['status'] ?? 'Full') === 'Full';
+        $roleAllowed = $accessControl === null
+            || schoolCommunityCategoryAllows($accessControl, $member['roleCategory'] ?? '');
+        $isEligible = $isActive && $roleAllowed;
         $audience[$isEligible ? 'eligible' : 'excluded'][] = $member;
     }
 

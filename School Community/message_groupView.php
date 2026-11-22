@@ -285,7 +285,7 @@ $groupMembers = $pdo->select(
      ORDER BY gibbonPerson.surname, gibbonPerson.preferredName",
     ['groupID' => $groupID]
 )->fetchAll(PDO::FETCH_ASSOC);
-$audience = schoolCommunityGroupAudience($groupMembers, $group['accessControl']);
+$audience = schoolCommunityGroupAudience($groupMembers);
 $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
 sort($recipientIDs, SORT_STRING);
 $audienceSignature = hash('sha256', implode(',', $recipientIDs));

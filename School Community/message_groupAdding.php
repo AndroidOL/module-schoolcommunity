@@ -43,19 +43,15 @@ $form = Form::create(
 );
 $form->addHiddenValue('action', 'create');
 $form->setTitle(schoolCommunityT('Create Group'));
-$form->setDescription(schoolCommunityT('Choose a category carefully. Class membership is captured once when the group is created and can be edited afterwards.'));
+$form->setDescription(schoolCommunityT('Class membership is captured once when the group is created and can be edited afterwards.'));
 
 $row = $form->addRow();
     $row->addLabel('linkedSource', schoolCommunityT('Group Source'))->description(schoolCommunityT('Teachers can select only their own administrative and course classes.'));
-    $row->addSelect('linkedSource')->fromArray($sourceOptions)->required()->selected('custom');
+    $row->addSearchSelect('linkedSource')->fromArray($sourceOptions)->required()->selected('custom')->setAttribute('autocomplete', 'off');
 
 $row = $form->addRow();
     $row->addLabel('groupName', schoolCommunityT('Group Name'))->description(schoolCommunityT('Required for custom groups; class groups use the class name when left blank.'));
     $row->addTextField('groupName')->maxLength(100);
-
-$row = $form->addRow();
-    $row->addLabel('categoryID', schoolCommunityT('Category'));
-    $row->addSelect('categoryID')->fromArray($categories)->required()->placeholder()->selected($selectedCategoryID);
 
 $row = $form->addRow();
     $row->addFooter();

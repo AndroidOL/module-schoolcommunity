@@ -593,7 +593,7 @@ msgstr "收件人预览"
 msgid ""
 "%d group members will be excluded because their account is inactive or their "
 "role is not allowed by this category."
-msgstr "%d 名群组成员将因账号停用或角色不符合该分类权限而被排除。"
+msgstr "%d 名群组成员将因账号停用而被排除。"
 
 #: ⁨School Community/message_groupView.php⁩:338
 msgid "I have reviewed the recipient list above."
@@ -747,7 +747,7 @@ msgstr "取消"
 msgid ""
 "%d group members are excluded because their account is inactive or their "
 "role is not allowed by this category."
-msgstr "%d 名群组成员因账号停用或角色不符合该分类权限而被排除。"
+msgstr "%d 名群组成员因账号停用而被排除。"
 
 #: ⁨School Community/message_groupRecipients.php⁩:67
 #: ⁨School Community/message_groupMembers.php⁩:108

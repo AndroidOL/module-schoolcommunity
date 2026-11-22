@@ -96,7 +96,7 @@ try {
          WHERE member.groupID=:groupID",
         ['groupID' => $groupID]
     )->fetchAll(PDO::FETCH_ASSOC);
-    $audience = schoolCommunityGroupAudience($members, $group['accessControl']);
+    $audience = schoolCommunityGroupAudience($members);
     $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
     sort($recipientIDs, SORT_STRING);
     $actualRecipientSignature = hash('sha256', implode(',', $recipientIDs));

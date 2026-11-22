@@ -22,7 +22,7 @@ $redirect = function (string $return) use ($URL) {
     exit;
 };
 
-if (!in_array($action, ['create', 'addMember', 'removeMember'], true)) {
+if (!in_array($action, ['create', 'addMember', 'removeMember', 'deleteGroup'], true)) {
     $redirect('error1');
 }
 
@@ -45,9 +45,31 @@ $currentPersonID = (string) $session->get('gibbonPersonID');
 $roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
 
+if ($action === 'deleteGroup') {
+    $manageURL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupManage.php';
+    if (!$canManageGroups || $groupID === '') {
+        header('Location: '.$manageURL.'&return=error0');
+        exit;
+    }
+    if (empty(schoolCommunityManageableGroup($pdo, $groupID))) {
+        header('Location: '.$manageURL.'&return=error1');
+        exit;
+    }
+    $deleted = $pdo->delete(
+        "DELETE FROM message_group WHERE groupID=:groupID",
+        ['groupID' => $groupID]
+    );
+    header('Location: '.$manageURL.'&return='.($deleted === 1 ? 'success4' : 'error1'));
+    exit;
+}
+
 if ($action === 'create') {
     $groupName = is_scalar($_POST['groupName'] ?? null) ? trim((string) $_POST['groupName']) : '';
     $categoryID = is_scalar($_POST['categoryID'] ?? null) ? trim((string) $_POST['categoryID']) : '';
+    if ($categoryID === '') {
+        $defaultCategories = schoolCommunityCategoryOptions($pdo, $roleCategory, false, true);
+        $categoryID = (string) (array_key_first($defaultCategories) ?? '');
+    }
     $linkedSource = is_scalar($_POST['linkedSource'] ?? null) ? trim((string) $_POST['linkedSource']) : '';
     $sourceType = 'custom';
     $sourceID = null;
@@ -91,7 +113,8 @@ if ($action === 'create') {
             ['sourceType' => $sourceType, 'sourceID' => $sourceID]
         );
         if (!empty($existingGroupID)) {
-            header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode((string) $existingGroupID).'&return=error4');
+            // A group already exists for this source: open it instead of erroring.
+            header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode((string) $existingGroupID));
             exit;
         }
     }

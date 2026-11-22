@@ -40,7 +40,7 @@ $members = $pdo->select(
      ORDER BY gibbonPerson.surname, gibbonPerson.preferredName",
     ['groupID' => $groupID]
 )->fetchAll(PDO::FETCH_ASSOC);
-$audience = schoolCommunityGroupAudience($members, $group['accessControl']);
+$audience = schoolCommunityGroupAudience($members);
 
 $rows = [];
 foreach ($audience['eligible'] as $member) {

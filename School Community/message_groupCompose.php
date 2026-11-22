@@ -167,7 +167,7 @@ if (str_starts_with($target, 'group:')) {
     $members = schoolCommunityLinkedSourceMembers($pdo, $sourceType, $sourceID);
 }
 
-$audience = schoolCommunityGroupAudience($members, $category['accessControl']);
+$audience = schoolCommunityGroupAudience($members);
 $recipientIDs = array_map('strval', array_column($audience['eligible'], 'gibbonPersonID'));
 sort($recipientIDs, SORT_STRING);
 $audienceSignature = hash('sha256', implode(',', $recipientIDs));
