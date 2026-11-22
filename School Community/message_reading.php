@@ -64,19 +64,23 @@ $mailboxTabs = [
 $tabParams = array_filter(['search' => $search, 'categoryID' => $categoryID], function ($value) {
     return $value !== '';
 });
-$tabsHTML = '<nav class="flex flex-wrap gap-2 mb-4" aria-label="'.htmlPrep(schoolCommunityT('Mailbox')).'">';
+$tabsHTML = '<div class="relative w-full max-w-full">'
+    .'<div class="overflow-y-hidden w-full"><div class="flex flex-wrap justify-start items-end" role="tablist" aria-label="'.htmlPrep(schoolCommunityT('Mailbox')).'">';
 foreach ($mailboxTabs as $tabKey => $tabLabel) {
     $tabURL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_reading.php&mailbox='.$tabKey;
     if (!empty($tabParams)) {
         $tabURL .= '&'.http_build_query($tabParams);
     }
     $active = $mailbox === $tabKey;
-    $tabsHTML .= '<a href="'.htmlPrep($tabURL).'" class="px-3 py-2 rounded-md border '.($active
-        ? 'bg-gray-100 border-gray-400 font-semibold text-gray-900'
-        : 'bg-white border-gray-200 text-gray-600').'">'.htmlPrep($tabLabel).'</a>';
+    $tabClass = $active
+        ? 'text-gray-900 border border-gray-400 border-b-white z-10 bg-white shadow'
+        : 'text-gray-800 hover:bg-gray-200 border border-transparent hover:border-b-gray-400 bg-transparent';
+    $tabsHTML .= '<a href="'.htmlPrep($tabURL).'" role="tab" class="inline-flex items-center px-4 sm:px-5 py-2 -mr-1 sm:-mr-2 font-normal rounded-t-md no-underline '.$tabClass.'">'
+        .'<span class="block sm:inline text-xxs sm:text-sm whitespace-nowrap">'.htmlPrep($tabLabel).'</span></a>';
 }
-$tabsHTML .= '</nav>';
+$tabsHTML .= '</div></div></div>';
 $page->write($tabsHTML);
+$page->write('<div class="pt-4 -mt-px px-4 border rounded-b bg-white border-gray-400">');
 
 $where = ["(message_totals.senderID=:currentPersonID OR message_totals.receiverID=:currentPersonID)"];
 $params = ['currentPersonID' => $gibbonPersonID];
@@ -207,3 +211,4 @@ if (isActionAccessible($guid, $connection2, '/modules/School Community/message_c
 }
 
 $page->write($table->render(schoolCommunityMessageTable($messages, $gibbonPersonID)));
+$page->write('</div>');

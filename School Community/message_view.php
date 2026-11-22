@@ -107,10 +107,8 @@ if ($privateNote !== '') {
     $metaTags[] = Format::tag($privateNote, 'message');
 }
 
-$isSender = schoolCommunitySamePersonID($message['senderID'], $currentPersonID);
-$isReceiver = schoolCommunitySamePersonID($message['receiverID'], $currentPersonID);
-$senderProfile = !$isSender ? schoolCommunityPersonProfileURL($message['senderID'], $message['senderRoleCategory'] ?? '') : '';
-$receiverProfile = !$isReceiver ? schoolCommunityPersonProfileURL($message['receiverID'], $message['receiverRoleCategory'] ?? '') : '';
+$senderProfile = schoolCommunityPersonProfileURL($message['senderID'], $message['senderRoleCategory'] ?? '');
+$receiverProfile = schoolCommunityPersonProfileURL($message['receiverID'], $message['receiverRoleCategory'] ?? '');
 $senderHTML = $senderProfile !== ''
     ? '<a href="'.htmlPrep($senderProfile).'" class="text-blue-600 hover:text-blue-800">'.htmlPrep($senderName).'</a>'
     : htmlPrep($senderName);
