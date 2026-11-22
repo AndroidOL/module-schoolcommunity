@@ -106,8 +106,8 @@ $row = $form->addRow();
     $row->addTextField('groupName')->required()->maxLength(100);
 
 $row = $form->addRow();
+    $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
     $memberColumn = $row->addColumn();
-    $memberColumn->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
     $memberColumn->addContent(
         '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full mb-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
     );
