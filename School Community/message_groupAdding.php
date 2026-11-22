@@ -122,14 +122,14 @@ $row = $form->addRow();
         .'<option value="Parent">'.htmlPrep(schoolCommunityT('Parent')).'</option>';
 
     $memberColumn->addContent(
-        '<div class="mb-2 flex flex-wrap items-end gap-2">'
-        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Administrative Class')
+        '<div class="mb-2 flex flex-col gap-2">'
+        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Administrative Class')
         .'<select id="scFilterFormGroup" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select></label>'
-        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Course Class')
+        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Course Class')
         .'<select id="scFilterCourseClass" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select></label>'
-        .'<label class="flex flex-col text-xs text-gray-600 flex-1 min-w-0">'.schoolCommunityT('Role')
+        .'<label class="flex flex-col text-gray-600 text-xs">'.schoolCommunityT('Role')
         .'<select id="scFilterRole" class="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select></label>'
-        .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800 pb-2">'.schoolCommunityT('Clear filters').'</button>'
+        .'<button type="button" id="scGroupFilterClear" class="self-start text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button>'
         .'</div>'
     );
     $memberColumn->addContent(
