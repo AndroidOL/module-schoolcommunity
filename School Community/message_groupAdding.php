@@ -49,10 +49,24 @@ $courseClasses = $pdo->select(
     ['gibbonSchoolYearID' => $gibbonSchoolYearID]
 )->fetchKeyPair();
 
-// Build a lightweight index for client-side filtering (role, form group, course classes).
+// Build a lightweight name index for client-side text filtering.
+$fgNameById = [];
+foreach ($formGroups as $formGroupID => $formGroupName) {
+    $fgNameById[(string) (int) $formGroupID] = (string) $formGroupName;
+}
+$ccNameById = [];
+foreach ($courseClasses as $courseClassID => $courseClassName) {
+    $ccNameById[(string) (int) $courseClassID] = (string) $courseClassName;
+}
+
 $memberIndex = [];
 foreach (array_keys($people) as $personID) {
-    $memberIndex[(string) $personID] = ['role' => '', 'formGroup' => '', 'classes' => []];
+    $memberIndex[(string) $personID] = [
+        'role'          => '',
+        'roleLabel'     => '',
+        'formGroupName' => '',
+        'classNames'    => [],
+    ];
 }
 $roleRows = $pdo->select(
     "SELECT person.gibbonPersonID, role.category
@@ -64,6 +78,7 @@ foreach ($roleRows as $row) {
     $id = (string) $row['gibbonPersonID'];
     if (isset($memberIndex[$id])) {
         $memberIndex[$id]['role'] = (string) $row['category'];
+        $memberIndex[$id]['roleLabel'] = schoolCommunityT((string) $row['category']);
     }
 }
 $enrolRows = $pdo->select(
@@ -73,7 +88,7 @@ $enrolRows = $pdo->select(
 foreach ($enrolRows as $row) {
     $id = (string) $row['gibbonPersonID'];
     if (isset($memberIndex[$id])) {
-        $memberIndex[$id]['formGroup'] = (string) $row['gibbonFormGroupID'];
+        $memberIndex[$id]['formGroupName'] = $fgNameById[(string) (int) $row['gibbonFormGroupID']] ?? '';
     }
 }
 $classRows = $pdo->select(
@@ -87,8 +102,20 @@ $classRows = $pdo->select(
 foreach ($classRows as $row) {
     $id = (string) $row['gibbonPersonID'];
     if (isset($memberIndex[$id])) {
-        $memberIndex[$id]['classes'][] = (string) $row['gibbonCourseClassID'];
+        $className = $ccNameById[(string) (int) $row['gibbonCourseClassID']] ?? '';
+        if ($className !== '') {
+            $memberIndex[$id]['classNames'][] = $className;
+        }
     }
+}
+
+$memberRows = '';
+foreach ($people as $personID => $personLabel) {
+    $inputId = 'scMember'.preg_replace('/[^A-Za-z0-9_-]/', '', (string) $personID);
+    $memberRows .= '<div class="w-full inline-flex items-center gap-2 py-1">'
+        .'<input type="checkbox" name="memberIDs[]" id="'.htmlPrep($inputId).'" value="'.htmlPrep((string) $personID).'" class="h-4 w-4 rounded text-blue-500 focus:ring-blue-600">'
+        .'<label for="'.htmlPrep($inputId).'" class="flex-1 text-sm text-gray-800 cursor-pointer select-none">'.htmlPrep((string) $personLabel).'</label>'
+        .'</div>';
 }
 
 $form = Form::create(
@@ -105,43 +132,29 @@ $row = $form->addRow();
     $row->addLabel('groupName', schoolCommunityT('Group Name'));
     $row->addTextField('groupName')->required()->maxLength(100);
 
-$row = $form->addRow();
-    $row->addLabel('filterFormGroupID', schoolCommunityT('Administrative Class'));
-    $row->addSelect('filterFormGroupID')->fromArray($formGroups)->placeholder(schoolCommunityT('All'))->setID('scFilterFormGroup');
-
-$row = $form->addRow();
-    $row->addLabel('filterCourseClassID', schoolCommunityT('Course Class'));
-    $row->addSelect('filterCourseClassID')->fromArray($courseClasses)->placeholder(schoolCommunityT('All'))->setID('scFilterCourseClass');
-
-$row = $form->addRow();
-    $row->addLabel('filterRole', schoolCommunityT('Role'));
-    $row->addSelect('filterRole')->fromArray([
-        'Staff'   => schoolCommunityT('Staff'),
-        'Student' => schoolCommunityT('Student'),
-        'Parent'  => schoolCommunityT('Parent'),
-    ])->placeholder(schoolCommunityT('All'))->setID('scFilterRole');
-
-$row = $form->addRow();
-    $row->addContent(
-        '<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'
-        .schoolCommunityT('Clear filters')
-        .'</button>'
-    );
+$filterInputs = [
+    'scFilterFormGroupText'   => schoolCommunityT('Administrative Class'),
+    'scFilterCourseClassText' => schoolCommunityT('Course Class'),
+    'scFilterRoleText'        => schoolCommunityT('Role'),
+];
+foreach ($filterInputs as $filterInputId => $filterInputLabel) {
+    $row = $form->addRow();
+        $row->addLabel($filterInputId, $filterInputLabel);
+        $row->addContent(
+            '<input type="search" id="'.$filterInputId.'" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Filter')).'" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
+        );
+}
 
 $row = $form->addRow();
     $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
     $memberColumn = $row->addColumn();
     $memberColumn->addContent(
-        '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full rounded-t-md border border-gray-300 border-b-0 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
-    );
-    $memberColumn->addCheckbox('memberIDs')
-        ->fromArray($people)
-        ->alignLeft()
-        ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('scGroupMemberList w-full h-64 overflow-y-auto rounded-b-md border border-gray-300 border-t-0 bg-white p-2');
-    $memberColumn->addContent(
-        '<div id="scGroupNoRecords" class="hidden scGroupNoRecords w-full h-64 items-center justify-center rounded-b-md border border-gray-300 border-t-0 bg-white text-sm text-gray-500">'
-        .schoolCommunityT('No records')
+        '<div class="scGroupMemberPicker w-full rounded-md border border-gray-300 bg-white">'
+        .'<div class="p-2 border-b border-gray-200">'
+        .'<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
+        .'</div>'
+        .'<div class="scGroupMemberList max-h-80 overflow-y-auto p-2">'.$memberRows.'</div>'
+        .'<div id="scGroupNoRecords" class="hidden p-4 text-center text-sm text-gray-500">'.schoolCommunityT('No records').'</div>'
         .'</div>'
     );
 
@@ -170,10 +183,9 @@ echo <<<'JS'
     function applyGroupFilters() {
         var form = document.getElementById('schoolCommunityGroupAdd');
         if (!form) return;
-        function norm(v) { var n = parseInt(String(v || '').trim(), 10); return isNaN(n) ? '' : String(n); }
-        var fg = (document.getElementById('scFilterFormGroup') || {}).value || '';
-        var cc = (document.getElementById('scFilterCourseClass') || {}).value || '';
-        var role = (document.getElementById('scFilterRole') || {}).value || '';
+        var fg = ((document.getElementById('scFilterFormGroupText') || {}).value || '').trim().toLowerCase();
+        var cc = ((document.getElementById('scFilterCourseClassText') || {}).value || '').trim().toLowerCase();
+        var role = ((document.getElementById('scFilterRoleText') || {}).value || '').trim().toLowerCase();
         var term = ((document.getElementById('scGroupMemberFilter') || {}).value || '').trim().toLowerCase();
         form.querySelectorAll('input[name="memberIDs[]"]').forEach(function (box) {
             var row = box.closest('div');
@@ -182,9 +194,9 @@ echo <<<'JS'
             var label = row.querySelector('label');
             var name = label ? label.textContent.toLowerCase() : '';
             var ok = true;
-            if (role) ok = ok && (info.role === role);
-            if (fg) ok = ok && (norm(info.formGroup) === norm(fg));
-            if (cc) ok = ok && (Array.isArray(info.classes) && info.classes.some(function (x) { return norm(x) === norm(cc); }));
+            if (fg) ok = ok && (String(info.formGroupName || '').toLowerCase().indexOf(fg) !== -1);
+            if (cc) ok = ok && (Array.isArray(info.classNames) && info.classNames.some(function (x) { return String(x).toLowerCase().indexOf(cc) !== -1; }));
+            if (role) ok = ok && (String(info.roleLabel || '').toLowerCase().indexOf(role) !== -1 || String(info.role || '').toLowerCase().indexOf(role) !== -1);
             if (term) ok = ok && name.indexOf(term) !== -1;
             row.classList.toggle('hidden', !ok);
         });
@@ -202,20 +214,13 @@ echo <<<'JS'
         }
     }
 
-    ['scFilterFormGroup', 'scFilterCourseClass', 'scFilterRole'].forEach(function (id) {
+    ['scFilterFormGroupText', 'scFilterCourseClassText', 'scFilterRoleText', 'scGroupMemberFilter'].forEach(function (id) {
         var el = document.getElementById(id);
-        if (el) el.addEventListener('change', applyGroupFilters);
-    });
-    var search = document.getElementById('scGroupMemberFilter');
-    if (search) search.addEventListener('input', applyGroupFilters);
-    var clear = document.getElementById('scGroupFilterClear');
-    if (clear) clear.addEventListener('click', function (e) {
-        e.preventDefault();
-        ['scFilterFormGroup', 'scFilterCourseClass', 'scFilterRole', 'scGroupMemberFilter'].forEach(function (id) {
-            var el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-        applyGroupFilters();
+        if (el) {
+            el.addEventListener('input', applyGroupFilters);
+            el.addEventListener('change', applyGroupFilters);
+            el.addEventListener('search', applyGroupFilters);
+        }
     });
     applyGroupFilters();
 })();

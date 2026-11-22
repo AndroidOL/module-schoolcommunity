@@ -1103,3 +1103,6 @@ msgstr "没有符合筛选条件的人员。"
 
 msgid "No records"
 msgstr "没有记录"
+
+msgid "Filter"
+msgstr "筛选"
