@@ -128,3 +128,39 @@ if (typeof htmx !== 'undefined') {
         }
     });
 });
+
+// Group member picker: live selected count/names + name filter.
+window.scGroupUpdatePreview = function () {
+    var form = document.getElementById('schoolCommunityGroupAdd');
+    if (!form) return;
+    var checked = form.querySelectorAll('input[name="memberIDs[]"]:checked');
+    var count = document.getElementById('scGroupSelectedCount');
+    if (count) count.textContent = String(checked.length);
+    var names = [];
+    checked.forEach(function (box) {
+        var label = form.querySelector('label[for="' + box.id + '"]');
+        if (label) names.push(label.textContent.trim());
+    });
+    var preview = document.getElementById('scGroupSelectedNames');
+    if (preview) preview.textContent = names.join('、');
+};
+window.scGroupFilterMembers = function (term) {
+    var form = document.getElementById('schoolCommunityGroupAdd');
+    if (!form) return;
+    var needle = (term || '').trim().toLowerCase();
+    form.querySelectorAll('input[name="memberIDs[]"]').forEach(function (box) {
+        var row = box.closest('div');
+        var label = row ? row.querySelector('label') : null;
+        var text = label ? label.textContent.toLowerCase() : '';
+        if (row) row.classList.toggle('hidden', needle !== '' && text.indexOf(needle) === -1);
+    });
+};
+document.addEventListener('DOMContentLoaded', function () {
+    window.scGroupUpdatePreview();
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.name === 'memberIDs[]') window.scGroupUpdatePreview();
+    });
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'scGroupMemberSearch') window.scGroupFilterMembers(e.target.value);
+    });
+});

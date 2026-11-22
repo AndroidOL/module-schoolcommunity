@@ -22,18 +22,19 @@ if (!isActionAccessible($guid, $connection2, '/modules/School Community/message_
     return;
 }
 
-$roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $currentPersonID = (string) $session->get('gibbonPersonID');
-$gibbonSchoolYearID = (string) $session->get('gibbonSchoolYearID');
-$selectedCategoryID = is_scalar($_GET['categoryID'] ?? null) ? trim((string) $_GET['categoryID']) : '';
+$roleCategory = (string) $session->get('gibbonRoleIDCurrentCategory');
 $categories = schoolCommunityCategoryOptions($pdo, $roleCategory, false, true);
 if (empty($categories)) {
     $page->addError(schoolCommunityT('No group-enabled message categories are available for your role. Contact an administrator.'));
     return;
 }
 
-$sourceOptions = ['custom' => schoolCommunityT('Custom Group')]
-    + schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
+$people = schoolCommunityPersonOptions($pdo, $currentPersonID, null, false);
+if (empty($people)) {
+    $page->addError(schoolCommunityT('No eligible people are available to add.'));
+    return;
+}
 
 $form = Form::create(
     'schoolCommunityGroupAdd',
@@ -43,15 +44,35 @@ $form = Form::create(
 );
 $form->addHiddenValue('action', 'create');
 $form->setTitle(schoolCommunityT('Create Group'));
-$form->setDescription(schoolCommunityT('Class membership is captured once when the group is created and can be edited afterwards.'));
+$form->setDescription(schoolCommunityT('Give the group a name and choose the people who belong to it. Members can be edited afterwards.'));
 
 $row = $form->addRow();
-    $row->addLabel('linkedSource', schoolCommunityT('Group Source'))->description(schoolCommunityT('Teachers can select only their own administrative and course classes.'));
-    $row->addSearchSelect('linkedSource')->fromArray($sourceOptions)->required()->selected('custom')->setAttribute('autocomplete', 'off');
+    $row->addLabel('groupName', schoolCommunityT('Group Name'));
+    $row->addTextField('groupName')->required()->maxLength(100);
 
 $row = $form->addRow();
-    $row->addLabel('groupName', schoolCommunityT('Group Name'))->description(schoolCommunityT('Required for custom groups; class groups use the class name when left blank.'));
-    $row->addTextField('groupName')->maxLength(100);
+    $row->addLabel('memberSearch', schoolCommunityT('Search'));
+    $row->addTextField('memberSearch')
+        ->setID('scGroupMemberSearch')
+        ->setAttribute('autocomplete', 'off')
+        ->setAttribute('placeholder', schoolCommunityT('Search by name'));
+
+$row = $form->addRow();
+    $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
+    $row->addCheckbox('memberIDs')
+        ->fromArray($people)
+        ->alignLeft()
+        ->required()
+        ->setLabelClass('text-gray-800 py-2 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
+        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+
+$row = $form->addRow();
+    $row->addContent(
+        '<div class="text-sm text-gray-700">'
+        .'<span class="font-semibold">'.schoolCommunityT('Selected').': <span id="scGroupSelectedCount">0</span></span>'
+        .'<div id="scGroupSelectedNames" class="mt-1 text-xs text-gray-600"></div>'
+        .'</div>'
+    );
 
 $row = $form->addRow();
     $row->addFooter();

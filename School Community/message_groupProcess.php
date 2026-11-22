@@ -70,26 +70,7 @@ if ($action === 'create') {
         $defaultCategories = schoolCommunityCategoryOptions($pdo, $roleCategory, false, true);
         $categoryID = (string) (array_key_first($defaultCategories) ?? '');
     }
-    $linkedSource = is_scalar($_POST['linkedSource'] ?? null) ? trim((string) $_POST['linkedSource']) : '';
-    $sourceType = 'custom';
-    $sourceID = null;
-
-    if ($linkedSource !== 'custom') {
-        $sources = schoolCommunityLinkedSourceOptions($pdo, $currentPersonID, $gibbonSchoolYearID);
-        if (!array_key_exists($linkedSource, $sources)) {
-            $redirect('error0');
-        }
-        [$sourceType, $sourceID] = array_pad(explode(':', $linkedSource, 2), 2, null);
-        if (!in_array($sourceType, ['formGroup', 'courseClass', 'gibbonGroup'], true) || empty($sourceID)) {
-            $redirect('error1');
-        }
-        if ($groupName === '') {
-            $groupName = $sources[$linkedSource];
-        }
-    }
-
-    if (($sourceType === 'custom' && $groupName === '')
-        || mb_strlen($groupName) > 100 || $categoryID === '') {
+    if ($groupName === '' || mb_strlen($groupName) > 100 || $categoryID === '') {
         $redirect('error1');
     }
 
@@ -105,31 +86,48 @@ if ($action === 'create') {
         $redirect('error0');
     }
 
-    if ($sourceType !== 'custom') {
-        $existingGroupID = $pdo->selectOne(
-            "SELECT groupID FROM message_group
-             WHERE sourceType=:sourceType AND sourceID=:sourceID
-             LIMIT 1",
-            ['sourceType' => $sourceType, 'sourceID' => $sourceID]
-        );
-        if (!empty($existingGroupID)) {
-            // A group already exists for this source: open it instead of erroring.
-            header('Location: '.$session->get('absoluteURL').'/index.php?q=/modules/School Community/message_groupView.php&groupID='.urlencode((string) $existingGroupID));
-            exit;
+    $rawMembers = is_array($_POST['memberIDs'] ?? null) ? $_POST['memberIDs'] : [];
+    $requestedIDs = [];
+    foreach ($rawMembers as $memberID) {
+        if (!is_scalar($memberID)) {
+            continue;
         }
+        $memberID = trim((string) $memberID);
+        if ($memberID !== '') {
+            $requestedIDs[] = $memberID;
+        }
+    }
+    $requestedIDs = array_values(array_unique($requestedIDs));
+
+    $validMembers = [];
+    if (!empty($requestedIDs)) {
+        $placeholders = [];
+        $params = [];
+        foreach ($requestedIDs as $index => $memberID) {
+            $key = 'member'.$index;
+            $placeholders[] = ':'.$key;
+            $params[$key] = $memberID;
+        }
+        $validMembers = $pdo->select(
+            "SELECT gibbonPersonID FROM gibbonPerson
+             WHERE status='Full' AND gibbonPersonID IN (".implode(', ', $placeholders).")",
+            $params
+        )->fetchAll(\PDO::FETCH_COLUMN);
+        $validMembers = array_values(array_unique(array_map('strval', $validMembers)));
+    }
+    if (empty($validMembers)) {
+        $redirect('error1');
     }
 
     try {
         $pdo->beginTransaction();
         $inserted = $pdo->insert(
             "INSERT INTO message_group (groupName, categoryID, ownerID, sourceType, sourceID)
-             VALUES (:groupName, :categoryID, :ownerID, :sourceType, :sourceID)",
+             VALUES (:groupName, :categoryID, :ownerID, 'custom', NULL)",
             [
-                'groupName' => $groupName,
-                'categoryID'=> $categoryID,
-                'ownerID'   => $currentPersonID,
-                'sourceType'=> $sourceType,
-                'sourceID'  => $sourceID,
+                'groupName'  => $groupName,
+                'categoryID' => $categoryID,
+                'ownerID'    => $currentPersonID,
             ]
         );
         if (empty($inserted)) {
@@ -137,14 +135,21 @@ if ($action === 'create') {
         }
         $pdo->insert(
             "INSERT INTO message_group_member (groupID, gibbonPersonID)
-             VALUES (:groupID, :gibbonPersonID)",
+             VALUES (:groupID, :gibbonPersonID)
+             ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
             ['groupID' => $inserted, 'gibbonPersonID' => $currentPersonID]
         );
-        schoolCommunityAddLinkedGroupMembers($pdo, [
-            'groupID'   => $inserted,
-            'sourceType'=> $sourceType,
-            'sourceID'  => $sourceID,
-        ]);
+        foreach ($validMembers as $memberID) {
+            if (schoolCommunitySamePersonID($memberID, $currentPersonID)) {
+                continue;
+            }
+            $pdo->insert(
+                "INSERT INTO message_group_member (groupID, gibbonPersonID)
+                 VALUES (:groupID, :gibbonPersonID)
+                 ON DUPLICATE KEY UPDATE joinedAt=joinedAt",
+                ['groupID' => $inserted, 'gibbonPersonID' => $memberID]
+            );
+        }
         $pdo->commit();
     } catch (\Throwable $e) {
         if ($pdo->inTransaction()) {
