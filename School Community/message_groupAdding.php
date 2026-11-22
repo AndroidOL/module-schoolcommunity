@@ -157,7 +157,7 @@ $row = $form->addRow();
         .'<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
         .'</div>'
         .'<div class="scGroupMemberList max-h-80 overflow-y-auto p-2">'.$memberRows.'</div>'
-        .'<div id="scGroupNoRecords" class="hidden p-4 text-center text-sm text-gray-500">'.schoolCommunityT('No records').'</div>'
+        .'<div id="scGroupNoRecords" class="hidden h-64 w-full items-center justify-center p-4 text-center text-sm text-gray-500">'.schoolCommunityT('No records').'</div>'
         .'</div>'
     );
 
