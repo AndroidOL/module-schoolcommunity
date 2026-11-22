@@ -35,6 +35,7 @@ $form = Form::create('schoolCommunitySearch', $session->get('absoluteURL').'/ind
 $form->setTitle(schoolCommunityT('Search Messages'));
 $form->setClass('noIntBorder w-full');
 $form->addHiddenValue('q', '/modules/School Community/message_reading.php');
+$form->addHiddenValue('mailbox', $mailbox);
 
 $row = $form->addRow();
     $row->addLabel('search', schoolCommunityT('Search'))->description(schoolCommunityT('Subject, message or reply text'));
@@ -48,20 +49,34 @@ $row = $form->addRow();
         ->placeholder();
 
 $row = $form->addRow();
-    $row->addLabel('mailbox', schoolCommunityT('Mailbox'));
-    $row->addSelect('mailbox')->fromArray([
-        'all'      => schoolCommunityT('All'),
-        'received' => schoolCommunityT('Received'),
-        'sent'     => schoolCommunityT('Sent'),
-        'unread'   => schoolCommunityT('Unread'),
-        'archived' => schoolCommunityT('Archived'),
-        'trash'    => schoolCommunityT('Trash'),
-    ])->selected($mailbox);
-
-$row = $form->addRow();
     $row->addSearchSubmit($session, schoolCommunityT('Clear search'));
 
 $page->write($form->getOutput());
+
+$mailboxTabs = [
+    'received' => schoolCommunityT('Received Messages'),
+    'sent'     => schoolCommunityT('Sent Messages'),
+    'unread'   => schoolCommunityT('Unread'),
+    'archived' => schoolCommunityT('Archived'),
+    'trash'    => schoolCommunityT('Trash'),
+    'all'      => schoolCommunityT('All'),
+];
+$tabParams = array_filter(['search' => $search, 'categoryID' => $categoryID], function ($value) {
+    return $value !== '';
+});
+$tabsHTML = '<nav class="flex flex-wrap gap-2 mb-4" aria-label="'.htmlPrep(schoolCommunityT('Mailbox')).'">';
+foreach ($mailboxTabs as $tabKey => $tabLabel) {
+    $tabURL = $session->get('absoluteURL').'/index.php?q=/modules/School Community/message_reading.php&mailbox='.$tabKey;
+    if (!empty($tabParams)) {
+        $tabURL .= '&'.http_build_query($tabParams);
+    }
+    $active = $mailbox === $tabKey;
+    $tabsHTML .= '<a href="'.htmlPrep($tabURL).'" class="px-3 py-2 rounded-md border '.($active
+        ? 'bg-gray-100 border-gray-400 font-semibold text-gray-900'
+        : 'bg-white border-gray-200 text-gray-600').'">'.htmlPrep($tabLabel).'</a>';
+}
+$tabsHTML .= '</nav>';
+$page->write($tabsHTML);
 
 $where = ["(message_totals.senderID=:currentPersonID OR message_totals.receiverID=:currentPersonID)"];
 $params = ['currentPersonID' => $gibbonPersonID];

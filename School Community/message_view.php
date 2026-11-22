@@ -107,6 +107,17 @@ if ($privateNote !== '') {
     $metaTags[] = Format::tag($privateNote, 'message');
 }
 
+$isSender = schoolCommunitySamePersonID($message['senderID'], $currentPersonID);
+$isReceiver = schoolCommunitySamePersonID($message['receiverID'], $currentPersonID);
+$senderProfile = !$isSender ? schoolCommunityPersonProfileURL($message['senderID'], $message['senderRoleCategory'] ?? '') : '';
+$receiverProfile = !$isReceiver ? schoolCommunityPersonProfileURL($message['receiverID'], $message['receiverRoleCategory'] ?? '') : '';
+$senderHTML = $senderProfile !== ''
+    ? '<a href="'.htmlPrep($senderProfile).'" class="text-blue-600 hover:text-blue-800">'.htmlPrep($senderName).'</a>'
+    : htmlPrep($senderName);
+$receiverHTML = $receiverProfile !== ''
+    ? '<a href="'.htmlPrep($receiverProfile).'" class="text-blue-600 hover:text-blue-800">'.htmlPrep($receiverName).'</a>'
+    : htmlPrep($receiverName);
+
 // The subject and body are the focus; metadata is a single compact line beneath the subject.
 $page->write(
     '<section class="w-full p-4 bg-white border border-gray-200 rounded-md">'
@@ -116,9 +127,9 @@ $page->write(
     .'</div>'
     .'<h1 class="text-2xl font-semibold text-gray-900 leading-tight">'.htmlPrep((string) $message['title']).'</h1>'
     .'<div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-600">'
-    .'<span class="font-medium text-gray-900">'.htmlPrep($senderName).'</span>'
+    .'<span class="font-medium text-gray-900">'.$senderHTML.'</span>'
     .'<span>→</span>'
-    .'<span>'.htmlPrep($receiverName).'</span>'
+    .'<span>'.$receiverHTML.'</span>'
     .'<span>·</span>'
     .'<span>'.Format::dateTime($message['sendTimestamp']).'</span>'
     .implode('', $metaTags)

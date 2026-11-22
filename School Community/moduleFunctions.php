@@ -178,6 +178,25 @@ function schoolCommunityPersonOptions($pdo, $currentPersonID, ?int $accessContro
     return $options;
 }
 
+function schoolCommunityPersonProfileURL($gibbonPersonID, $roleCategory): string
+{
+    global $session;
+
+    $gibbonPersonID = (string) $gibbonPersonID;
+    if ($gibbonPersonID === '' || empty($session)) {
+        return '';
+    }
+    $base = $session->get('absoluteURL');
+    if ($roleCategory === 'Student') {
+        return $base.'/index.php?q=/modules/Students/student_view_details.php&gibbonPersonID='.urlencode($gibbonPersonID);
+    }
+    if (in_array($roleCategory, ['Staff', 'Other'], true)) {
+        return $base.'/index.php?q=/modules/Staff/staff_view_details.php&gibbonPersonID='.urlencode($gibbonPersonID);
+    }
+
+    return '';
+}
+
 function schoolCommunityGroupSourceLabel($sourceType): string
 {
     return [
@@ -846,11 +865,14 @@ function schoolCommunityAccessibleMessage($pdo, $messageID, $gibbonPersonID): ?a
     $message = $pdo->selectOne(
         "SELECT message_totals.*, message_category.categoryName,
                 sender.title AS senderTitle, sender.preferredName AS senderPreferredName, sender.surname AS senderSurname,
-                receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname
+                receiver.title AS receiverTitle, receiver.preferredName AS receiverPreferredName, receiver.surname AS receiverSurname,
+                senderRole.category AS senderRoleCategory, receiverRole.category AS receiverRoleCategory
          FROM message_totals
          JOIN message_category ON message_category.categoryID=message_totals.categoryID
          JOIN gibbonPerson AS sender ON sender.gibbonPersonID=message_totals.senderID
+         JOIN gibbonRole AS senderRole ON senderRole.gibbonRoleID=sender.gibbonRoleIDPrimary
          JOIN gibbonPerson AS receiver ON receiver.gibbonPersonID=message_totals.receiverID
+         JOIN gibbonRole AS receiverRole ON receiverRole.gibbonRoleID=receiver.gibbonRoleIDPrimary
          WHERE message_totals.messageID=:messageID
            AND (message_totals.senderID=:senderID OR message_totals.receiverID=:receiverID)",
         [
