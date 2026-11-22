@@ -122,26 +122,26 @@ $row = $form->addRow();
         .'<option value="Parent">'.htmlPrep(schoolCommunityT('Parent')).'</option>';
 
     $memberColumn->addContent(
-        '<div class="mb-2">'
-        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Administrative Class').'</div>'
-        .'<select id="scFilterFormGroup" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select>'
-        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Course Class').'</div>'
-        .'<select id="scFilterCourseClass" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select>'
-        .'<div class="text-xs text-gray-600">'.schoolCommunityT('Role').'</div>'
-        .'<select id="scFilterRole" class="block w-full mb-2 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select>'
+        '<div class="mb-3">'
+        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Administrative Class').'</div>'
+        .'<select id="scFilterFormGroup" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select>'
+        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Course Class').'</div>'
+        .'<select id="scFilterCourseClass" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select>'
+        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Role').'</div>'
+        .'<select id="scFilterRole" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select>'
         .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button>'
         .'</div>'
     );
     $memberColumn->addContent(
-        '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full mb-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
+        '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full rounded-t-md border border-gray-300 border-b-0 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
     );
     $memberColumn->addCheckbox('memberIDs')
         ->fromArray($people)
         ->alignLeft()
         ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('scGroupMemberList w-full h-64 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+        ->setOuterClass('scGroupMemberList w-full h-64 overflow-y-auto rounded-b-md border border-gray-300 border-t-0 bg-white p-2');
     $memberColumn->addContent(
-        '<div id="scGroupNoRecords" class="hidden scGroupNoRecords w-full h-64 items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-500">'
+        '<div id="scGroupNoRecords" class="hidden scGroupNoRecords w-full h-64 items-center justify-center rounded-b-md border border-gray-300 border-t-0 bg-white text-sm text-gray-500">'
         .schoolCommunityT('No records')
         .'</div>'
     );
