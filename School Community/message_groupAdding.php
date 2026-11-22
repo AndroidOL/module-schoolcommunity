@@ -106,32 +106,31 @@ $row = $form->addRow();
     $row->addTextField('groupName')->required()->maxLength(100);
 
 $row = $form->addRow();
+    $row->addLabel('filterFormGroupID', schoolCommunityT('Administrative Class'));
+    $row->addSelect('filterFormGroupID')->fromArray($formGroups)->placeholder(schoolCommunityT('All'))->setID('scFilterFormGroup');
+
+$row = $form->addRow();
+    $row->addLabel('filterCourseClassID', schoolCommunityT('Course Class'));
+    $row->addSelect('filterCourseClassID')->fromArray($courseClasses)->placeholder(schoolCommunityT('All'))->setID('scFilterCourseClass');
+
+$row = $form->addRow();
+    $row->addLabel('filterRole', schoolCommunityT('Role'));
+    $row->addSelect('filterRole')->fromArray([
+        'Staff'   => schoolCommunityT('Staff'),
+        'Student' => schoolCommunityT('Student'),
+        'Parent'  => schoolCommunityT('Parent'),
+    ])->placeholder(schoolCommunityT('All'))->setID('scFilterRole');
+
+$row = $form->addRow();
+    $row->addContent(
+        '<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'
+        .schoolCommunityT('Clear filters')
+        .'</button>'
+    );
+
+$row = $form->addRow();
     $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
     $memberColumn = $row->addColumn();
-    $fgOptions = '<option value="">'.htmlPrep(schoolCommunityT('All')).'</option>';
-    foreach ($formGroups as $formGroupID => $formGroupName) {
-        $fgOptions .= '<option value="'.htmlPrep((string) $formGroupID).'">'.htmlPrep((string) $formGroupName).'</option>';
-    }
-    $ccOptions = '<option value="">'.htmlPrep(schoolCommunityT('All')).'</option>';
-    foreach ($courseClasses as $courseClassID => $courseClassName) {
-        $ccOptions .= '<option value="'.htmlPrep((string) $courseClassID).'">'.htmlPrep((string) $courseClassName).'</option>';
-    }
-    $roleOptions = '<option value="">'.htmlPrep(schoolCommunityT('All')).'</option>'
-        .'<option value="Staff">'.htmlPrep(schoolCommunityT('Staff')).'</option>'
-        .'<option value="Student">'.htmlPrep(schoolCommunityT('Student')).'</option>'
-        .'<option value="Parent">'.htmlPrep(schoolCommunityT('Parent')).'</option>';
-
-    $memberColumn->addContent(
-        '<div class="mb-3">'
-        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Administrative Class').'</div>'
-        .'<select id="scFilterFormGroup" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$fgOptions.'</select>'
-        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Course Class').'</div>'
-        .'<select id="scFilterCourseClass" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$ccOptions.'</select>'
-        .'<div class="mb-1 text-xs text-gray-600">'.schoolCommunityT('Role').'</div>'
-        .'<select id="scFilterRole" class="block w-full mb-3 rounded-md border border-gray-300 px-2 py-2 text-sm text-gray-900">'.$roleOptions.'</select>'
-        .'<button type="button" id="scGroupFilterClear" class="text-sm text-blue-600 hover:text-blue-800">'.schoolCommunityT('Clear filters').'</button>'
-        .'</div>'
-    );
     $memberColumn->addContent(
         '<input type="text" id="scGroupMemberFilter" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full rounded-t-md border border-gray-300 border-b-0 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
     );
@@ -171,6 +170,7 @@ echo <<<'JS'
     function applyGroupFilters() {
         var form = document.getElementById('schoolCommunityGroupAdd');
         if (!form) return;
+        function norm(v) { var n = parseInt(String(v || '').trim(), 10); return isNaN(n) ? '' : String(n); }
         var fg = (document.getElementById('scFilterFormGroup') || {}).value || '';
         var cc = (document.getElementById('scFilterCourseClass') || {}).value || '';
         var role = (document.getElementById('scFilterRole') || {}).value || '';
@@ -183,8 +183,8 @@ echo <<<'JS'
             var name = label ? label.textContent.toLowerCase() : '';
             var ok = true;
             if (role) ok = ok && (info.role === role);
-            if (fg) ok = ok && (String(info.formGroup || '') === fg);
-            if (cc) ok = ok && (Array.isArray(info.classes) && info.classes.indexOf(cc) !== -1);
+            if (fg) ok = ok && (norm(info.formGroup) === norm(fg));
+            if (cc) ok = ok && (Array.isArray(info.classes) && info.classes.some(function (x) { return norm(x) === norm(cc); }));
             if (term) ok = ok && name.indexOf(term) !== -1;
             row.classList.toggle('hidden', !ok);
         });
