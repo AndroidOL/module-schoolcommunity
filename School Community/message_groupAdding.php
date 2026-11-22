@@ -134,11 +134,6 @@ $row = $filterForm->addRow();
     $row->addSearchSubmit($session, schoolCommunityT('Clear filters'));
 $page->write($filterForm->getOutput());
 
-if (empty($people)) {
-    $page->addError(schoolCommunityT('No eligible people match this filter.'));
-    return;
-}
-
 $form = Form::create(
     'schoolCommunityGroupAdd',
     $session->get('absoluteURL').'/modules/School Community/message_groupProcess.php',
@@ -154,20 +149,21 @@ $row = $form->addRow();
     $row->addTextField('groupName')->required()->maxLength(100);
 
 $row = $form->addRow();
-    $row->addLabel('memberSearch', schoolCommunityT('Search'));
-    $row->addTextField('memberSearch')
-        ->setID('scGroupMemberSearch')
-        ->setAttribute('autocomplete', 'off')
-        ->setAttribute('placeholder', schoolCommunityT('Search by name'));
-
-$row = $form->addRow();
     $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
-    $row->addCheckbox('memberIDs')
+    $memberColumn = $row->addColumn();
+    $memberColumn->addContent(
+        '<input type="text" id="scGroupMemberSearch" name="memberSearch" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Search by name')).'" class="w-full mb-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
+    );
+    $memberColumn->addCheckbox('memberIDs')
         ->fromArray($people)
         ->alignLeft()
-        ->required()
         ->setLabelClass('leading-normal text-gray-800 py-1.5 px-1 rounded cursor-pointer select-none hover:bg-gray-100')
-        ->setOuterClass('w-full mt-1 pt-2 max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+        ->setOuterClass('w-full max-h-80 overflow-y-auto rounded-md border border-gray-200 bg-white p-2');
+    if (empty($people)) {
+        $memberColumn->addContent(
+            '<p class="mt-1 text-xs text-gray-500">'.schoolCommunityT('No eligible people match this filter.').'</p>'
+        );
+    }
 
 $row = $form->addRow();
     $row->addContent(

@@ -1097,3 +1097,6 @@ msgstr "筛选成员"
 
 msgid "Clear filters"
 msgstr "清除筛选"
+
+msgid "No eligible people match this filter."
+msgstr "没有符合筛选条件的人员。"
