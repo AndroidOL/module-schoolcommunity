@@ -132,18 +132,21 @@ $row = $form->addRow();
     $row->addLabel('groupName', schoolCommunityT('Group Name'));
     $row->addTextField('groupName')->required()->maxLength(100);
 
-$filterInputs = [
-    'scFilterFormGroupText'   => schoolCommunityT('Administrative Class'),
-    'scFilterCourseClassText' => schoolCommunityT('Course Class'),
-    'scFilterRoleText'        => schoolCommunityT('Role'),
-];
-foreach ($filterInputs as $filterInputId => $filterInputLabel) {
-    $row = $form->addRow();
-        $row->addLabel($filterInputId, $filterInputLabel);
-        $row->addContent(
-            '<input type="search" id="'.$filterInputId.'" autocomplete="off" placeholder="'.htmlPrep(schoolCommunityT('Filter')).'" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-inset focus:ring-blue-500" />'
-        );
-}
+$row = $form->addRow();
+    $row->addLabel('filterFormGroupID', schoolCommunityT('Administrative Class'));
+    $row->addSearchSelect('filterFormGroupID')->fromArray($formGroups)->placeholder(schoolCommunityT('All'))->setID('scFilterFormGroup');
+
+$row = $form->addRow();
+    $row->addLabel('filterCourseClassID', schoolCommunityT('Course Class'));
+    $row->addSearchSelect('filterCourseClassID')->fromArray($courseClasses)->placeholder(schoolCommunityT('All'))->setID('scFilterCourseClass');
+
+$row = $form->addRow();
+    $row->addLabel('filterRole', schoolCommunityT('Role'));
+    $row->addSearchSelect('filterRole')->fromArray([
+        'Staff'   => schoolCommunityT('Staff'),
+        'Student' => schoolCommunityT('Student'),
+        'Parent'  => schoolCommunityT('Parent'),
+    ])->placeholder(schoolCommunityT('All'))->setID('scFilterRole');
 
 $row = $form->addRow();
     $row->addLabel('memberIDs', schoolCommunityT('Members'))->description(schoolCommunityT('Select the people who should be in this group.'));
@@ -180,12 +183,18 @@ echo <<<'JS'
     var indexEl = document.getElementById('scGroupMemberIndex');
     var index = indexEl ? JSON.parse(indexEl.textContent) : {};
 
+    function selectedText(id) {
+        var sel = document.getElementById(id);
+        if (!sel) return '';
+        var opt = sel.options[sel.selectedIndex];
+        return opt ? String(opt.text || '').trim() : '';
+    }
     function applyGroupFilters() {
         var form = document.getElementById('schoolCommunityGroupAdd');
         if (!form) return;
-        var fg = ((document.getElementById('scFilterFormGroupText') || {}).value || '').trim().toLowerCase();
-        var cc = ((document.getElementById('scFilterCourseClassText') || {}).value || '').trim().toLowerCase();
-        var role = ((document.getElementById('scFilterRoleText') || {}).value || '').trim().toLowerCase();
+        var fg = selectedText('scFilterFormGroup');
+        var cc = selectedText('scFilterCourseClass');
+        var role = selectedText('scFilterRole');
         var term = ((document.getElementById('scGroupMemberFilter') || {}).value || '').trim().toLowerCase();
         form.querySelectorAll('input[name="memberIDs[]"]').forEach(function (box) {
             var row = box.closest('div');
@@ -194,9 +203,9 @@ echo <<<'JS'
             var label = row.querySelector('label');
             var name = label ? label.textContent.toLowerCase() : '';
             var ok = true;
-            if (fg) ok = ok && (String(info.formGroupName || '').toLowerCase().indexOf(fg) !== -1);
-            if (cc) ok = ok && (Array.isArray(info.classNames) && info.classNames.some(function (x) { return String(x).toLowerCase().indexOf(cc) !== -1; }));
-            if (role) ok = ok && (String(info.roleLabel || '').toLowerCase().indexOf(role) !== -1 || String(info.role || '').toLowerCase().indexOf(role) !== -1);
+            if (fg) ok = ok && (String(info.formGroupName || '') === fg);
+            if (cc) ok = ok && (Array.isArray(info.classNames) && info.classNames.indexOf(cc) !== -1);
+            if (role) ok = ok && (String(info.roleLabel || '') === role || String(info.role || '') === role);
             if (term) ok = ok && name.indexOf(term) !== -1;
             row.classList.toggle('hidden', !ok);
         });
@@ -214,14 +223,12 @@ echo <<<'JS'
         }
     }
 
-    ['scFilterFormGroupText', 'scFilterCourseClassText', 'scFilterRoleText', 'scGroupMemberFilter'].forEach(function (id) {
+    ['scFilterFormGroup', 'scFilterCourseClass', 'scFilterRole'].forEach(function (id) {
         var el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', applyGroupFilters);
-            el.addEventListener('change', applyGroupFilters);
-            el.addEventListener('search', applyGroupFilters);
-        }
+        if (el) el.addEventListener('change', applyGroupFilters);
     });
+    var search = document.getElementById('scGroupMemberFilter');
+    if (search) search.addEventListener('input', applyGroupFilters);
     applyGroupFilters();
 })();
 </script>

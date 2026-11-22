@@ -4,6 +4,11 @@
 $sql = [];
 $count = 0;
 
+// v1.4.9
+$sql[$count][0] = "1.4.9";
+$sql[$count][1] = "UPDATE gibbonAction SET menuShow='Y' WHERE gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community') AND name='Manage Message Groups';end";
+$count++;
+
 // v1.4.8
 $sql[$count][0] = "1.4.8";
 $sql[$count][1] = "UPDATE gibbonAction SET menuShow='N' WHERE gibbonModuleID=(SELECT gibbonModuleID FROM gibbonModule WHERE name='School Community') AND name='Manage Message Groups';end";
