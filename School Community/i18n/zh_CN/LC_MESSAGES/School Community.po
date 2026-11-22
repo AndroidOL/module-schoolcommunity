@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: School Community 1.4.7\n"
+"Project-Id-Version: School Community 1.4.8\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-11-21 21:22+0800\n"
 "PO-Revision-Date: 2026-11-21 21:22+0800\n"

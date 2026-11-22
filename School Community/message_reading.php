@@ -182,8 +182,11 @@ $table->addActionColumn()->format(function ($message, $actions) {
         ->addParam('action', 'delete');
 });
 
+$groupsURL = isActionAccessible($guid, $connection2, '/modules/School Community/message_groupManage.php')
+    ? '/modules/School Community/message_groupManage.php'
+    : '/modules/School Community/message_groups.php';
 $table->addHeaderAction('groups', schoolCommunityT('Message Groups'))
-    ->setURL('/modules/School Community/message_groups.php')
+    ->setURL($groupsURL)
     ->setIcon('users')
     ->displayLabel();
 if (schoolCommunityMessagingAccessAllowed(
